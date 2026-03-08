@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { DEMO_GRAPH, type GraphEdge, type GraphNode } from '../graph/model';
+import { HORIZONS, PRESSURE_OPTIONS, TARGET_EDGE_HINT, type LaunchContext } from '../../app/state/launchContext';
 import { propagateGraphScenario } from '../graph/engine';
 
 type Horizon = 3 | 7 | 14;
 type ScenarioKind = 'base' | 'inaction' | 'intervention';
 
 type OracleModeProps = {
+  launchContext: LaunchContext;
   selectedNodeId: string;
   sharedLens: {
     panX: number;
@@ -20,7 +22,8 @@ const SCENARIO_LABEL: Record<ScenarioKind, string> = {
   intervention: 'Вмешательство',
 };
 
-const HORIZONS: Horizon[] = [3, 7, 14];
+const FORECAST_STEPS: Horizon[] = [3, 7, 14];
+
 const SCENARIO_TONE: Record<ScenarioKind, string> = {
   base: '#9fc1ff',
   inaction: '#ff9688',
@@ -68,9 +71,12 @@ const findPath = (fromId: string, toId: string) => {
   return null;
 };
 
-export const OracleMode = ({ selectedNodeId, sharedLens }: OracleModeProps) => {
-  const [horizon, setHorizon] = useState<Horizon>(7);
+export const OracleMode = ({ selectedNodeId, sharedLens, launchContext }: OracleModeProps) => {
+  const launchHorizon = (HORIZONS.find((entry) => entry.id === launchContext.horizonId)?.oracleHorizon ?? 7) as Horizon;
+  const [horizonOverride, setHorizonOverride] = useState<Horizon | null>(null);
+  const horizon = horizonOverride ?? launchHorizon;
   const [scenario, setScenario] = useState<ScenarioKind>('intervention');
+  const pressure = PRESSURE_OPTIONS.find((option) => option.id === launchContext.pressureId) ?? PRESSURE_OPTIONS[0];
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const actionNodes = useMemo(() => DEMO_GRAPH.nodes.filter((node) => node.type === 'action'), []);
   const [actionId, setActionId] = useState(actionNodes[0]?.id ?? '');
@@ -122,7 +128,10 @@ export const OracleMode = ({ selectedNodeId, sharedLens }: OracleModeProps) => {
       });
     }
 
-    const recommendationPath = findPath(bestLever?.id ?? selectedNode.id, targetGoal?.id ?? selectedNode.id) ?? [];
+    const preferredTarget = TARGET_EDGE_HINT[launchContext.targetFocus]
+      .map((edgeId) => DEMO_GRAPH.edges.find((edge) => edge.id === edgeId)?.target)
+      .find((id): id is string => Boolean(id));
+    const recommendationPath = findPath(bestLever?.id ?? selectedNode.id, preferredTarget ?? targetGoal?.id ?? selectedNode.id) ?? [];
     const recommendationEdgeIds = new Set<string>();
     for (let i = 0; i < recommendationPath.length - 1; i += 1) {
       const source = recommendationPath[i];
@@ -230,7 +239,7 @@ export const OracleMode = ({ selectedNodeId, sharedLens }: OracleModeProps) => {
       goalBranches,
       recommendationEdgeIds,
     };
-  }, [actionNode, horizon, nodeMap, scenario, selectedNode, sharedLens]);
+  }, [actionNode, horizon, launchContext.targetFocus, nodeMap, scenario, selectedNode, sharedLens]);
 
   const stateOfAnchor = scenarioData.chosen.find((node) => node.id === selectedNode.id)?.state ?? selectedNode.state;
 
@@ -238,7 +247,7 @@ export const OracleMode = ({ selectedNodeId, sharedLens }: OracleModeProps) => {
     <div className="oracle-mode" aria-label="Режим оракула и прогнозов">
       <div className="oracle-header">
         <p className="scene-mode-kicker">Oracle · Прогноз</p>
-        <p className="oracle-header-copy">Якорь «{selectedNode.name}» · линия на {horizon} шагов</p>
+        <p className="oracle-header-copy">Якорь «{selectedNode.name}» · линия на {horizon} шагов · давление: {pressure.label.toLowerCase()}</p>
       </div>
 
       <div className="oracle-projection-scene" aria-hidden="true">
@@ -314,8 +323,8 @@ export const OracleMode = ({ selectedNodeId, sharedLens }: OracleModeProps) => {
 
         <div className="oracle-segment">
           <span>Горизонт</span>
-          {HORIZONS.map((step) => (
-            <button key={step} className={horizon === step ? 'active' : ''} type="button" onClick={() => setHorizon(step)}>
+          {FORECAST_STEPS.map((step) => (
+            <button key={step} className={horizon === step ? 'active' : ''} type="button" onClick={() => setHorizonOverride(step)}>
               {step} шагов
             </button>
           ))}
