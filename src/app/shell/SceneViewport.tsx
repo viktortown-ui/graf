@@ -15,10 +15,10 @@ export const SceneViewport = ({ mode, sceneState }: SceneViewportProps) => {
   const signal = MODE_SIGNAL[mode];
 
   return (
-    <section className="scene-viewport" aria-label="Immersive scene viewport">
+    <section className="scene-viewport" aria-label="Иммерсивная сцена">
       <header className="scene-hud">
         <p className="scene-hud-label">{signal.title}</p>
-        <p className="scene-hud-metric">Pulse {Math.round(signal.pulse * 100)}%</p>
+        <p className="scene-hud-metric">Пульс {Math.round(signal.pulse * 100)}%</p>
       </header>
 
       <div className="scene-canvas" style={{ ['--mode-hue' as string]: signal.hue }}>
@@ -32,7 +32,7 @@ export const SceneViewport = ({ mode, sceneState }: SceneViewportProps) => {
           {mode === 'graph' && (
             <GraphMode selectedNodeId={sceneState.selection.graphNodeId} onSelectNode={sceneState.selectGraphNode} />
           )}
-          {mode === 'oracle' && <OracleMode selectedNodeName={sceneState.selectedGraphNode.name} />}
+          {mode === 'oracle' && <OracleMode selectedNodeId={sceneState.selection.graphNodeId} />}
         </div>
       </div>
     </section>

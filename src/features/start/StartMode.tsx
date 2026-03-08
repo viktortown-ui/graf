@@ -4,10 +4,10 @@ type StartModeProps = {
 
 export const StartMode = ({ selectedNodeName }: StartModeProps) => (
   <>
-    <p className="scene-mode-kicker">Mission Control</p>
-    <h2 className="scene-mode-title">Initialize the graph-native command loop.</h2>
+    <p className="scene-mode-kicker">Командный контур</p>
+    <h2 className="scene-mode-title">Соберите стартовый фокус перед входом в Мир, Граф и Оракул.</h2>
     <p className="scene-mode-copy">
-      Start mode anchors from <strong>{selectedNodeName}</strong> and primes intent before entering World, Graph, or Oracle passes.
+      Текущий якорь: <strong>{selectedNodeName}</strong>. Зафиксируйте цель, проверьте риски и задайте ритм следующего шага.
     </p>
   </>
 );

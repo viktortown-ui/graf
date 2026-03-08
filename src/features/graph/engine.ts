@@ -72,6 +72,43 @@ export const propagateGraphState = (graph: InfluenceGraph, iterations = 1) => {
   return graph.nodes.map((node) => ({ ...node, state: Number((stateMap.get(node.id) ?? node.state).toFixed(1)) }));
 };
 
+export type PropagationBoost = {
+  nodeId: string;
+  amount: number;
+};
+
+export const propagateGraphScenario = (graph: InfluenceGraph, iterations: number, boosts: PropagationBoost[] = []) => {
+  const boostMap = new Map(boosts.map((entry) => [entry.nodeId, entry.amount]));
+  const stateMap = new Map(graph.nodes.map((node) => [node.id, node.state]));
+
+  for (let i = 0; i < iterations; i += 1) {
+    const nextMap = new Map(stateMap);
+
+    graph.nodes.forEach((node) => {
+      const inbound = graph.edges.filter((edge) => edge.target === node.id);
+      const incomingSignal = inbound.reduce((total, edge) => {
+        const sourceState = stateMap.get(edge.source) ?? 50;
+        const normalized = (sourceState - 50) / 50;
+        const lagPenalty = edge.lag ? 1 / (1 + edge.lag * 0.24) : 1;
+        return total + normalized * influenceAmount(edge) * lagPenalty;
+      }, 0);
+
+      const inertiaHold = node.state * node.inertia;
+      const sensitivityMix = incomingSignal * node.sensitivity;
+      const baseline = 50 * (1 - node.inertia);
+      const interventionPush = (boostMap.get(node.id) ?? 0) * (1 - i / (iterations + 1));
+      const recomputed = clamp(inertiaHold + baseline + sensitivityMix + interventionPush, 0, 100);
+
+      nextMap.set(node.id, recomputed);
+    });
+
+    stateMap.clear();
+    nextMap.forEach((value, key) => stateMap.set(key, value));
+  }
+
+  return graph.nodes.map((node) => ({ ...node, state: Number((stateMap.get(node.id) ?? node.state).toFixed(1)) }));
+};
+
 export const neighborsOf = (graph: InfluenceGraph, nodeId: string) => {
   const inbound = graph.edges.filter((edge) => edge.target === nodeId);
   const outbound = graph.edges.filter((edge) => edge.source === nodeId);

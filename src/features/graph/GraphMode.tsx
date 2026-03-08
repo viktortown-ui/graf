@@ -10,6 +10,21 @@ type CameraState = {
 
 type LayerFilter = 'risks' | 'actions' | 'goals' | 'delays';
 
+const FILTER_LABEL: Record<LayerFilter, string> = {
+  risks: 'Риски',
+  actions: 'Действия',
+  goals: 'Цели',
+  delays: 'Задержки',
+};
+
+const NODE_TYPE_LABEL: Record<GraphNode['type'], string> = {
+  domain: 'Ядро',
+  factor: 'Фактор',
+  action: 'Действие',
+  risk: 'Риск',
+  goal: 'Цель',
+};
+
 const EDGE_STYLE: Record<GraphEdgeType, { color: string; dash?: string }> = {
   boosts: { color: '#82ffe2' },
   drags: { color: '#ff9f84' },
@@ -127,13 +142,13 @@ export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
   };
 
   return (
-    <div className="graph-mode" aria-label="Graph influence view">
+    <div className="graph-mode" aria-label="Сцена причинного графа">
       <div className="graph-header">
-        <p className="scene-mode-kicker">Analytical Projection</p>
-        <h2 className="scene-mode-title">Causal force-map of the same living world.</h2>
+        <p className="scene-mode-kicker">Аналитическая проекция</p>
+        <h2 className="scene-mode-title">Причинная карта того же живого мира.</h2>
       </div>
 
-      <div className="graph-filter-bar" role="toolbar" aria-label="Graph layers">
+      <div className="graph-filter-bar" role="toolbar" aria-label="Слои графа">
         {(['risks', 'actions', 'goals', 'delays'] as const).map((filter) => (
           <button
             key={filter}
@@ -141,7 +156,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
             className={filters[filter] ? 'graph-filter active' : 'graph-filter'}
             onClick={() => setFilters((current) => ({ ...current, [filter]: !current[filter] }))}
           >
-            {filter}
+            {FILTER_LABEL[filter]}
           </button>
         ))}
       </div>
@@ -202,7 +217,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
               const style = NODE_STYLE[node.type];
               const isSelected = node.id === selectedNode.id;
               const inNeighborhood = neighborhood.nodeIds.has(node.id);
-              const emphasis = isSelected ? 1 : inNeighborhood ? 0.93 : 0.42;
+              const emphasis = isSelected ? 1 : inNeighborhood ? 0.9 : 0.3;
               const haloSize = style.radius + (isSelected ? 16 : 8);
 
               return (
@@ -215,7 +230,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
                 >
                   <circle r={haloSize} className="graph-node-halo" style={{ opacity: isSelected ? 0.46 : 0.14 }} />
                   <circle r={style.radius + 7} fill={style.fill} opacity={0.12} />
-                  <circle r={style.radius} fill={style.fill} stroke={style.stroke} strokeWidth={isSelected ? 2.4 : 1.3} />
+                  <circle r={style.radius} fill={style.fill} stroke={style.stroke} strokeWidth={isSelected ? 2.8 : 1.2} />
                   <text y={style.radius + 20} className="graph-node-label">
                     {node.name}
                   </text>
@@ -228,23 +243,23 @@ export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
         </g>
       </svg>
 
-      <aside className="graph-inspector" aria-label="Selected node details">
+      <aside className="graph-inspector" aria-label="Параметры выбранного узла">
         <p className="graph-inspector-kicker">
-          {selectedNode.type} · {selectedNode.id}
+          {NODE_TYPE_LABEL[selectedNode.type]} · {selectedNode.id}
         </p>
         <h3>{selectedNode.name}</h3>
-        <p className="graph-inspector-state">State {toPercent(selectedNode.state)}</p>
+        <p className="graph-inspector-state">Состояние {toPercent(selectedNode.state)}</p>
         <div className="graph-metrics">
-          <p>Inertia {toPercent(selectedNode.inertia * 100)}</p>
-          <p>Sensitivity {toPercent(selectedNode.sensitivity * 100)}</p>
+          <p>Инерция {toPercent(selectedNode.inertia * 100)}</p>
+          <p>Чувствительность {toPercent(selectedNode.sensitivity * 100)}</p>
         </div>
         <div className="graph-summary">
-          <p>Inbound {summary.inboundCount}</p>
-          <p>Outbound {summary.outboundCount}</p>
-          <p>Inbound boost {toPercent(summary.inboundBoost)}</p>
-          <p>Inbound drag {toPercent(summary.inboundDrag)}</p>
-          <p>Outbound boost {toPercent(summary.outboundBoost)}</p>
-          <p>Outbound drag {toPercent(summary.outboundDrag)}</p>
+          <p>Входящих связей {summary.inboundCount}</p>
+          <p>Исходящих связей {summary.outboundCount}</p>
+          <p>Входящее усиление {toPercent(summary.inboundBoost)}</p>
+          <p>Входящее давление {toPercent(summary.inboundDrag)}</p>
+          <p>Исходящее усиление {toPercent(summary.outboundBoost)}</p>
+          <p>Исходящее давление {toPercent(summary.outboundDrag)}</p>
         </div>
       </aside>
     </div>
