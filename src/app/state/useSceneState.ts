@@ -74,8 +74,13 @@ export const useSceneState = () => {
   const applyLaunchContext = (next: LaunchContext) => {
     setLaunchContext(next);
     const pressure = PRESSURE_OPTIONS.find((option) => option.id === next.pressureId) ?? PRESSURE_OPTIONS[0];
+    const entrySeedPlanet: Record<LaunchContext['entryModeId'], string> = {
+      fast: pressure.worldPlanetId,
+      analysis: pressure.worldPlanetId,
+      forecast: next.targetFocus === 'Снизить риск' ? 'stress' : next.targetFocus === 'Восстановить ресурс' ? 'energy' : 'goal',
+    };
     const targetPlanetByFocus: Record<LaunchContext['targetFocus'], string> = {
-      'Удержать систему': pressure.worldPlanetId,
+      'Удержать систему': entrySeedPlanet[next.entryModeId],
       'Снизить риск': 'stress',
       'Усилить цель': 'goal',
       'Восстановить ресурс': 'energy',
