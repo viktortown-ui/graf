@@ -74,9 +74,19 @@ export const useSceneState = () => {
   const applyLaunchContext = (next: LaunchContext) => {
     setLaunchContext(next);
     const pressure = PRESSURE_OPTIONS.find((option) => option.id === next.pressureId) ?? PRESSURE_OPTIONS[0];
+    const targetPlanetByFocus: Record<LaunchContext['targetFocus'], string> = {
+      'Удержать систему': pressure.worldPlanetId,
+      'Снизить риск': 'stress',
+      'Усилить цель': 'goal',
+      'Восстановить ресурс': 'energy',
+    };
+
+    const selectedPlanet = targetPlanetByFocus[next.targetFocus] ?? pressure.worldPlanetId;
+    const selectedGraph = WORLD_TO_GRAPH_NODE[selectedPlanet] ?? pressure.anchorNodeId;
+
     setSelection((current) => ({
-      worldPlanetId: pressure.worldPlanetId ?? current.worldPlanetId,
-      graphNodeId: pressure.anchorNodeId ?? current.graphNodeId,
+      worldPlanetId: selectedPlanet ?? current.worldPlanetId,
+      graphNodeId: selectedGraph ?? current.graphNodeId,
     }));
   };
 
