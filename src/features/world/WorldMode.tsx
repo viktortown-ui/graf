@@ -70,8 +70,8 @@ export const WorldMode = ({ selectedPlanetId, onSelectPlanet }: WorldModeProps) 
 
   const focusAnchor = preFocusPlanets.find((planet) => planet.id === selectedPlanetId) ?? preFocusPlanets[0];
   const focusShift = {
-    x: -focusAnchor.x * 0.34,
-    y: -focusAnchor.y * 0.34,
+    x: -focusAnchor.x * 0.28,
+    y: -focusAnchor.y * 0.3,
   };
 
   const planets: PlanetRender[] = preFocusPlanets.map((planet) => ({
@@ -91,7 +91,7 @@ export const WorldMode = ({ selectedPlanetId, onSelectPlanet }: WorldModeProps) 
 
   const stars = useMemo(
     () =>
-      Array.from({ length: 64 }, (_, index) => {
+      Array.from({ length: 92 }, (_, index) => {
         const seed = index * 9277;
         return {
           id: index,
@@ -138,9 +138,9 @@ export const WorldMode = ({ selectedPlanetId, onSelectPlanet }: WorldModeProps) 
   };
 
   return (
-    <div className="world-mode" aria-label="World system scene">
+    <div className="world-mode" aria-label="Сцена системного мира">
       <div className="world-overlay">
-        <p className="world-kicker">Living System</p>
+        <p className="world-kicker">Живой мир</p>
         <p className="world-selected">
           {selectedPlanet.label} · {STATE_COPY[selectedPlanet.state]}
         </p>
@@ -162,13 +162,17 @@ export const WorldMode = ({ selectedPlanetId, onSelectPlanet }: WorldModeProps) 
             <stop offset="34%" stopColor="#8bdbff" />
             <stop offset="100%" stopColor="#282f86" stopOpacity="0.2" />
           </radialGradient>
+          <radialGradient id="selectedFocusGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#f7ffff" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#9cd5ff" stopOpacity="0" />
+          </radialGradient>
         </defs>
 
         {stars.map((star) => (
           <circle key={star.id} cx={`${star.x * 11.2 - 560}`} cy={`${star.y * 6.8 - 340}`} r={star.size} fill="#b9d8ff" opacity={star.opacity} />
         ))}
 
-        <g opacity="0.28">
+        <g opacity="0.34">
           {WORLD_PLANETS.map((planet) => (
             <ellipse
               key={planet.id}
@@ -192,6 +196,15 @@ export const WorldMode = ({ selectedPlanetId, onSelectPlanet }: WorldModeProps) 
             fill="none"
             stroke="#8ad6ff"
             strokeOpacity="0.3"
+          />
+          <circle
+            cx={focusShift.x}
+            cy={focusShift.y}
+            r={172 + Math.sin(time * 0.42) * 12}
+            fill="none"
+            stroke="#77b8ff"
+            strokeOpacity="0.2"
+            strokeDasharray="5 10"
           />
         </g>
 
@@ -239,10 +252,12 @@ export const WorldMode = ({ selectedPlanetId, onSelectPlanet }: WorldModeProps) 
                 {planet.accent === 'haze' && <circle r={planet.r * 1.26} fill={planet.color} opacity={0.14} />}
 
                 {(hovered || selected) && (
-                  <text x={planet.r + 14} y={4} className="world-planet-label">
+                  <text x={planet.r + 16} y={5} className="world-planet-label">
                     {planet.label}
                   </text>
                 )}
+
+                {selected && <circle r={planet.r * 2.6} fill="url(#selectedFocusGlow)" opacity={0.36 + Math.sin(time * 2.6) * 0.12} />}
               </g>
             );
           })}

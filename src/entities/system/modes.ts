@@ -10,27 +10,27 @@ export type ModeDefinition = {
 export const MODES: ModeDefinition[] = [
   {
     id: 'start',
-    label: 'Start',
-    short: 'ST',
-    summary: 'Prime the mission and align the system baseline.',
+    label: 'Старт',
+    short: 'СТ',
+    summary: 'Выравнивание контура и запуск рабочей сцены.',
   },
   {
     id: 'world',
-    label: 'World',
-    short: 'WD',
-    summary: 'Observe active world signals and regional pressure.',
+    label: 'Мир',
+    short: 'МР',
+    summary: 'Наблюдение за живыми сигналами системы и давлением зон.',
   },
   {
     id: 'graph',
-    label: 'Graph',
-    short: 'GP',
-    summary: 'Inspect the topology and influence corridors.',
+    label: 'Граф',
+    short: 'ГР',
+    summary: 'Разбор структуры связей, влияний и узловых рычагов.',
   },
   {
     id: 'oracle',
-    label: 'Oracle',
-    short: 'OR',
-    summary: 'Project probable trajectories and next actions.',
+    label: 'Оракул',
+    short: 'ОР',
+    summary: 'Прогноз сценариев и выбор следующего шага.',
   },
 ];
 

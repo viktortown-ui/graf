@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { DEMO_GRAPH } from '../../features/graph/model';
+import { WORLD_PLANETS } from '../../features/world/worldPlanets';
 
 export type SceneSelection = {
   worldPlanetId: string;
@@ -32,7 +33,7 @@ export const useSceneState = () => {
   );
 
   const selectedPlanetLabel = useMemo(
-    () => selection.worldPlanetId.charAt(0).toUpperCase() + selection.worldPlanetId.slice(1),
+    () => WORLD_PLANETS.find((planet) => planet.id === selection.worldPlanetId)?.label ?? selection.worldPlanetId,
     [selection.worldPlanetId],
   );
 

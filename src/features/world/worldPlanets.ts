@@ -18,7 +18,7 @@ export type PlanetDomain = {
 export const WORLD_PLANETS: PlanetDomain[] = [
   {
     id: 'energy',
-    label: 'Energy',
+    label: 'Энергия',
     size: 1.2,
     brightness: 0.92,
     pulseIntensity: 0.8,
@@ -32,7 +32,7 @@ export const WORLD_PLANETS: PlanetDomain[] = [
   },
   {
     id: 'money',
-    label: 'Money',
+    label: 'Ресурсы',
     size: 1,
     brightness: 0.9,
     pulseIntensity: 0.55,
@@ -46,7 +46,7 @@ export const WORLD_PLANETS: PlanetDomain[] = [
   },
   {
     id: 'discipline',
-    label: 'Discipline',
+    label: 'Дисциплина',
     size: 1.08,
     brightness: 0.86,
     pulseIntensity: 0.47,
@@ -60,7 +60,7 @@ export const WORLD_PLANETS: PlanetDomain[] = [
   },
   {
     id: 'focus',
-    label: 'Focus',
+    label: 'Фокус',
     size: 0.97,
     brightness: 0.78,
     pulseIntensity: 0.52,
@@ -74,7 +74,7 @@ export const WORLD_PLANETS: PlanetDomain[] = [
   },
   {
     id: 'stress',
-    label: 'Stress',
+    label: 'Напряжение',
     size: 1.12,
     brightness: 0.84,
     pulseIntensity: 0.85,
@@ -88,7 +88,7 @@ export const WORLD_PLANETS: PlanetDomain[] = [
   },
   {
     id: 'social',
-    label: 'Social',
+    label: 'Поддержка',
     size: 1.03,
     brightness: 0.7,
     pulseIntensity: 0.48,
@@ -102,7 +102,7 @@ export const WORLD_PLANETS: PlanetDomain[] = [
   },
   {
     id: 'goal',
-    label: 'Goal',
+    label: 'Цель',
     size: 1.15,
     brightness: 0.96,
     pulseIntensity: 0.7,
@@ -117,10 +117,10 @@ export const WORLD_PLANETS: PlanetDomain[] = [
 ];
 
 export const STATE_COPY: Record<PlanetDomain['state'], string> = {
-  stable: 'Calm glow · stable orbital behavior',
-  overloaded: 'Hot edge distortion · high vibration',
-  weak: 'Dimmed pressure · fragile shell drift',
-  protected: 'Defensive ring active · low volatility',
-  risky: 'Stress halo expanding · elevated heat',
-  improving: 'Pulse trend rising · trail momentum',
+  stable: 'Ровное сияние · стабильная орбита',
+  overloaded: 'Перегрев контура · высокий шум',
+  weak: 'Просадка поля · хрупкая динамика',
+  protected: 'Защитный контур · низкая волатильность',
+  risky: 'Расширение риска · рост турбулентности',
+  improving: 'Рост импульса · положительный тренд',
 };

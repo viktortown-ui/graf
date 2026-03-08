@@ -8,13 +8,13 @@ type LeftRailProps = {
 };
 
 export const LeftRail = ({ activeMode, onSelectMode }: LeftRailProps) => (
-  <aside className="left-rail" aria-label="Mode rail">
+  <aside className="left-rail" aria-label="Панель режимов">
     <div className="brand-lockup">
       <p className="brand">GRAF</p>
-      <p className="brand-subtitle">Graph-first command surface</p>
+      <p className="brand-subtitle">Граф-нативная командная сцена</p>
     </div>
 
-    <nav className="mode-rail-nav" aria-label="Primary modes">
+    <nav className="mode-rail-nav" aria-label="Основные режимы">
       {MODES.map((mode) => {
         const active = mode.id === activeMode;
 
