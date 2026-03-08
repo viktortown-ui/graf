@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import { DEMO_GRAPH, type GraphEdge, type GraphNode } from '../graph/model';
 import { HORIZONS, PRESSURE_OPTIONS, TARGET_EDGE_HINT, type LaunchContext } from '../../app/state/launchContext';
+import type { AppSettings } from '../../app/state/settingsModel';
 import { propagateGraphScenario } from '../graph/engine';
 
 type Horizon = 3 | 7 | 14;
 type ScenarioKind = 'base' | 'inaction' | 'intervention';
 
 type OracleModeProps = {
+  settings: AppSettings;
   launchContext: LaunchContext;
   selectedNodeId: string;
   sharedLens: {
@@ -71,7 +73,7 @@ const findPath = (fromId: string, toId: string) => {
   return null;
 };
 
-export const OracleMode = ({ selectedNodeId, sharedLens, launchContext }: OracleModeProps) => {
+export const OracleMode = ({ selectedNodeId, sharedLens, launchContext, settings }: OracleModeProps) => {
   const launchHorizon = (HORIZONS.find((entry) => entry.id === launchContext.horizonId)?.oracleHorizon ?? 7) as Horizon;
   const [horizonOverride, setHorizonOverride] = useState<Horizon | null>(null);
   const horizon = horizonOverride ?? launchHorizon;
@@ -250,8 +252,8 @@ export const OracleMode = ({ selectedNodeId, sharedLens, launchContext }: Oracle
         <p className="oracle-header-copy">Якорь «{selectedNode.name}» · линия на {horizon} шагов · давление: {pressure.label.toLowerCase()}</p>
       </div>
 
-      <div className="oracle-projection-scene" aria-hidden="true">
-        <svg viewBox="0 0 100 100" className="oracle-projection-svg">
+      <div className="oracle-projection-scene" aria-hidden="true" style={{ opacity: settings.reduceTransparency ? 1 : 0.78 + settings.glowBrightness / 500 }}>
+        <svg viewBox="0 0 100 100" className="oracle-projection-svg" style={{ transitionDuration: settings.reduceMotion ? '0ms' : undefined }}>
           <defs>
             <radialGradient id="oracleAnchorGlow" cx="50%" cy="50%" r="52%">
               <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />

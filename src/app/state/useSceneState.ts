@@ -19,6 +19,9 @@ const DEFAULT_SELECTION: SceneSelection = {
   graphNodeId: 'domain-focus',
 };
 
+const DEFAULT_GRAPH_LENS: SpatialLens = { panX: 0, panY: 0, zoom: 1 };
+const DEFAULT_WORLD_CAMERA = { rotation: 0, panX: 0, panY: 0, zoom: 1 };
+
 const WORLD_TO_GRAPH_NODE: Record<string, string> = {
   energy: 'domain-energy',
   money: 'domain-money',
@@ -33,7 +36,8 @@ const GRAPH_TO_WORLD_PLANET = Object.fromEntries(Object.entries(WORLD_TO_GRAPH_N
 
 export const useSceneState = () => {
   const [selection, setSelection] = useState<SceneSelection>(DEFAULT_SELECTION);
-  const [graphLens, setGraphLens] = useState<SpatialLens>({ panX: 0, panY: 0, zoom: 1 });
+  const [graphLens, setGraphLens] = useState<SpatialLens>(DEFAULT_GRAPH_LENS);
+  const [worldCamera, setWorldCamera] = useState(DEFAULT_WORLD_CAMERA);
   const [launchContext, setLaunchContext] = useState<LaunchContext>(DEFAULT_LAUNCH_CONTEXT);
 
   const selectedGraphNode = useMemo(
@@ -53,11 +57,18 @@ export const useSceneState = () => {
     }));
   };
 
-  const selectGraphNode = (nodeId: string) => {
+  const selectGraphNode = (nodeId: string, autoFocus = true) => {
     setSelection((current) => ({
       graphNodeId: nodeId,
       worldPlanetId: (GRAPH_TO_WORLD_PLANET[nodeId] as string | undefined) ?? current.worldPlanetId,
     }));
+
+    if (autoFocus) {
+      const node = DEMO_GRAPH.nodes.find((entry) => entry.id === nodeId);
+      if (node) {
+        setGraphLens((current) => ({ ...current, panX: -node.position.x * 0.26, panY: -node.position.y * 0.2 }));
+      }
+    }
   };
 
   const applyLaunchContext = (next: LaunchContext) => {
@@ -74,10 +85,25 @@ export const useSceneState = () => {
     selectedGraphNode,
     selectedPlanetLabel,
     graphLens,
+    worldCamera,
     launchContext,
     setGraphLens,
+    setWorldCamera,
     applyLaunchContext,
     selectWorldPlanet,
     selectGraphNode,
+    resetView: () => {
+      setGraphLens(DEFAULT_GRAPH_LENS);
+      setWorldCamera(DEFAULT_WORLD_CAMERA);
+    },
+    resetScene: () => {
+      setSelection(DEFAULT_SELECTION);
+      setGraphLens(DEFAULT_GRAPH_LENS);
+      setWorldCamera(DEFAULT_WORLD_CAMERA);
+    },
+    resetLaunch: () => {
+      setLaunchContext(DEFAULT_LAUNCH_CONTEXT);
+      setSelection(DEFAULT_SELECTION);
+    },
   };
 };

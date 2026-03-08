@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'react';
 import type { AppMode } from '../../entities/system/modes';
 import { HORIZONS, PRESSURE_OPTIONS, TARGET_EDGE_HINT, type LaunchContext } from '../../app/state/launchContext';
+import type { AppSettings } from '../../app/state/settingsModel';
 import { DEMO_GRAPH } from '../graph/model';
 import { STATE_COPY, WORLD_PLANETS } from './worldPlanets';
 
-type CameraState = {
+export type CameraState = {
   rotation: number;
   panX: number;
   panY: number;
@@ -48,15 +49,17 @@ const PLANET_TO_DOMAIN_NODE: Record<string, string> = {
 };
 
 type WorldModeProps = {
+  settings: AppSettings;
+  camera: CameraState;
+  onCameraChange: (camera: CameraState) => void;
   selectedPlanetId: string;
   launchContext: LaunchContext;
   onSelectPlanet: (planetId: string) => void;
   onModeChange: (mode: AppMode) => void;
 };
 
-export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onModeChange }: WorldModeProps) => {
+export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onModeChange, camera, onCameraChange, settings }: WorldModeProps) => {
   const [time, setTime] = useState(0);
-  const [camera, setCamera] = useState<CameraState>({ rotation: 0, panX: 0, panY: 0, zoom: 1 });
   const [hoveredPlanetId, setHoveredPlanetId] = useState<string | null>(null);
   const [layer, setLayer] = useState<WorldLayer>('pressure');
   const dragRef = useRef<{ x: number; y: number } | null>(null);
@@ -150,12 +153,12 @@ export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onM
     const deltaY = event.clientY - dragRef.current.y;
     dragRef.current = { x: event.clientX, y: event.clientY };
 
-    setCamera((current) => ({
-      ...current,
-      rotation: current.rotation + deltaX * 0.0024,
-      panX: clamp(current.panX + deltaX * 0.3, -220, 220),
-      panY: clamp(current.panY + deltaY * 0.3, -150, 150),
-    }));
+    onCameraChange({
+      ...camera,
+      rotation: camera.rotation + deltaX * 0.0024 * (settings.sceneSpeed === 'fast' ? 1.2 : settings.sceneSpeed === 'slow' ? 0.8 : 1),
+      panX: clamp(camera.panX + deltaX * 0.3, -220, 220),
+      panY: clamp(camera.panY + deltaY * 0.3, -150, 150),
+    });
   };
 
   const handlePointerUp = (event: PointerEvent<SVGSVGElement>) => {
@@ -166,7 +169,7 @@ export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onM
   const handleWheel = (event: WheelEvent<SVGSVGElement>) => {
     event.preventDefault();
     const amount = event.deltaY > 0 ? -0.07 : 0.07;
-    setCamera((current) => ({ ...current, zoom: clamp(current.zoom + amount, 0.74, 1.55) }));
+    onCameraChange({ ...camera, zoom: clamp(camera.zoom + amount, 0.74, 1.55) });
   };
 
   const getLayerEmphasis = (planetId: string) => {
@@ -225,6 +228,7 @@ export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onM
 
       <svg
         className="world-scene"
+        style={{ opacity: settings.reduceTransparency ? 0.98 : 0.86 + settings.backgroundDensity / 700 }}
         viewBox="-560 -340 1120 680"
         role="presentation"
         onPointerDown={handlePointerDown}
@@ -246,7 +250,7 @@ export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onM
         </defs>
 
         {stars.map((star) => (
-          <circle key={star.id} cx={`${star.x * 11.2 - 560}`} cy={`${star.y * 6.8 - 340}`} r={star.size} fill="#b9d8ff" opacity={star.opacity} />
+          <circle key={star.id} cx={`${star.x * 11.2 - 560}`} cy={`${star.y * 6.8 - 340}`} r={star.size} fill="#b9d8ff" opacity={star.opacity * (settings.backgroundDensity / 100)} />
         ))}
 
         <g opacity="0.34">
