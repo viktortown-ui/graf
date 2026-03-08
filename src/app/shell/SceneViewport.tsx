@@ -34,9 +34,14 @@ export const SceneViewport = ({ mode, sceneState }: SceneViewportProps) => {
             <WorldMode selectedPlanetId={sceneState.selection.worldPlanetId} onSelectPlanet={sceneState.selectWorldPlanet} />
           )}
           {mode === 'graph' && (
-            <GraphMode selectedNodeId={sceneState.selection.graphNodeId} onSelectNode={sceneState.selectGraphNode} />
+            <GraphMode
+              selectedNodeId={sceneState.selection.graphNodeId}
+              onSelectNode={sceneState.selectGraphNode}
+              lens={sceneState.graphLens}
+              onLensChange={sceneState.setGraphLens}
+            />
           )}
-          {mode === 'oracle' && <OracleMode selectedNodeId={sceneState.selection.graphNodeId} />}
+          {mode === 'oracle' && <OracleMode selectedNodeId={sceneState.selection.graphNodeId} sharedLens={sceneState.graphLens} />}
         </div>
       </div>
     </section>

@@ -7,6 +7,12 @@ export type SceneSelection = {
   graphNodeId: string;
 };
 
+export type SpatialLens = {
+  panX: number;
+  panY: number;
+  zoom: number;
+};
+
 const DEFAULT_SELECTION: SceneSelection = {
   worldPlanetId: 'energy',
   graphNodeId: 'domain-focus',
@@ -26,6 +32,7 @@ const GRAPH_TO_WORLD_PLANET = Object.fromEntries(Object.entries(WORLD_TO_GRAPH_N
 
 export const useSceneState = () => {
   const [selection, setSelection] = useState<SceneSelection>(DEFAULT_SELECTION);
+  const [graphLens, setGraphLens] = useState<SpatialLens>({ panX: 0, panY: 0, zoom: 1 });
 
   const selectedGraphNode = useMemo(
     () => DEMO_GRAPH.nodes.find((node) => node.id === selection.graphNodeId) ?? DEMO_GRAPH.nodes[0],
@@ -55,6 +62,8 @@ export const useSceneState = () => {
     selection,
     selectedGraphNode,
     selectedPlanetLabel,
+    graphLens,
+    setGraphLens,
     selectWorldPlanet,
     selectGraphNode,
   };
