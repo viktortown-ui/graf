@@ -2,12 +2,6 @@ import { useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'r
 import { neighborsOf, nodeLayerIndex, propagateGraphState, summarizeNodeInfluence } from './engine';
 import { DEMO_GRAPH, type GraphEdgeType, type GraphNode } from './model';
 
-type CameraState = {
-  panX: number;
-  panY: number;
-  zoom: number;
-};
-
 type LayerFilter = 'risks' | 'actions' | 'goals' | 'delays';
 
 const FILTER_LABEL: Record<LayerFilter, string> = {
@@ -57,10 +51,15 @@ const edgePath = (from: GraphNode, to: GraphNode) => {
 type GraphModeProps = {
   selectedNodeId: string;
   onSelectNode: (nodeId: string) => void;
+  lens: {
+    panX: number;
+    panY: number;
+    zoom: number;
+  };
+  onLensChange: (lens: { panX: number; panY: number; zoom: number }) => void;
 };
 
-export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
-  const [camera, setCamera] = useState<CameraState>({ panX: 0, panY: 0, zoom: 1 });
+export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange }: GraphModeProps) => {
   const [filters, setFilters] = useState<Record<LayerFilter, boolean>>({ risks: true, actions: true, goals: true, delays: true });
   const dragRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -138,11 +137,11 @@ export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
     const deltaY = event.clientY - dragRef.current.y;
     dragRef.current = { x: event.clientX, y: event.clientY };
 
-    setCamera((current) => ({
-      ...current,
-      panX: clamp(current.panX + deltaX * 0.75, -340, 340),
-      panY: clamp(current.panY + deltaY * 0.75, -220, 220),
-    }));
+    onLensChange({
+      panX: clamp(lens.panX + deltaX * 0.75, -340, 340),
+      panY: clamp(lens.panY + deltaY * 0.75, -220, 220),
+      zoom: lens.zoom,
+    });
   };
 
   const handlePointerUp = (event: PointerEvent<SVGSVGElement>) => {
@@ -153,7 +152,11 @@ export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
   const handleWheel = (event: WheelEvent<SVGSVGElement>) => {
     event.preventDefault();
     const direction = event.deltaY > 0 ? -0.1 : 0.1;
-    setCamera((current) => ({ ...current, zoom: clamp(current.zoom + direction, 0.62, 1.68) }));
+    onLensChange({
+      panX: lens.panX,
+      panY: lens.panY,
+      zoom: clamp(lens.zoom + direction, 0.62, 1.68),
+    });
   };
 
   return (
@@ -198,7 +201,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
           </marker>
         </defs>
 
-        <g transform={`translate(${camera.panX} ${camera.panY}) scale(${camera.zoom})`}>
+        <g transform={`translate(${lens.panX} ${lens.panY}) scale(${lens.zoom})`}>
           {visibleEdges.map((edge) => {
             const from = nodeMap.get(edge.source);
             const to = nodeMap.get(edge.target);
