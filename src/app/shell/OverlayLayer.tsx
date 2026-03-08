@@ -4,10 +4,16 @@ type OverlayLayerProps = {
   mode: ModeDefinition;
 };
 
-export const OverlayLayer = ({ mode }: OverlayLayerProps) => (
-  <aside className="overlay-layer" aria-label="Contextual overlay layer">
-    <p className="overlay-kicker">Context overlay</p>
-    <h2>{mode.label}</h2>
-    <p>{mode.summary}</p>
-  </aside>
-);
+export const OverlayLayer = ({ mode }: OverlayLayerProps) => {
+  if (mode.id === 'world') {
+    return null;
+  }
+
+  return (
+    <aside className="overlay-layer" aria-label="Contextual overlay layer">
+      <p className="overlay-kicker">Context overlay</p>
+      <h2>{mode.label}</h2>
+      <p>{mode.summary}</p>
+    </aside>
+  );
+};
