@@ -16,14 +16,13 @@ export const SceneViewport = ({ mode, sceneState }: SceneViewportProps) => {
 
   return (
     <section className="scene-viewport" aria-label="Иммерсивная сцена">
-      <header className="scene-hud">
-        <p className="scene-hud-label">{signal.title}</p>
-        <p className="scene-hud-metric">Пульс {Math.round(signal.pulse * 100)}%</p>
-      </header>
-
       <div className="scene-canvas" style={{ ['--mode-hue' as string]: signal.hue }}>
         <div className="scene-grid" aria-hidden="true" />
         <div className="scene-core-glow" aria-hidden="true" />
+        <header className="scene-hud">
+          <p className="scene-hud-label">{signal.title}</p>
+          <p className="scene-hud-metric">Пульс {Math.round(signal.pulse * 100)}%</p>
+        </header>
         <div className="scene-anchor-memory" aria-live="polite">
           <p>Якорь системы: <strong>{sceneState.selectedGraphNode.name}</strong></p>
           <p>Планета мира: <strong>{sceneState.selectedPlanetLabel}</strong></p>
