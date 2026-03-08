@@ -312,3 +312,137 @@ button {
   font-family: var(--font-body);
   letter-spacing: 0.04em;
 }
+
+.scene-mode-content.graph {
+  inset: 0;
+  display: block;
+}
+
+.graph-mode {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.graph-header {
+  position: absolute;
+  left: 1.2rem;
+  top: 1rem;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.graph-filter-bar {
+  position: absolute;
+  left: 1.2rem;
+  bottom: 1rem;
+  z-index: 4;
+  display: flex;
+  gap: 0.45rem;
+}
+
+.graph-filter {
+  border: 1px solid rgba(134, 170, 230, 0.4);
+  background: rgba(8, 17, 33, 0.66);
+  color: #aac6e9;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.36rem 0.75rem;
+  cursor: pointer;
+}
+
+.graph-filter.active {
+  color: #d9f8ff;
+  border-color: rgba(123, 232, 255, 0.8);
+  box-shadow: 0 0 18px rgba(106, 234, 255, 0.25);
+}
+
+.graph-scene {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+.graph-scene:active {
+  cursor: grabbing;
+}
+
+.graph-edge-label {
+  fill: #b5cbe7;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  text-anchor: middle;
+}
+
+.graph-node {
+  cursor: pointer;
+  transition: opacity 170ms ease;
+}
+
+.graph-node-halo {
+  fill: #a5ecff;
+}
+
+.graph-node-label {
+  fill: #deeeff;
+  font-size: 12px;
+  text-anchor: middle;
+}
+
+.graph-node-state {
+  fill: #89b5de;
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+.graph-inspector {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  width: min(290px, 30vw);
+  border-radius: 0.95rem;
+  border: 1px solid rgba(137, 165, 212, 0.42);
+  background: linear-gradient(180deg, rgba(7, 16, 31, 0.86), rgba(7, 13, 24, 0.58));
+  backdrop-filter: blur(9px);
+  box-shadow: 0 0 30px rgba(8, 14, 28, 0.48);
+  padding: 0.85rem 1rem;
+  z-index: 4;
+}
+
+.graph-inspector-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.63rem;
+  color: #9fbbe0;
+}
+
+.graph-inspector h3 {
+  margin: 0.4rem 0 0;
+  font-size: 1rem;
+}
+
+.graph-inspector-state {
+  margin: 0.35rem 0 0;
+  color: #82ffe2;
+  font-size: 0.88rem;
+}
+
+.graph-metrics,
+.graph-summary {
+  margin-top: 0.65rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 0.5rem;
+}
+
+.graph-metrics p,
+.graph-summary p {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #bfd2ef;
+}

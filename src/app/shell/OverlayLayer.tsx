@@ -5,7 +5,7 @@ type OverlayLayerProps = {
 };
 
 export const OverlayLayer = ({ mode }: OverlayLayerProps) => {
-  if (mode.id === 'world') {
+  if (mode.id === 'world' || mode.id === 'graph') {
     return null;
   }
 

@@ -30,7 +30,7 @@ export const SceneViewport = ({ mode }: SceneViewportProps) => {
       <div className="scene-canvas" style={{ ['--mode-hue' as string]: signal.hue }}>
         <div className="scene-grid" aria-hidden="true" />
         <div className="scene-core-glow" aria-hidden="true" />
-        <div className={mode === 'world' ? 'scene-mode-content world' : 'scene-mode-content'}>{modeContent[mode]}</div>
+        <div className={`scene-mode-content ${mode}`}>{modeContent[mode]}</div>
       </div>
     </section>
   );
