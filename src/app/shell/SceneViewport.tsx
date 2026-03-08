@@ -75,6 +75,7 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
           <p>Якорь системы: <strong>{sceneState.selectedGraphNode.name}</strong></p>
           <p>Планета мира: <strong>{sceneState.selectedPlanetLabel}</strong></p>
           <p>Давление запуска: <strong>{PRESSURE_OPTIONS.find((entry) => entry.id === sceneState.launchContext.pressureId)?.label ?? 'Не задано'}</strong></p>
+          <p>Контур перехода: <strong>Старт → Мир → {mode === 'graph' ? 'Граф причин' : mode === 'oracle' ? 'Прогноз' : 'оперативный выбор'}</strong></p>
         </div>
         <div className={`scene-mode-content ${mode}`}>
           {mode === 'start' && (

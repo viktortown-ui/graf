@@ -83,15 +83,34 @@ const EDGE_SIGN: Record<GraphEdge['type'], number> = {
   conflicts: -0.75,
 };
 
+const ENTRY_MODE_PRESSURE_BIAS: Record<LaunchContext['entryModeId'], number> = {
+  fast: 1.08,
+  analysis: 1.18,
+  forecast: 0.95,
+};
+
+const ENTRY_MODE_RESOURCE_BIAS: Record<LaunchContext['entryModeId'], number> = {
+  fast: 1,
+  analysis: 0.92,
+  forecast: 1.14,
+};
+
+
 const getNodeById = (nodeId: string) => DEMO_GRAPH.nodes.find((node) => node.id === nodeId);
 
 const getNodeReadiness = (node?: GraphNode) => (node ? node.state / 100 : 0.5);
 
-const getDefaultAction = (context: LaunchContext): AppMode => {
+const getDefaultAction = (context: LaunchContext, profile: OperationalProfile, layer: WorldLayer): AppMode => {
   if (context.entryModeId === 'analysis') {
     return 'graph';
   }
   if (context.entryModeId === 'forecast') {
+    return 'oracle';
+  }
+  if (layer === 'risks' || profile.pressure > 62) {
+    return 'graph';
+  }
+  if (layer === 'goals' || profile.goal > profile.risk + 8) {
     return 'oracle';
   }
   return context.targetFocus === 'Усилить цель' ? 'oracle' : 'graph';
@@ -118,8 +137,8 @@ type WorldModeProps = {
 export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onModeChange, camera, onCameraChange, settings }: WorldModeProps) => {
   const [time, setTime] = useState(0);
   const [hoveredPlanetId, setHoveredPlanetId] = useState<string | null>(null);
-  const [lockedPlanetId, setLockedPlanetId] = useState<string | null>(null);
-  const [manualLayer, setManualLayer] = useState<WorldLayer | null>(null);
+  const [lockedPlanetId, setLockedPlanetId] = useState<{ planetId: string; launchKey: string } | null>(null);
+  const [manualLayer, setManualLayer] = useState<{ layer: WorldLayer; launchKey: string } | null>(null);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -137,7 +156,9 @@ export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onM
 
 
   const pressure = PRESSURE_OPTIONS.find((option) => option.id === launchContext.pressureId) ?? PRESSURE_OPTIONS[0];
-  const layer = manualLayer ?? TARGET_LAYER[launchContext.targetFocus];
+  const launchKey = `${launchContext.pressureId}-${launchContext.entryModeId}-${launchContext.horizonId}-${launchContext.targetFocus}`;
+  const lockedPlanet = lockedPlanetId?.launchKey === launchKey ? lockedPlanetId.planetId : null;
+  const layer = manualLayer?.launchKey === launchKey ? manualLayer.layer : TARGET_LAYER[launchContext.targetFocus];
   const horizon = HORIZONS.find((option) => option.id === launchContext.horizonId) ?? HORIZONS[0];
   const horizonFactor = HORIZON_FACTOR[launchContext.horizonId];
 
@@ -184,9 +205,11 @@ export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onM
       }, 0);
 
       const nodeReadiness = getNodeReadiness(node);
-      const pressureScore = clamp((weightedPressure * horizonFactor + (1 - nodeReadiness) * 2.8) * 21, 0, 100);
-      const resourceScore = clamp((resourceFlow + nodeReadiness * 1.4) * 38, 0, 100);
-      const riskScore = clamp((riskFlow + (1 - nodeReadiness) * 1.8 + (1 - planet.orbitStability) * 1.2) * 32, 0, 100);
+      const entryPressureBias = ENTRY_MODE_PRESSURE_BIAS[launchContext.entryModeId];
+      const entryResourceBias = ENTRY_MODE_RESOURCE_BIAS[launchContext.entryModeId];
+      const pressureScore = clamp((weightedPressure * horizonFactor * entryPressureBias + (1 - nodeReadiness) * 2.8) * 21, 0, 100);
+      const resourceScore = clamp((resourceFlow * entryResourceBias + nodeReadiness * 1.4) * 38, 0, 100);
+      const riskScore = clamp((riskFlow * entryPressureBias + (1 - nodeReadiness) * 1.8 + (1 - planet.orbitStability) * 1.2) * 32, 0, 100);
       const goalScore = clamp((goalFlow + nodeReadiness * 1.2 + (launchContext.targetFocus === 'Усилить цель' ? 0.9 : 0.4)) * 35, 0, 100);
 
       const leverageEdge = outgoing
@@ -202,6 +225,7 @@ export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onM
         `Давление ${pressureScore > 70 ? 'растёт' : 'контролируется'} через ${pressure.label.toLowerCase()}.`,
         `Ресурс ${resourceScore > 65 ? 'поддерживает' : 'проседает для'} домена «${planet.label.toLowerCase()}».`,
         `Цель связана с «${linkedGoalLabel.toLowerCase()}» на горизонте ${horizon.label.toLowerCase()}.`,
+        `Режим входа «${launchContext.entryModeId === 'fast' ? 'быстрый запуск' : launchContext.entryModeId === 'analysis' ? 'анализ причин' : 'прогноз сценариев'}» смещает приоритет этого узла.`,
       ];
 
       return {
@@ -218,7 +242,7 @@ export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onM
         explanation,
       };
     });
-  }, [horizon.label, horizonFactor, launchContext.targetFocus, pressure]);
+  }, [horizon.label, horizonFactor, launchContext.entryModeId, launchContext.targetFocus, pressure]);
 
   const selectedPlanet = WORLD_PLANETS.find((planet) => planet.id === selectedPlanetId) ?? WORLD_PLANETS[0];
   const selectedProfile = profiles.find((profile) => profile.planetId === selectedPlanet.id) ?? profiles[0];
@@ -237,7 +261,7 @@ export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onM
       return layerWeight;
     })[0];
 
-  const entryAction = getDefaultAction(launchContext);
+  const entryAction = getDefaultAction(launchContext, selectedProfile, layer);
 
   const preFocusPlanets = useMemo(() => {
     return WORLD_PLANETS.map((planet) => {
@@ -368,7 +392,7 @@ export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onM
 
     const active = planetId === selectedPlanetId;
     const hovered = hoveredPlanetId === planetId;
-    const locked = lockedPlanetId === planetId;
+    const locked = lockedPlanet === planetId;
     const recommended = recommendedProfile?.planetId === planetId;
 
     return clamp((0.74 + layerMetric / 170) * (active ? 1.34 : hovered ? 1.15 : 1) * (locked ? 1.07 : 1) * (recommended ? 1.08 : 1), 0.66, 1.72);
@@ -384,12 +408,15 @@ export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onM
         <p className="world-launch-lens">
           Линза: {pressure.label} · {horizon.label.toLowerCase()} · {launchContext.targetFocus.toLowerCase()}
         </p>
+        <p className="world-launch-lens">
+          Цепочка: Старт → Мир → {entryAction === 'graph' ? 'Граф причин' : 'Прогноз'}
+        </p>
         <p className="world-priority-hint">Приоритет сейчас: <strong>{WORLD_PLANETS.find((p) => p.id === recommendedProfile?.planetId)?.label ?? selectedPlanet.label}</strong></p>
       </div>
 
       <div className="world-layer-switch" role="toolbar" aria-label="Слои интерпретации мира">
         {(['risks', 'resources', 'goals', 'pressure'] as const).map((mode) => (
-          <button key={mode} type="button" className={layer === mode ? 'active' : ''} onClick={() => setManualLayer(mode)}>
+          <button key={mode} type="button" className={layer === mode ? 'active' : ''} onClick={() => setManualLayer({ layer: mode, launchKey })}>
             {LAYER_LABEL[mode]}
           </button>
         ))}
@@ -506,7 +533,7 @@ export const WorldMode = ({ selectedPlanetId, launchContext, onSelectPlanet, onM
                 onMouseLeave={() => setHoveredPlanetId(null)}
                 onClick={() => {
                   onSelectPlanet(planet.id);
-                  setLockedPlanetId(planet.id);
+                  setLockedPlanetId({ planetId: planet.id, launchKey });
                 }}
                 className="world-planet-hit"
               >
