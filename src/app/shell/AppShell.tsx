@@ -12,7 +12,7 @@ export const AppShell = () => {
     <main className="app-shell">
       <LeftRail activeMode={activeMode} onSelectMode={setActiveMode} />
       <section className="scene-stage">
-        <SceneViewport mode={activeMode} sceneState={sceneState} />
+        <SceneViewport mode={activeMode} sceneState={sceneState} onModeChange={setActiveMode} />
         <OverlayLayer mode={activeModeDefinition} sceneState={sceneState} />
       </section>
     </main>

@@ -9,9 +9,10 @@ import type { useSceneState } from '../state/useSceneState';
 type SceneViewportProps = {
   mode: AppMode;
   sceneState: ReturnType<typeof useSceneState>;
+  onModeChange: (mode: AppMode) => void;
 };
 
-export const SceneViewport = ({ mode, sceneState }: SceneViewportProps) => {
+export const SceneViewport = ({ mode, sceneState, onModeChange }: SceneViewportProps) => {
   const signal = MODE_SIGNAL[mode];
 
   return (
@@ -28,7 +29,15 @@ export const SceneViewport = ({ mode, sceneState }: SceneViewportProps) => {
           <p>Планета мира: <strong>{sceneState.selectedPlanetLabel}</strong></p>
         </div>
         <div className={`scene-mode-content ${mode}`}>
-          {mode === 'start' && <StartMode selectedNodeName={sceneState.selectedGraphNode.name} />}
+          {mode === 'start' && (
+            <StartMode
+              selectedNodeId={sceneState.selection.graphNodeId}
+              selectedNodeName={sceneState.selectedGraphNode.name}
+              selectedPlanetLabel={sceneState.selectedPlanetLabel}
+              onAnchorChange={sceneState.selectGraphNode}
+              onLaunch={onModeChange}
+            />
+          )}
           {mode === 'world' && (
             <WorldMode selectedPlanetId={sceneState.selection.worldPlanetId} onSelectPlanet={sceneState.selectWorldPlanet} />
           )}
