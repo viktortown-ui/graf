@@ -24,6 +24,10 @@ export const SceneViewport = ({ mode, sceneState }: SceneViewportProps) => {
       <div className="scene-canvas" style={{ ['--mode-hue' as string]: signal.hue }}>
         <div className="scene-grid" aria-hidden="true" />
         <div className="scene-core-glow" aria-hidden="true" />
+        <div className="scene-anchor-memory" aria-live="polite">
+          <p>Якорь системы: <strong>{sceneState.selectedGraphNode.name}</strong></p>
+          <p>Планета мира: <strong>{sceneState.selectedPlanetLabel}</strong></p>
+        </div>
         <div className={`scene-mode-content ${mode}`}>
           {mode === 'start' && <StartMode selectedNodeName={sceneState.selectedGraphNode.name} />}
           {mode === 'world' && (
