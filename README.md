@@ -1,77 +1,120 @@
 # GRAF
 
-Premium graph-first, single-screen command application.
+GRAF is a **graph-first, single-screen command surface** where one living system is explored through four mode projections:
 
-## Product intent
+1. **Start**
+2. **World**
+3. **Graph**
+4. **Oracle**
 
-GRAF is designed as an immersive desktop command surface where every workflow happens inside one continuous scene.
-The product avoids dashboard cards, page stacks, and admin-table patterns in favor of:
+No dashboard cards, page stacks, or admin-panel layouts are used. The product keeps one immersive scene with a compact rail and contextual overlay.
 
-- one dominant scene viewport
-- one compact mode rail with exactly 4 modes: **Start / World / Graph / Oracle**
-- one contextual overlay layer that changes with mode intent
+## V1 foundation scope
 
-## Architecture overview
+This repository now provides a deployable V1 foundation with:
 
-```txt
-src/
-  app/
-    App.tsx
-    shell/
-      AppShell.tsx          # root composition: left rail + scene stage + overlay layer
-      LeftRail.tsx          # 4-mode rail navigation
-      OverlayLayer.tsx      # contextual right-side overlay placeholder
-      SceneViewport.tsx     # immersive central scene surface
-    state/
-      useModeState.ts       # mode switching state
+- Vite + React + strict TypeScript shell
+- A single-screen scene architecture (`LeftRail` + `SceneViewport` + `OverlayLayer`)
+- Four wired modes sharing scene intent
+- Typed graph domain model and deterministic influence propagation
+- Interactive world and graph scenes with shared selection bridge
+- GitHub Pages deployment workflow
 
-  features/
-    start/StartMode.tsx     # Start mode placeholder copy
-    world/WorldMode.tsx     # World mode placeholder copy
-    graph/GraphMode.tsx     # Graph mode placeholder copy
-    oracle/OracleMode.tsx   # Oracle mode placeholder copy
+## Stack
 
-  entities/
-    system/modes.ts         # mode definitions and shared types
+- React 19
+- TypeScript 5 (strict)
+- Vite 7
+- ESLint 9
+- GitHub Actions (Pages deploy)
 
-  engine/
-    sceneSignals.ts         # per-mode visual signal metadata
-
-  shared/
-    lib/cn.ts               # className utility
-    ui/ModeGlyph.tsx        # rail mode glyph primitive
-    theme/
-      global.css            # dark sci-fi tokens + shell styling
-      tokens.ts             # token object for future TS-driven theming
-
-  main.tsx
-```
-
-## Theme baseline
-
-Base theme tokens are defined in `src/shared/theme/global.css` and `src/shared/theme/tokens.ts`:
-
-- colors: deep black-blue backgrounds, cool text contrast, cyan/violet glow accents
-- borders: soft neon edge lines for surfaces and overlays
-- spacing: scene-first spacing scale with dense rail and expansive center
-- typography: clean body font + sci-fi display font stack
-
-## Modes
-
-The shell currently supports four clean placeholders:
-
-- `StartMode`
-- `WorldMode`
-- `GraphMode`
-- `OracleMode`
-
-Mode switching is local and immediate through the left rail.
-
-## Run and build
+## Local development
 
 ```bash
 npm install
 npm run dev
+```
+
+## Build and quality checks
+
+```bash
 npm run build
 npm run lint
+npm run preview
 ```
+
+## Deployment (GitHub Pages)
+
+This repo is configured for Pages with `base: '/graf/'` in Vite.
+
+Deployment workflow:
+
+- File: `.github/workflows/deploy.yml`
+- Trigger: push to `main` and `workflow_dispatch`
+- Steps: install → build → upload `dist` → deploy Pages
+
+After pushing to `main`, GitHub Actions deploys the latest `dist` to Pages.
+
+## Folder structure
+
+```txt
+src/
+  app/
+    shell/
+      AppShell.tsx
+      LeftRail.tsx
+      SceneViewport.tsx
+      OverlayLayer.tsx
+    state/
+      useModeState.ts
+      useSceneState.ts
+  engine/
+    sceneSignals.ts
+  entities/
+    system/modes.ts
+  features/
+    start/StartMode.tsx
+    world/
+      WorldMode.tsx
+      worldPlanets.ts
+    graph/
+      model.ts
+      engine.ts
+      GraphMode.tsx
+    oracle/OracleMode.tsx
+  shared/
+    theme/
+      global.css
+      tokens.ts
+```
+
+## What is implemented now
+
+- **Single-screen shell** with left rail, central scene, and optional overlay
+- **4 mode routing** through shared mode state
+- **Scene linkage** through shared selection state:
+  - world planet selection can map to graph node focus
+  - graph node selection can map back to world anchor where mapped
+- **Graph domain model** with typed nodes and edges:
+  - Node fields: id, type, name, state, inertia, sensitivity, tags (+ view metadata)
+  - Edge fields: source, target, type, weight, confidence, optional lag (+ label/id)
+- **Influence engine**:
+  - deterministic propagation pass
+  - neighborhood extraction
+  - influence summary metrics
+- **Immersive visual baseline** dark sci-fi styling without dashboard widgets
+
+## Deferred for next iteration
+
+- Oracle simulation timeline and intervention editor
+- External persistence / backend integration
+- Scenario snapshots and replay
+- Accessibility pass for keyboard-first scene navigation
+- Automated unit tests for graph engine invariants
+
+## Product direction guardrails
+
+- Stay graph-first and scene-first
+- Keep one living surface
+- Keep mode transitions as projections of the same system
+- Avoid introducing dashboard/card-grid/admin-panel UI patterns

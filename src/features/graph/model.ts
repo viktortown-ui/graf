@@ -16,8 +16,8 @@ export type GraphNode = {
 
 export type GraphEdge = {
   id: string;
-  from: string;
-  to: string;
+  source: string;
+  target: string;
   type: GraphEdgeType;
   label: string;
   weight: number;
@@ -169,8 +169,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
   edges: [
     {
       id: 'e-sleep-energy',
-      from: 'factor-sleep',
-      to: 'domain-energy',
+      source: 'factor-sleep',
+      target: 'domain-energy',
       type: 'boosts',
       label: 'Restorative lift',
       weight: 0.72,
@@ -178,8 +178,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-routine-focus',
-      from: 'factor-routine',
-      to: 'domain-focus',
+      source: 'factor-routine',
+      target: 'domain-focus',
       type: 'boosts',
       label: 'Priming window',
       weight: 0.65,
@@ -187,8 +187,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-cash-money',
-      from: 'factor-cashflow',
-      to: 'domain-money',
+      source: 'factor-cashflow',
+      target: 'domain-money',
       type: 'boosts',
       label: 'Buffer confidence',
       weight: 0.56,
@@ -196,8 +196,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-energy-focus',
-      from: 'domain-energy',
-      to: 'domain-focus',
+      source: 'domain-energy',
+      target: 'domain-focus',
       type: 'boosts',
       label: 'Cognitive fuel',
       weight: 0.51,
@@ -205,8 +205,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-focus-launch',
-      from: 'domain-focus',
-      to: 'goal-launch',
+      source: 'domain-focus',
+      target: 'goal-launch',
       type: 'boosts',
       label: 'Execution throughput',
       weight: 0.69,
@@ -214,8 +214,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-stress-focus',
-      from: 'domain-stress',
-      to: 'domain-focus',
+      source: 'domain-stress',
+      target: 'domain-focus',
       type: 'drags',
       label: 'Cognitive fog',
       weight: 0.63,
@@ -223,8 +223,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-distraction-focus',
-      from: 'risk-distraction',
-      to: 'domain-focus',
+      source: 'risk-distraction',
+      target: 'domain-focus',
       type: 'blocks',
       label: 'Context fracture',
       weight: 0.58,
@@ -232,8 +232,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-burnout-energy',
-      from: 'risk-burnout',
-      to: 'domain-energy',
+      source: 'risk-burnout',
+      target: 'domain-energy',
       type: 'drags',
       label: 'Recovery debt',
       weight: 0.67,
@@ -241,8 +241,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-review-money',
-      from: 'action-review',
-      to: 'domain-money',
+      source: 'action-review',
+      target: 'domain-money',
       type: 'boosts',
       label: 'Allocation clarity',
       weight: 0.43,
@@ -250,8 +250,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-review-risk',
-      from: 'action-review',
-      to: 'risk-burnout',
+      source: 'action-review',
+      target: 'risk-burnout',
       type: 'drags',
       label: 'Early detection',
       weight: 0.31,
@@ -260,8 +260,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-sprint-stress',
-      from: 'action-sprint',
-      to: 'domain-stress',
+      source: 'action-sprint',
+      target: 'domain-stress',
       type: 'conflicts',
       label: 'Intensity tax',
       weight: 0.44,
@@ -269,8 +269,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-sprint-launch',
-      from: 'action-sprint',
-      to: 'goal-launch',
+      source: 'action-sprint',
+      target: 'goal-launch',
       type: 'delayed',
       label: 'Compounding output',
       weight: 0.61,
@@ -279,8 +279,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-money-stress',
-      from: 'domain-money',
-      to: 'domain-stress',
+      source: 'domain-money',
+      target: 'domain-stress',
       type: 'drags',
       label: 'Uncertainty pressure',
       weight: 0.39,
@@ -288,8 +288,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-health-burnout',
-      from: 'goal-health',
-      to: 'risk-burnout',
+      source: 'goal-health',
+      target: 'risk-burnout',
       type: 'blocks',
       label: 'Recovery protocol',
       weight: 0.47,
@@ -297,8 +297,8 @@ export const DEMO_GRAPH: InfluenceGraph = {
     },
     {
       id: 'e-stress-health',
-      from: 'domain-stress',
-      to: 'goal-health',
+      source: 'domain-stress',
+      target: 'goal-health',
       type: 'drags',
       label: 'Sustainability erosion',
       weight: 0.55,
