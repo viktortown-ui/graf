@@ -39,8 +39,12 @@ const edgePath = (from: GraphNode, to: GraphNode) => {
   return `M ${from.position.x} ${from.position.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${to.position.x} ${to.position.y}`;
 };
 
-export const GraphMode = () => {
-  const [selectedNodeId, setSelectedNodeId] = useState('domain-focus');
+type GraphModeProps = {
+  selectedNodeId: string;
+  onSelectNode: (nodeId: string) => void;
+};
+
+export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
   const [camera, setCamera] = useState<CameraState>({ panX: 0, panY: 0, zoom: 1 });
   const [filters, setFilters] = useState<Record<LayerFilter, boolean>>({ risks: true, actions: true, goals: true, delays: true });
   const dragRef = useRef<{ x: number; y: number } | null>(null);
@@ -77,7 +81,7 @@ export const GraphMode = () => {
   const visibleEdges = useMemo(
     () =>
       DEMO_GRAPH.edges.filter((edge) => {
-        if (!visibleNodeIds.has(edge.from) || !visibleNodeIds.has(edge.to)) {
+        if (!visibleNodeIds.has(edge.source) || !visibleNodeIds.has(edge.target)) {
           return false;
         }
         if (edge.type === 'delayed' && !filters.delays) {
@@ -166,8 +170,8 @@ export const GraphMode = () => {
 
         <g transform={`translate(${camera.panX} ${camera.panY}) scale(${camera.zoom})`}>
           {visibleEdges.map((edge) => {
-            const from = nodeMap.get(edge.from);
-            const to = nodeMap.get(edge.to);
+            const from = nodeMap.get(edge.source);
+            const to = nodeMap.get(edge.target);
             if (!from || !to) {
               return null;
             }
@@ -207,7 +211,7 @@ export const GraphMode = () => {
                   transform={`translate(${node.position.x} ${node.position.y})`}
                   className="graph-node"
                   opacity={emphasis}
-                  onClick={() => setSelectedNodeId(node.id)}
+                  onClick={() => onSelectNode(node.id)}
                 >
                   <circle r={haloSize} className="graph-node-halo" style={{ opacity: isSelected ? 0.46 : 0.14 }} />
                   <circle r={style.radius + 7} fill={style.fill} opacity={0.12} />

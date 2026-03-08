@@ -24,8 +24,8 @@ export type NodeInfluenceSummary = {
 const influenceAmount = (edge: GraphEdge) => edge.weight * edge.confidence * 34 * EDGE_SIGN[edge.type];
 
 export const summarizeNodeInfluence = (graph: InfluenceGraph, nodeId: string): NodeInfluenceSummary => {
-  const inbound = graph.edges.filter((edge) => edge.to === nodeId);
-  const outbound = graph.edges.filter((edge) => edge.from === nodeId);
+  const inbound = graph.edges.filter((edge) => edge.target === nodeId);
+  const outbound = graph.edges.filter((edge) => edge.source === nodeId);
 
   const sumBoost = (edges: GraphEdge[]) =>
     edges.filter((edge) => EDGE_SIGN[edge.type] > 0).reduce((total, edge) => total + Math.abs(influenceAmount(edge)), 0);
@@ -49,9 +49,9 @@ export const propagateGraphState = (graph: InfluenceGraph, iterations = 1) => {
     const nextMap = new Map(stateMap);
 
     graph.nodes.forEach((node) => {
-      const inbound = graph.edges.filter((edge) => edge.to === node.id);
+      const inbound = graph.edges.filter((edge) => edge.target === node.id);
       const incomingSignal = inbound.reduce((total, edge) => {
-        const sourceState = stateMap.get(edge.from) ?? 50;
+        const sourceState = stateMap.get(edge.source) ?? 50;
         const normalized = (sourceState - 50) / 50;
         const lagPenalty = edge.lag ? 1 / (1 + edge.lag * 0.24) : 1;
         return total + normalized * influenceAmount(edge) * lagPenalty;
@@ -73,11 +73,11 @@ export const propagateGraphState = (graph: InfluenceGraph, iterations = 1) => {
 };
 
 export const neighborsOf = (graph: InfluenceGraph, nodeId: string) => {
-  const inbound = graph.edges.filter((edge) => edge.to === nodeId);
-  const outbound = graph.edges.filter((edge) => edge.from === nodeId);
+  const inbound = graph.edges.filter((edge) => edge.target === nodeId);
+  const outbound = graph.edges.filter((edge) => edge.source === nodeId);
 
   return {
-    nodeIds: new Set([nodeId, ...inbound.map((edge) => edge.from), ...outbound.map((edge) => edge.to)]),
+    nodeIds: new Set([nodeId, ...inbound.map((edge) => edge.source), ...outbound.map((edge) => edge.target)]),
     edgeIds: new Set([...inbound.map((edge) => edge.id), ...outbound.map((edge) => edge.id)]),
   };
 };

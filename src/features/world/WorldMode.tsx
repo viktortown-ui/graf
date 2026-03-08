@@ -25,10 +25,14 @@ type PlanetRender = {
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-export const WorldMode = () => {
+type WorldModeProps = {
+  selectedPlanetId: string;
+  onSelectPlanet: (planetId: string) => void;
+};
+
+export const WorldMode = ({ selectedPlanetId, onSelectPlanet }: WorldModeProps) => {
   const [time, setTime] = useState(0);
   const [camera, setCamera] = useState<CameraState>({ rotation: 0, panX: 0, panY: 0, zoom: 1 });
-  const [selectedPlanetId, setSelectedPlanetId] = useState(WORLD_PLANETS[0].id);
   const [hoveredPlanetId, setHoveredPlanetId] = useState<string | null>(null);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -205,7 +209,7 @@ export const WorldMode = () => {
                 transform={`translate(${planet.x}, ${planet.y})`}
                 onMouseEnter={() => setHoveredPlanetId(planet.id)}
                 onMouseLeave={() => setHoveredPlanetId(null)}
-                onClick={() => setSelectedPlanetId(planet.id)}
+                onClick={() => onSelectPlanet(planet.id)}
                 className="world-planet-hit"
               >
                 <circle r={planet.r * (1.55 + (1 - planet.stability) * 0.35)} fill={planet.color} opacity={0.09 + planet.pulse * 0.09} />

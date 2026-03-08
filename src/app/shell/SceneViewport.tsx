@@ -2,22 +2,16 @@ import { GraphMode } from '../../features/graph/GraphMode';
 import { OracleMode } from '../../features/oracle/OracleMode';
 import { StartMode } from '../../features/start/StartMode';
 import { WorldMode } from '../../features/world/WorldMode';
-import type { ReactNode } from 'react';
 import type { AppMode } from '../../entities/system/modes';
 import { MODE_SIGNAL } from '../../engine/sceneSignals';
+import type { useSceneState } from '../state/useSceneState';
 
 type SceneViewportProps = {
   mode: AppMode;
+  sceneState: ReturnType<typeof useSceneState>;
 };
 
-const modeContent: Record<AppMode, ReactNode> = {
-  start: <StartMode />,
-  world: <WorldMode />,
-  graph: <GraphMode />,
-  oracle: <OracleMode />,
-};
-
-export const SceneViewport = ({ mode }: SceneViewportProps) => {
+export const SceneViewport = ({ mode, sceneState }: SceneViewportProps) => {
   const signal = MODE_SIGNAL[mode];
 
   return (
@@ -30,7 +24,16 @@ export const SceneViewport = ({ mode }: SceneViewportProps) => {
       <div className="scene-canvas" style={{ ['--mode-hue' as string]: signal.hue }}>
         <div className="scene-grid" aria-hidden="true" />
         <div className="scene-core-glow" aria-hidden="true" />
-        <div className={`scene-mode-content ${mode}`}>{modeContent[mode]}</div>
+        <div className={`scene-mode-content ${mode}`}>
+          {mode === 'start' && <StartMode selectedNodeName={sceneState.selectedGraphNode.name} />}
+          {mode === 'world' && (
+            <WorldMode selectedPlanetId={sceneState.selection.worldPlanetId} onSelectPlanet={sceneState.selectWorldPlanet} />
+          )}
+          {mode === 'graph' && (
+            <GraphMode selectedNodeId={sceneState.selection.graphNodeId} onSelectNode={sceneState.selectGraphNode} />
+          )}
+          {mode === 'oracle' && <OracleMode selectedNodeName={sceneState.selectedGraphNode.name} />}
+        </div>
       </div>
     </section>
   );
