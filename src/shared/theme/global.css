@@ -16,7 +16,14 @@
   --space-5: 2rem;
   --font-body: 'Inter', 'Segoe UI', sans-serif;
   --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  --scene-grid-opacity: 0.12;
+  --scene-glow-opacity: 0.38;
+  --hud-opacity: 0.78;
+  --panel-bg: linear-gradient(180deg, rgba(8, 18, 37, 0.54), rgba(6, 11, 22, 0.32));
+  --label-density: 0.82;
+  --ui-scale: 1;
 }
+
 
 * {
   box-sizing: border-box;
@@ -56,6 +63,7 @@ button {
 .left-rail {
   border-right: 1px solid rgba(118, 164, 255, 0.22);
   background: linear-gradient(180deg, rgba(7, 13, 26, 0.7), rgba(4, 8, 16, 0.86));
+  font-size: calc(1rem * var(--ui-scale));
   padding: var(--space-4) var(--space-2) var(--space-3);
   display: flex;
   flex-direction: column;
@@ -154,7 +162,7 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  opacity: 0.78;
+  opacity: var(--hud-opacity);
 }
 
 .scene-hud-label {
@@ -186,8 +194,8 @@ button {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(138, 185, 255, 0.11) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(138, 185, 255, 0.11) 1px, transparent 1px);
+    linear-gradient(rgba(138, 185, 255, var(--scene-grid-opacity)) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(138, 185, 255, var(--scene-grid-opacity)) 1px, transparent 1px);
   background-size: 58px 58px;
   mask-image: radial-gradient(circle at center, black 58%, transparent 100%);
 }
@@ -196,7 +204,7 @@ button {
   position: absolute;
   inset: 0;
   background: radial-gradient(circle at center, var(--mode-hue), transparent 45%);
-  opacity: 0.38;
+  opacity: var(--scene-glow-opacity);
   filter: blur(24px);
 }
 
@@ -209,8 +217,9 @@ button {
   border: 1px solid rgba(139, 180, 245, 0.24);
   border-radius: 999px;
   padding: 0.34rem 0.7rem;
-  background: linear-gradient(180deg, rgba(10, 19, 36, 0.42), rgba(5, 10, 20, 0.22));
+  background: var(--panel-bg);
   backdrop-filter: blur(6px);
+  font-size: calc(0.66rem * var(--ui-scale));
 }
 
 .scene-anchor-memory p {
@@ -299,7 +308,7 @@ button {
 .start-verdict {
   border: 1px solid rgba(141, 181, 246, 0.2);
   border-radius: 0.86rem;
-  background: linear-gradient(180deg, rgba(8, 18, 37, 0.54), rgba(6, 11, 22, 0.32));
+  background: var(--panel-bg);
   backdrop-filter: blur(9px);
 }
 
@@ -690,6 +699,7 @@ button {
   gap: 0.33rem;
   align-items: center;
   backdrop-filter: blur(6px);
+  font-size: calc(0.66rem * var(--ui-scale));
 }
 
 .oracle-segment span,
@@ -1010,3 +1020,73 @@ button {
   font-size: 0.7rem;
   color: #a9d3f0;
 }
+
+
+.app-shell[data-theme='cosmos'] {
+  background: radial-gradient(circle at 58% 45%, rgba(140, 98, 255, 0.18), transparent 60%);
+}
+
+.app-shell[data-theme='abyss'] {
+  background: radial-gradient(circle at 52% 38%, rgba(66, 103, 161, 0.12), transparent 66%), #02050b;
+}
+
+.settings-mode {
+  position: absolute;
+  inset: 0.7rem;
+  display: grid;
+  gap: 0.75rem;
+  overflow: auto;
+}
+
+.settings-header,
+.settings-panel {
+  border: 1px solid rgba(141, 181, 246, 0.22);
+  border-radius: 0.9rem;
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px);
+  padding: 0.65rem 0.75rem;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.settings-panel { grid-column: span 6; display: grid; gap: 0.5rem; }
+.settings-panel.compact { grid-column: span 6; align-content: start; }
+.settings-panel-title { margin: 0; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.7rem; color: #95bcf0; }
+.settings-segmented { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 0.45rem; }
+.settings-segmented button,
+.settings-chip-row button,
+.settings-toggle-grid button,
+.settings-actions-row button,
+.settings-reset-list button {
+  border: 1px solid rgba(136, 171, 227, 0.35);
+  background: rgba(8, 16, 30, 0.66);
+  color: #b4caea;
+  border-radius: 0.65rem;
+  padding: 0.44rem 0.58rem;
+  cursor: pointer;
+}
+.settings-segmented button.active,
+.settings-chip-row button.active,
+.settings-toggle-grid button.active { border-color: rgba(129, 230, 255, 0.82); color: #ebf9ff; box-shadow: 0 0 17px rgba(92, 210, 255, 0.16); }
+.settings-segmented strong { display: block; }
+.settings-segmented span { display: block; font-size: 0.66rem; opacity: 0.86; margin-top: 0.2rem; }
+.settings-chip-row,
+.settings-toggle-grid,
+.settings-actions-row { display: flex; flex-wrap: wrap; gap: 0.42rem; }
+.settings-toggle-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+.settings-panel label { display: grid; gap: 0.2rem; font-size: 0.74rem; color: #a7c5e8; }
+.settings-panel input[type='range'] { width: 100%; }
+.settings-note { margin: 0; font-size: 0.74rem; color: #9cbce3; }
+.settings-reset-list { display: grid; gap: 0.35rem; }
+.settings-reset-list button { text-align: left; display: grid; gap: 0.1rem; }
+.settings-reset-list button span { font-size: 0.66rem; opacity: 0.8; }
+.settings-reset-list .danger { border-color: rgba(255, 104, 120, 0.7); color: #ffd7de; }
+.settings-actions-row .ghost { background: transparent; }
+.settings-panel textarea { min-height: 4rem; resize: vertical; background: rgba(8, 16, 30, 0.6); color: #d8ebff; border: 1px solid rgba(136, 171, 227, 0.35); border-radius: 0.5rem; padding: 0.4rem; }
+.graph-edge-label,
+.graph-node-label,
+.graph-node-state { opacity: var(--label-density); }

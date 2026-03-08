@@ -1,4 +1,4 @@
-export type AppMode = 'start' | 'world' | 'graph' | 'oracle';
+export type AppMode = 'start' | 'world' | 'graph' | 'oracle' | 'settings';
 
 export type ModeDefinition = {
   id: AppMode;
@@ -31,6 +31,12 @@ export const MODES: ModeDefinition[] = [
     label: 'Оракул',
     short: 'ОР',
     summary: 'Прогноз сценариев и выбор следующего шага.',
+  },
+  {
+    id: 'settings',
+    label: 'Настройки',
+    short: 'НС',
+    summary: 'Центр управления визуальной сценой, поведением и безопасностью данных.',
   },
 ];
 

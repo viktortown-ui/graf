@@ -27,6 +27,7 @@ const MODE_LABEL: Record<AppMode, string> = {
   world: 'Мир',
   graph: 'Граф причин',
   oracle: 'Прогноз',
+  settings: 'Настройки',
 };
 
 const MODE_ACTION_LABEL: Record<AppMode, string> = {
@@ -34,6 +35,7 @@ const MODE_ACTION_LABEL: Record<AppMode, string> = {
   world: 'Войти в Мир',
   graph: 'Открыть Граф причин',
   oracle: 'Перейти в прогноз',
+  settings: 'Открыть настройки',
 };
 
 export const StartMode = ({

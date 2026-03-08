@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'r
 import { neighborsOf, nodeLayerIndex, propagateGraphState, summarizeNodeInfluence } from './engine';
 import { DEMO_GRAPH, type GraphEdgeType, type GraphNode } from './model';
 import { PRESSURE_OPTIONS, TARGET_EDGE_HINT, type LaunchContext } from '../../app/state/launchContext';
+import type { AppSettings } from '../../app/state/settingsModel';
 
 type LayerFilter = 'risks' | 'actions' | 'goals' | 'delays';
 
@@ -50,6 +51,7 @@ const edgePath = (from: GraphNode, to: GraphNode) => {
 };
 
 type GraphModeProps = {
+  settings: AppSettings;
   launchContext: LaunchContext;
   selectedNodeId: string;
   onSelectNode: (nodeId: string) => void;
@@ -61,7 +63,7 @@ type GraphModeProps = {
   onLensChange: (lens: { panX: number; panY: number; zoom: number }) => void;
 };
 
-export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, launchContext }: GraphModeProps) => {
+export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, launchContext, settings }: GraphModeProps) => {
   const [filters, setFilters] = useState<Record<LayerFilter, boolean>>({ risks: true, actions: true, goals: true, delays: true });
   const dragRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -100,12 +102,15 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, la
         if (!visibleNodeIds.has(edge.source) || !visibleNodeIds.has(edge.target)) {
           return false;
         }
-        if (edge.type === 'delayed' && !filters.delays) {
+        if (edge.type === 'delayed' && (!filters.delays || !settings.showDelays)) {
+          return false;
+        }
+        if (!settings.showSecondaryLinks && !neighborhood.edgeIds.has(edge.id)) {
           return false;
         }
         return true;
       }),
-    [filters.delays, visibleNodeIds],
+    [filters.delays, neighborhood.edgeIds, settings.showDelays, settings.showSecondaryLinks, visibleNodeIds],
   );
 
   const summary = summarizeNodeInfluence(DEMO_GRAPH, selectedNode.id);
@@ -225,7 +230,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, la
               <g
                 key={edge.id}
                 opacity={isNeighbor ? 0.96 : isLaunchPressure || isLaunchTarget ? 0.48 : 0.18}
-                filter="url(#edgeGlow)"
+                filter={settings.lowGlowMode ? undefined : 'url(#edgeGlow)'}
                 className={isNeighbor ? (isPressure ? 'graph-edge-pressure' : 'graph-edge-boost') : ''}
               >
                 <path
@@ -236,7 +241,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, la
                   strokeDasharray={style.dash}
                   markerEnd="url(#arrowhead)"
                 />
-                <text x={(from.position.x + to.position.x) / 2} y={(from.position.y + to.position.y) / 2 - 5} className="graph-edge-label">
+                <text x={(from.position.x + to.position.x) / 2} y={(from.position.y + to.position.y) / 2 - 5} className="graph-edge-label" style={{ opacity: settings.labelDensity / 100 }}>
                   {edge.label}
                 </text>
               </g>
@@ -263,7 +268,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, la
                   <circle r={haloSize} className="graph-node-halo" style={{ opacity: isSelected ? 0.46 : 0.14 }} />
                   <circle r={style.radius + 7} fill={style.fill} opacity={0.12} />
                   <circle r={style.radius} fill={style.fill} stroke={style.stroke} strokeWidth={isSelected ? 2.8 : 1.2} />
-                  <text y={style.radius + 20} className="graph-node-label">
+                  <text y={style.radius + 20} className="graph-node-label" style={{ opacity: settings.labelDensity / 100 }}>
                     {node.name}
                   </text>
                   <text y={style.radius + 35} className="graph-node-state">
