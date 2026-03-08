@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { DEMO_GRAPH } from '../graph/model';
+import { DEMO_GRAPH, type GraphEdge, type GraphNode } from '../graph/model';
 import { propagateGraphScenario } from '../graph/engine';
 
 type Horizon = 3 | 7 | 14;
@@ -16,8 +16,49 @@ const SCENARIO_LABEL: Record<ScenarioKind, string> = {
 };
 
 const HORIZONS: Horizon[] = [3, 7, 14];
+const SCENARIO_TONE: Record<ScenarioKind, string> = {
+  base: '#9fc1ff',
+  inaction: '#ff9688',
+  intervention: '#87ffd0',
+};
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const edgeStrength = (edge: GraphEdge) => edge.weight * edge.confidence;
+const edgeSign = (edge: GraphEdge) => (edge.type === 'boosts' || edge.type === 'delayed' ? 1 : -1);
+
+const toProjectedPosition = (node: GraphNode, anchor: GraphNode) => ({
+  x: 36 + (node.position.x - anchor.position.x) * 0.2,
+  y: 52 + (node.position.y - anchor.position.y) * 0.2,
+});
+
+const findPath = (fromId: string, toId: string) => {
+  const queue: string[][] = [[fromId]];
+  const visited = new Set([fromId]);
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current) {
+      break;
+    }
+
+    const last = current[current.length - 1];
+    if (last === toId) {
+      return current;
+    }
+
+    DEMO_GRAPH.edges
+      .filter((edge) => edge.source === last)
+      .forEach((edge) => {
+        if (visited.has(edge.target)) {
+          return;
+        }
+        visited.add(edge.target);
+        queue.push([...current, edge.target]);
+      });
+  }
+
+  return null;
+};
 
 export const OracleMode = ({ selectedNodeId }: OracleModeProps) => {
   const [horizon, setHorizon] = useState<Horizon>(7);
@@ -54,13 +95,72 @@ export const OracleMode = ({ selectedNodeId }: OracleModeProps) => {
 
     const bestLever = deltas
       .filter(({ node }) => node.type === 'action')
-      .sort((a, b) => (b.intervention - b.inaction) - (a.intervention - a.inaction))[0]?.node;
+      .sort((a, b) => b.intervention - b.inaction - (a.intervention - a.inaction))[0]?.node;
 
     const targetGoal = deltas
       .filter(({ node }) => node.type === 'goal')
-      .sort((a, b) => (b.intervention - a.intervention))[0]?.node;
+      .sort((a, b) => b.intervention - a.intervention)[0]?.node;
 
     const selectedDelta = clamp(getNodeState(intervention, selectedNode.id) - getNodeState(inaction, selectedNode.id), -100, 100);
+
+    const neighborhoodIds = new Set<string>([selectedNode.id]);
+    for (let depth = 0; depth < 2; depth += 1) {
+      DEMO_GRAPH.edges.forEach((edge) => {
+        if (neighborhoodIds.has(edge.source) || neighborhoodIds.has(edge.target)) {
+          neighborhoodIds.add(edge.source);
+          neighborhoodIds.add(edge.target);
+        }
+      });
+    }
+
+    const projectionNodes = DEMO_GRAPH.nodes
+      .filter((node) => neighborhoodIds.has(node.id))
+      .map((node) => ({
+        node,
+        x: toProjectedPosition(node, selectedNode).x,
+        y: toProjectedPosition(node, selectedNode).y,
+        value: getNodeState(chosen, node.id),
+        baseValue: getNodeState(base, node.id),
+        scenarioDelta: getNodeState(chosen, node.id) - getNodeState(base, node.id),
+      }))
+      .sort((a, b) => Math.abs(b.scenarioDelta) - Math.abs(a.scenarioDelta));
+
+    const projectionEdges = DEMO_GRAPH.edges
+      .filter((edge) => neighborhoodIds.has(edge.source) && neighborhoodIds.has(edge.target))
+      .map((edge) => {
+        const source = projectionNodes.find((node) => node.node.id === edge.source);
+        const target = projectionNodes.find((node) => node.node.id === edge.target);
+        if (!source || !target) {
+          return null;
+        }
+
+        const targetDelta = getNodeState(chosen, edge.target) - getNodeState(base, edge.target);
+        return {
+          edge,
+          source,
+          target,
+          pressure: edgeSign(edge) * targetDelta,
+          relief: getNodeState(inaction, edge.target) - getNodeState(intervention, edge.target),
+        };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+
+    const mainDriverEdge = DEMO_GRAPH.edges
+      .filter((edge) => edge.target === riskNode.id)
+      .map((edge) => ({
+        edge,
+        sourceState: getNodeState(chosen, edge.source),
+        score: edgeStrength(edge) * edgeSign(edge) * ((getNodeState(chosen, edge.source) - 50) / 50),
+      }))
+      .sort((a, b) => b.score - a.score)[0]?.edge;
+
+    const reliefEdge = DEMO_GRAPH.edges
+      .filter((edge) => nodeMap.get(edge.source)?.type === 'action')
+      .map((edge) => ({ edge, relief: getNodeState(inaction, edge.target) - getNodeState(intervention, edge.target) }))
+      .sort((a, b) => b.relief - a.relief)[0]?.edge;
+
+    const actionPathIds = findPath(bestLever?.id ?? selectedNode.id, targetGoal?.id ?? selectedNode.id) ?? [];
+    const actionPathNodes = actionPathIds.map((nodeId) => nodeMap.get(nodeId)?.name).filter((name): name is string => Boolean(name));
 
     return {
       base,
@@ -76,8 +176,13 @@ export const OracleMode = ({ selectedNodeId }: OracleModeProps) => {
         getNodeState(inaction, selectedNode.id),
         getNodeState(intervention, selectedNode.id),
       ],
+      projectionNodes,
+      projectionEdges,
+      mainDriverEdge,
+      reliefEdge,
+      actionPathNodes,
     };
-  }, [actionNode, horizon, scenario, selectedNode.id]);
+  }, [actionNode, horizon, nodeMap, scenario, selectedNode]);
 
   const stateOfAnchor = scenarioData.chosen.find((node) => node.id === selectedNode.id)?.state ?? selectedNode.state;
 
@@ -85,7 +190,57 @@ export const OracleMode = ({ selectedNodeId }: OracleModeProps) => {
     <div className="oracle-mode" aria-label="Режим оракула и прогнозов">
       <div className="oracle-header">
         <p className="scene-mode-kicker">Прогнозный слой</p>
-        <h2 className="scene-mode-title">Детерминированный прогноз вокруг якоря «{selectedNode.name}».</h2>
+        <h2 className="scene-mode-title">Детерминированная проекция вокруг якоря «{selectedNode.name}».</h2>
+      </div>
+
+      <div className="oracle-projection-scene" aria-hidden="true">
+        <svg viewBox="0 0 100 100" className="oracle-projection-svg">
+          <defs>
+            <radialGradient id="oracleAnchorGlow" cx="50%" cy="50%" r="52%">
+              <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
+              <stop offset="100%" stopColor={SCENARIO_TONE[scenario]} stopOpacity="0" />
+            </radialGradient>
+          </defs>
+
+          {scenarioData.projectionEdges.map(({ edge, source, target, pressure, relief }) => {
+            const midpointX = (source.x + target.x) / 2;
+            const curveUp = clamp((target.x - source.x) * 0.12, -8, 8);
+            const tone = pressure > 0.8 ? '#ff8f86' : relief > 0.8 ? '#7effd2' : SCENARIO_TONE[scenario];
+
+            return (
+              <path
+                key={edge.id}
+                d={`M ${source.x} ${source.y} Q ${midpointX + curveUp} ${(source.y + target.y) / 2 - 4} ${target.x} ${target.y}`}
+                className="oracle-future-link"
+                style={{
+                  stroke: tone,
+                  strokeWidth: 0.35 + Math.min(Math.abs(pressure) * 0.22, 0.9),
+                  opacity: scenario === 'base' ? 0.3 : 0.45 + Math.min(Math.abs(relief) * 0.04, 0.35),
+                }}
+              />
+            );
+          })}
+
+          {scenarioData.projectionNodes.map(({ node, x, y, value, scenarioDelta }) => {
+            const isAnchor = node.id === selectedNode.id;
+            const radius = (isAnchor ? 4.6 : 2.2) + clamp(Math.abs(scenarioDelta) * 0.03, 0.2, 1.3);
+            const ring = scenarioDelta < -0.8 ? '#ff9a90' : scenarioDelta > 0.8 ? '#8dffd6' : '#c8d8ff';
+
+            return (
+              <g key={node.id} transform={`translate(${x} ${y})`}>
+                {isAnchor && <circle r={11} fill="url(#oracleAnchorGlow)" opacity={0.62} />}
+                <circle r={radius + 1.2} fill={ring} opacity={0.2} />
+                <circle r={radius} fill="#0c1122" stroke={ring} strokeWidth={isAnchor ? 0.75 : 0.38} />
+                <text y={radius + 3.2} className="oracle-node-label">
+                  {node.name}
+                </text>
+                <text y={radius + 5.7} className="oracle-node-state">
+                  {Math.round(value)}%
+                </text>
+              </g>
+            );
+          })}
+        </svg>
       </div>
 
       <div className="oracle-controls" role="group" aria-label="Управление сценарием">
@@ -128,11 +283,39 @@ export const OracleMode = ({ selectedNodeId }: OracleModeProps) => {
         <p>
           Следующий шаг: <strong>{scenarioData.targetGoal?.name ?? 'Стабилизировать ядро'}</strong>
         </p>
-        <p>
-          Почему: выбранное вмешательство меняет состояние якоря на <strong>{scenarioData.selectedDelta.toFixed(1)} п.п.</strong> к горизонту {horizon}{' '}
-          шагов относительно сценария без действий.
+        <p className="oracle-recommendation">
+          Рекомендовано сейчас: <strong>{scenarioData.bestLever?.name ?? 'Поддерживать текущий режим'}</strong> — смещение якоря на{' '}
+          <strong>{scenarioData.selectedDelta.toFixed(1)} п.п.</strong> к горизонту {horizon} шагов.
         </p>
       </div>
+
+      <aside className="oracle-cause-chain" aria-label="Цепочка причин">
+        <p className="oracle-cause-kicker">Цепочка причин</p>
+        <p>
+          Риск растёт через:{' '}
+          <strong>
+            {scenarioData.mainDriverEdge
+              ? `${nodeMap.get(scenarioData.mainDriverEdge.source)?.name} → ${nodeMap.get(scenarioData.mainDriverEdge.target)?.name}`
+              : 'Связь не выявлена'}
+          </strong>
+        </p>
+        <p>
+          Усилитель ухудшения:{' '}
+          <strong>{scenarioData.mainDriverEdge ? nodeMap.get(scenarioData.mainDriverEdge.source)?.name : 'Нет явного усилителя'}</strong>
+        </p>
+        <p>
+          Лучший рычаг ослабляет ветку:{' '}
+          <strong>
+            {scenarioData.reliefEdge
+              ? `${nodeMap.get(scenarioData.reliefEdge.source)?.name} → ${nodeMap.get(scenarioData.reliefEdge.target)?.name}`
+              : 'Требуется дополнительный шаг'}
+          </strong>
+        </p>
+        <p>
+          Следующий шаг усиливает цель через:{' '}
+          <strong>{scenarioData.actionPathNodes.length > 1 ? scenarioData.actionPathNodes.join(' → ') : 'Прямой переход к цели'}</strong>
+        </p>
+      </aside>
 
       <div className="oracle-arcs" aria-hidden="true">
         {scenarioData.trendLine.map((point, index) => (
@@ -140,9 +323,10 @@ export const OracleMode = ({ selectedNodeId }: OracleModeProps) => {
             key={index}
             className="oracle-arc"
             style={{
-              left: `${18 + index * 28}%`,
-              height: `${28 + point * 0.48}px`,
-              opacity: 0.45 + index * 0.18,
+              left: `${14 + index * 18}%`,
+              height: `${26 + point * 0.44}px`,
+              opacity: 0.3 + index * 0.22,
+              borderColor: `${SCENARIO_TONE[index === 0 ? 'base' : index === 1 ? 'inaction' : 'intervention']}80`,
             }}
           />
         ))}

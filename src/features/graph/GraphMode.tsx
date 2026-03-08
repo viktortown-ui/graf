@@ -108,6 +108,21 @@ export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
   );
 
   const summary = summarizeNodeInfluence(DEMO_GRAPH, selectedNode.id);
+  const strategicEdges = useMemo(() => {
+    const candidates = DEMO_GRAPH.edges
+      .filter((edge) => neighborhood.edgeIds.has(edge.id))
+      .map((edge) => ({
+        edge,
+        score: edge.weight * edge.confidence,
+        isPressure: edge.type === 'drags' || edge.type === 'blocks' || edge.type === 'conflicts',
+      }))
+      .sort((a, b) => b.score - a.score);
+
+    return {
+      pressure: candidates.filter((entry) => entry.isPressure).slice(0, 2),
+      boost: candidates.filter((entry) => !entry.isPressure).slice(0, 2),
+    };
+  }, [neighborhood.edgeIds]);
 
   const handlePointerDown = (event: PointerEvent<SVGSVGElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -193,14 +208,20 @@ export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
 
             const style = EDGE_STYLE[edge.type];
             const isNeighbor = neighborhood.edgeIds.has(edge.id);
+            const isPressure = edge.type === 'drags' || edge.type === 'blocks' || edge.type === 'conflicts';
 
             return (
-              <g key={edge.id} opacity={isNeighbor ? 0.95 : 0.25} filter="url(#edgeGlow)">
+              <g
+                key={edge.id}
+                opacity={isNeighbor ? 0.96 : 0.18}
+                filter="url(#edgeGlow)"
+                className={isNeighbor ? (isPressure ? 'graph-edge-pressure' : 'graph-edge-boost') : ''}
+              >
                 <path
                   d={edgePath(from, to)}
                   fill="none"
                   stroke={style.color}
-                  strokeWidth={isNeighbor ? 2.9 : 1.4}
+                  strokeWidth={isNeighbor ? 3 : 1.3}
                   strokeDasharray={style.dash}
                   markerEnd="url(#arrowhead)"
                 />
@@ -260,6 +281,25 @@ export const GraphMode = ({ selectedNodeId, onSelectNode }: GraphModeProps) => {
           <p>Входящее давление {toPercent(summary.inboundDrag)}</p>
           <p>Исходящее усиление {toPercent(summary.outboundBoost)}</p>
           <p>Исходящее давление {toPercent(summary.outboundDrag)}</p>
+        </div>
+        <div className="graph-strategic-readout">
+          <p className="graph-strategic-title">Тактическая читаемость</p>
+          <p>
+            Давление:{' '}
+            <strong>
+              {strategicEdges.pressure[0]
+                ? `${nodeMap.get(strategicEdges.pressure[0].edge.source)?.name} → ${nodeMap.get(strategicEdges.pressure[0].edge.target)?.name}`
+                : 'не выделено'}
+            </strong>
+          </p>
+          <p>
+            Полезная ветка:{' '}
+            <strong>
+              {strategicEdges.boost[0]
+                ? `${nodeMap.get(strategicEdges.boost[0].edge.source)?.name} → ${nodeMap.get(strategicEdges.boost[0].edge.target)?.name}`
+                : 'не выделено'}
+            </strong>
+          </p>
         </div>
       </aside>
     </div>
