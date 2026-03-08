@@ -1,49 +1,26 @@
 import { useMemo, useState } from 'react';
 import type { AppMode } from '../../entities/system/modes';
+import {
+  ENTRY_MODES,
+  HORIZONS,
+  PRESSURE_OPTIONS,
+  TARGETS,
+  type EntryModeId,
+  type HorizonId,
+  type LaunchContext,
+  type PressureId,
+  type TargetFocusId,
+} from '../../app/state/launchContext';
 
 type StartModeProps = {
   selectedNodeId: string;
   selectedNodeName: string;
   selectedPlanetLabel: string;
+  launchContext: LaunchContext;
   onAnchorChange: (nodeId: string) => void;
+  onLaunchContextChange: (context: LaunchContext) => void;
   onLaunch: (mode: AppMode) => void;
 };
-
-type LaunchPreset = {
-  id: string;
-  label: string;
-  anchorNodeId: string;
-  risk: string;
-  recommendedMode: AppMode;
-};
-
-const PRESSURE_OPTIONS: LaunchPreset[] = [
-  { id: 'load', label: 'Перегрузка', anchorNodeId: 'domain-stress', risk: 'Рост каскада напряжения', recommendedMode: 'world' },
-  { id: 'energy-drop', label: 'Просадка энергии', anchorNodeId: 'domain-energy', risk: 'Потеря темпа восстановления', recommendedMode: 'world' },
-  {
-    id: 'attention-drift',
-    label: 'Дрейф внимания',
-    anchorNodeId: 'risk-distraction',
-    risk: 'Рассыпание контекста выполнения',
-    recommendedMode: 'graph',
-  },
-  { id: 'money', label: 'Давление денег', anchorNodeId: 'domain-money', risk: 'Ослабление буфера решений', recommendedMode: 'graph' },
-  { id: 'goal-slip', label: 'Риск срыва цели', anchorNodeId: 'goal-launch', risk: 'Смещение северной цели', recommendedMode: 'oracle' },
-];
-
-const ENTRY_MODES = [
-  { id: 'fast', label: 'Быстрый запуск', recommendedMode: 'world' as const },
-  { id: 'analysis', label: 'Анализ причин', recommendedMode: 'graph' as const },
-  { id: 'forecast', label: 'Прогноз сценариев', recommendedMode: 'oracle' as const },
-];
-
-const HORIZONS = [
-  { id: 'today', label: 'Сегодня' },
-  { id: 'week', label: '7 дней' },
-  { id: 'month', label: '30 дней' },
-];
-
-const TARGETS = ['Удержать систему', 'Снизить риск', 'Усилить цель', 'Восстановить ресурс'] as const;
 
 const MODE_LABEL: Record<AppMode, string> = {
   start: 'Старт',
@@ -59,11 +36,19 @@ const MODE_ACTION_LABEL: Record<AppMode, string> = {
   oracle: 'Перейти в прогноз',
 };
 
-export const StartMode = ({ selectedNodeId, selectedNodeName, selectedPlanetLabel, onAnchorChange, onLaunch }: StartModeProps) => {
-  const [pressureId, setPressureId] = useState(PRESSURE_OPTIONS[0].id);
-  const [entryModeId, setEntryModeId] = useState(ENTRY_MODES[0].id);
-  const [horizonId, setHorizonId] = useState(HORIZONS[0].id);
-  const [targetFocus, setTargetFocus] = useState<(typeof TARGETS)[number]>(TARGETS[0]);
+export const StartMode = ({
+  selectedNodeId,
+  selectedNodeName,
+  selectedPlanetLabel,
+  launchContext,
+  onAnchorChange,
+  onLaunchContextChange,
+  onLaunch,
+}: StartModeProps) => {
+  const [pressureId, setPressureId] = useState<PressureId>(launchContext.pressureId);
+  const [entryModeId, setEntryModeId] = useState<EntryModeId>(launchContext.entryModeId);
+  const [horizonId, setHorizonId] = useState<HorizonId>(launchContext.horizonId);
+  const [targetFocus, setTargetFocus] = useState<TargetFocusId>(launchContext.targetFocus);
 
   const selectedPressure = useMemo(
     () => PRESSURE_OPTIONS.find((option) => option.id === pressureId) ?? PRESSURE_OPTIONS[0],
@@ -81,11 +66,13 @@ export const StartMode = ({ selectedNodeId, selectedNodeName, selectedPlanetLabe
 
   const mainZone = selectedPressure.anchorNodeId === selectedNodeId ? selectedNodeName : selectedPressure.label;
 
+  const launchState: LaunchContext = { pressureId, entryModeId, horizonId, targetFocus };
+
   return (
     <div className="start-mode">
       <section className="start-brief">
         <p className="scene-mode-kicker">Контур запуска</p>
-        <h2 className="scene-mode-title">Соберите стартовый фокус и войдите в рабочую сцену без разрыва контекста.</h2>
+        <h2 className="scene-mode-title">Соберите фокус и откройте сцену как рабочий инструмент, а не витрину.</h2>
         <p className="scene-mode-copy">
           Текущий якорь: <strong>{selectedNodeName}</strong> · Отражение: <strong>{selectedPlanetLabel}</strong>
         </p>
@@ -114,7 +101,7 @@ export const StartMode = ({ selectedNodeId, selectedNodeName, selectedPlanetLabe
         <div className="start-control-grid">
           <label>
             <span>Режим входа</span>
-            <select value={entryModeId} onChange={(event) => setEntryModeId(event.target.value)}>
+            <select value={entryModeId} onChange={(event) => setEntryModeId(event.target.value as EntryModeId)}>
               {ENTRY_MODES.map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.label}
@@ -125,7 +112,7 @@ export const StartMode = ({ selectedNodeId, selectedNodeName, selectedPlanetLabe
 
           <label>
             <span>Горизонт внимания</span>
-            <select value={horizonId} onChange={(event) => setHorizonId(event.target.value)}>
+            <select value={horizonId} onChange={(event) => setHorizonId(event.target.value as HorizonId)}>
               {HORIZONS.map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.label}
@@ -136,7 +123,7 @@ export const StartMode = ({ selectedNodeId, selectedNodeName, selectedPlanetLabe
 
           <label>
             <span>Целевой фокус</span>
-            <select value={targetFocus} onChange={(event) => setTargetFocus(event.target.value as (typeof TARGETS)[number])}>
+            <select value={targetFocus} onChange={(event) => setTargetFocus(event.target.value as TargetFocusId)}>
               {TARGETS.map((option) => (
                 <option key={option} value={option}>
                   {option}
@@ -144,6 +131,33 @@ export const StartMode = ({ selectedNodeId, selectedNodeName, selectedPlanetLabe
               ))}
             </select>
           </label>
+        </div>
+
+        <div className="start-launch-row">
+          <button
+            type="button"
+            onClick={() => {
+              onLaunchContextChange(launchState);
+              onLaunch(suggestedMode);
+            }}
+          >
+            {MODE_ACTION_LABEL[suggestedMode]}
+          </button>
+          {[...new Set([suggestedMode, 'world', 'graph', 'oracle'])]
+            .filter((mode): mode is AppMode => mode !== 'start')
+            .map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className="ghost"
+                onClick={() => {
+                  onLaunchContextChange(launchState);
+                  onLaunch(mode);
+                }}
+              >
+                {MODE_ACTION_LABEL[mode]}
+              </button>
+            ))}
         </div>
       </section>
 
@@ -158,20 +172,8 @@ export const StartMode = ({ selectedNodeId, selectedNodeName, selectedPlanetLabe
           Рекомендуемый режим: <strong>{MODE_LABEL[suggestedMode]}</strong>
         </p>
         <p>
-          Следующий шаг: <strong>{selectedEntryMode.label}</strong> · {selectedHorizon.label.toLowerCase()} · {targetFocus.toLowerCase()}.
+          Линза запуска: <strong>{selectedEntryMode.label}</strong> · {selectedHorizon.label.toLowerCase()} · {targetFocus.toLowerCase()}.
         </p>
-        <div className="start-launch-row">
-          <button type="button" onClick={() => onLaunch(suggestedMode)}>
-            {MODE_ACTION_LABEL[suggestedMode]}
-          </button>
-          {[...new Set([suggestedMode, 'world', 'graph', 'oracle'])]
-            .filter((mode): mode is AppMode => mode !== 'start')
-            .map((mode) => (
-              <button key={mode} type="button" className="ghost" onClick={() => onLaunch(mode)}>
-                {MODE_ACTION_LABEL[mode]}
-              </button>
-            ))}
-        </div>
       </section>
     </div>
   );

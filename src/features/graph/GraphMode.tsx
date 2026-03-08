@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'react';
 import { neighborsOf, nodeLayerIndex, propagateGraphState, summarizeNodeInfluence } from './engine';
 import { DEMO_GRAPH, type GraphEdgeType, type GraphNode } from './model';
+import { PRESSURE_OPTIONS, TARGET_EDGE_HINT, type LaunchContext } from '../../app/state/launchContext';
 
 type LayerFilter = 'risks' | 'actions' | 'goals' | 'delays';
 
@@ -49,6 +50,7 @@ const edgePath = (from: GraphNode, to: GraphNode) => {
 };
 
 type GraphModeProps = {
+  launchContext: LaunchContext;
   selectedNodeId: string;
   onSelectNode: (nodeId: string) => void;
   lens: {
@@ -59,7 +61,7 @@ type GraphModeProps = {
   onLensChange: (lens: { panX: number; panY: number; zoom: number }) => void;
 };
 
-export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange }: GraphModeProps) => {
+export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, launchContext }: GraphModeProps) => {
   const [filters, setFilters] = useState<Record<LayerFilter, boolean>>({ risks: true, actions: true, goals: true, delays: true });
   const dragRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -107,6 +109,10 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange }: 
   );
 
   const summary = summarizeNodeInfluence(DEMO_GRAPH, selectedNode.id);
+
+  const pressure = PRESSURE_OPTIONS.find((option) => option.id === launchContext.pressureId) ?? PRESSURE_OPTIONS[0];
+  const pressureEdgeIds = new Set(pressure.pressureEdgeIds);
+  const targetEdgeIds = new Set(TARGET_EDGE_HINT[launchContext.targetFocus]);
   const strategicEdges = useMemo(() => {
     const candidates = DEMO_GRAPH.edges
       .filter((edge) => neighborhood.edgeIds.has(edge.id))
@@ -212,11 +218,13 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange }: 
             const style = EDGE_STYLE[edge.type];
             const isNeighbor = neighborhood.edgeIds.has(edge.id);
             const isPressure = edge.type === 'drags' || edge.type === 'blocks' || edge.type === 'conflicts';
+            const isLaunchPressure = pressureEdgeIds.has(edge.id);
+            const isLaunchTarget = targetEdgeIds.has(edge.id);
 
             return (
               <g
                 key={edge.id}
-                opacity={isNeighbor ? 0.96 : 0.18}
+                opacity={isNeighbor ? 0.96 : isLaunchPressure || isLaunchTarget ? 0.48 : 0.18}
                 filter="url(#edgeGlow)"
                 className={isNeighbor ? (isPressure ? 'graph-edge-pressure' : 'graph-edge-boost') : ''}
               >
@@ -224,7 +232,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange }: 
                   d={edgePath(from, to)}
                   fill="none"
                   stroke={style.color}
-                  strokeWidth={isNeighbor ? 3 : 1.3}
+                  strokeWidth={isNeighbor ? 3 : isLaunchPressure || isLaunchTarget ? 2.1 : 1.3}
                   strokeDasharray={style.dash}
                   markerEnd="url(#arrowhead)"
                 />
@@ -268,6 +276,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange }: 
       </svg>
 
       <aside className="graph-inspector" aria-label="Параметры выбранного узла">
+        <p className="graph-context">Линза запуска: {pressure.label} · {launchContext.targetFocus.toLowerCase()}</p>
         <p className="graph-inspector-kicker">
           {NODE_TYPE_LABEL[selectedNode.type]} · {selectedNode.id}
         </p>
@@ -288,7 +297,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange }: 
         <div className="graph-strategic-readout">
           <p className="graph-strategic-title">Тактическая читаемость</p>
           <p>
-            Давление:{' '}
+            Давление пути ({pressure.label.toLowerCase()}):{' '}
             <strong>
               {strategicEdges.pressure[0]
                 ? `${nodeMap.get(strategicEdges.pressure[0].edge.source)?.name} → ${nodeMap.get(strategicEdges.pressure[0].edge.target)?.name}`
@@ -296,7 +305,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange }: 
             </strong>
           </p>
           <p>
-            Полезная ветка:{' '}
+            Полезная ветка ({launchContext.targetFocus.toLowerCase()}):{' '}
             <strong>
               {strategicEdges.boost[0]
                 ? `${nodeMap.get(strategicEdges.boost[0].edge.source)?.name} → ${nodeMap.get(strategicEdges.boost[0].edge.target)?.name}`

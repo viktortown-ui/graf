@@ -3,6 +3,7 @@ import { OracleMode } from '../../features/oracle/OracleMode';
 import { StartMode } from '../../features/start/StartMode';
 import { WorldMode } from '../../features/world/WorldMode';
 import type { AppMode } from '../../entities/system/modes';
+import { PRESSURE_OPTIONS } from '../state/launchContext';
 import { MODE_SIGNAL } from '../../engine/sceneSignals';
 import type { useSceneState } from '../state/useSceneState';
 
@@ -27,6 +28,7 @@ export const SceneViewport = ({ mode, sceneState, onModeChange }: SceneViewportP
         <div className="scene-anchor-memory" aria-live="polite">
           <p>Якорь системы: <strong>{sceneState.selectedGraphNode.name}</strong></p>
           <p>Планета мира: <strong>{sceneState.selectedPlanetLabel}</strong></p>
+          <p>Давление запуска: <strong>{PRESSURE_OPTIONS.find((entry) => entry.id === sceneState.launchContext.pressureId)?.label ?? 'Не задано'}</strong></p>
         </div>
         <div className={`scene-mode-content ${mode}`}>
           {mode === 'start' && (
@@ -35,11 +37,18 @@ export const SceneViewport = ({ mode, sceneState, onModeChange }: SceneViewportP
               selectedNodeName={sceneState.selectedGraphNode.name}
               selectedPlanetLabel={sceneState.selectedPlanetLabel}
               onAnchorChange={sceneState.selectGraphNode}
+              launchContext={sceneState.launchContext}
+              onLaunchContextChange={sceneState.applyLaunchContext}
               onLaunch={onModeChange}
             />
           )}
           {mode === 'world' && (
-            <WorldMode selectedPlanetId={sceneState.selection.worldPlanetId} onSelectPlanet={sceneState.selectWorldPlanet} />
+            <WorldMode
+              selectedPlanetId={sceneState.selection.worldPlanetId}
+              launchContext={sceneState.launchContext}
+              onSelectPlanet={sceneState.selectWorldPlanet}
+              onModeChange={onModeChange}
+            />
           )}
           {mode === 'graph' && (
             <GraphMode
@@ -47,9 +56,16 @@ export const SceneViewport = ({ mode, sceneState, onModeChange }: SceneViewportP
               onSelectNode={sceneState.selectGraphNode}
               lens={sceneState.graphLens}
               onLensChange={sceneState.setGraphLens}
+              launchContext={sceneState.launchContext}
             />
           )}
-          {mode === 'oracle' && <OracleMode selectedNodeId={sceneState.selection.graphNodeId} sharedLens={sceneState.graphLens} />}
+          {mode === 'oracle' && (
+            <OracleMode
+              selectedNodeId={sceneState.selection.graphNodeId}
+              sharedLens={sceneState.graphLens}
+              launchContext={sceneState.launchContext}
+            />
+          )}
         </div>
       </div>
     </section>
