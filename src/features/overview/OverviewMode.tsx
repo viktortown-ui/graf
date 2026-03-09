@@ -1,4 +1,5 @@
 import type { AppMode } from '../../entities/system/modes';
+import { OverviewHeroVisual } from './OverviewHeroVisual';
 
 type OverviewModeProps = {
   onModeChange: (mode: AppMode) => void;
@@ -24,7 +25,7 @@ const SceneSection = ({ tone, title, subtitle }: SceneSectionProps) => (
 export const OverviewMode = ({ onModeChange }: OverviewModeProps) => (
   <div className="overview-mode">
     <section className="overview-hero" aria-label="Обзор GRAF">
-      <div className="overview-hero-media" role="img" aria-label="GRAF как единая система: мир, причинность и прогноз" />
+      <OverviewHeroVisual />
       <div className="overview-hero-copy">
         <p className="scene-mode-kicker">Иммерсивный обзор</p>
         <h2 className="scene-mode-title">GRAF собирает Мир, Граф и Оракул в единый контур решений.</h2>
