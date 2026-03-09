@@ -1,107 +1,86 @@
-const glowId = 'overview-graph-glow';
-const oracleGlowId = 'overview-oracle-glow';
-
-export const OverviewGraphVisual = () => (
-  <svg viewBox="0 0 1200 580" aria-hidden="true" preserveAspectRatio="xMidYMid slice" className="overview-hero-svg">
-    <defs>
-      <radialGradient id="graph-bg" cx="20%" cy="22%" r="78%">
-        <stop offset="0%" stopColor="rgba(58, 153, 255, 0.36)" />
-        <stop offset="55%" stopColor="rgba(21, 38, 72, 0.34)" />
-        <stop offset="100%" stopColor="rgba(3, 9, 18, 0.96)" />
-      </radialGradient>
-      <filter id={glowId} x="-20%" y="-20%" width="140%" height="140%">
-        <feGaussianBlur stdDeviation="4" result="blur" />
-        <feMerge>
-          <feMergeNode in="blur" />
-          <feMergeNode in="SourceGraphic" />
-        </feMerge>
-      </filter>
-    </defs>
-    <rect width="1200" height="580" fill="url(#graph-bg)" />
-    <g fill="none" strokeLinecap="round">
-      <path d="M100 450 C280 360, 400 340, 530 260 S890 170, 1080 220" stroke="rgba(98,194,255,0.45)" strokeWidth="3" />
-      <path d="M120 360 C300 420, 420 390, 570 340 S860 280, 1060 300" stroke="rgba(121,142,255,0.38)" strokeWidth="2.4" />
-      <path d="M150 500 C360 510, 500 470, 660 400 S940 280, 1080 200" stroke="rgba(168,124,255,0.34)" strokeWidth="2" />
-    </g>
-    <g stroke="rgba(147,213,255,0.42)" strokeWidth="1.3" fill="none">
-      <path d="M220 390 L365 300 L530 324 L710 246 L882 288" />
-      <path d="M365 300 L430 214 L598 190 L760 220" />
-      <path d="M530 324 L570 430 L742 462 L960 402" />
-    </g>
-    <g filter={`url(#${glowId})`}>
-      <circle cx="220" cy="390" r="18" fill="rgba(83,211,255,0.9)" />
-      <circle cx="365" cy="300" r="16" fill="rgba(125,160,255,0.94)" />
-      <circle cx="530" cy="324" r="20" fill="rgba(102,233,255,0.92)" />
-      <circle cx="710" cy="246" r="16" fill="rgba(166,136,255,0.9)" />
-      <circle cx="882" cy="288" r="19" fill="rgba(102,189,255,0.9)" />
-      <circle cx="598" cy="190" r="14" fill="rgba(118,216,255,0.8)" />
-      <circle cx="742" cy="462" r="16" fill="rgba(142,152,255,0.85)" />
-      <circle cx="960" cy="402" r="13" fill="rgba(173,126,255,0.85)" />
-    </g>
-    <g stroke="rgba(170,220,255,0.65)" strokeWidth="2" fill="none">
-      <path d="M410 213 L460 132 L520 166" />
-      <path d="M760 220 L820 154 L884 202" />
-      <path d="M570 430 L622 502 L692 472" />
-    </g>
-    <g fill="none" stroke="rgba(112,227,255,0.45)" strokeWidth="2.2" strokeLinecap="round">
-      <path d="M298 332 l28 -10" />
-      <path d="M640 286 l35 -14" />
-      <path d="M835 345 l26 -8" />
-    </g>
-  </svg>
-);
-
-export const OverviewOracleVisual = () => (
-  <svg viewBox="0 0 1200 560" aria-hidden="true" preserveAspectRatio="xMidYMid slice" className="overview-hero-svg">
-    <defs>
-      <radialGradient id="oracle-bg" cx="76%" cy="40%" r="75%">
-        <stop offset="0%" stopColor="rgba(113, 86, 255, 0.34)" />
-        <stop offset="52%" stopColor="rgba(17, 43, 77, 0.32)" />
-        <stop offset="100%" stopColor="rgba(2, 8, 20, 0.96)" />
-      </radialGradient>
-      <filter id={oracleGlowId} x="-20%" y="-20%" width="140%" height="140%">
-        <feGaussianBlur stdDeviation="4.2" result="blur" />
-        <feMerge>
-          <feMergeNode in="blur" />
-          <feMergeNode in="SourceGraphic" />
-        </feMerge>
-      </filter>
-    </defs>
-    <rect width="1200" height="560" fill="url(#oracle-bg)" />
-    <g fill="none" strokeLinecap="round">
-      <path d="M180 450 C340 396, 418 325, 520 286 C620 250, 716 216, 850 168" stroke="rgba(111,220,255,0.42)" strokeWidth="2.4" />
-      <path d="M180 450 C312 420, 410 418, 525 412 C686 404, 822 372, 1000 305" stroke="rgba(141,156,255,0.38)" strokeWidth="2.2" />
-      <path d="M180 450 C328 458, 432 488, 558 504 C694 520, 826 496, 1035 410" stroke="rgba(193,140,255,0.35)" strokeWidth="2" />
-    </g>
-    <g fill="none" stroke="rgba(120,236,255,0.7)" strokeWidth="3.4" strokeLinecap="round" filter={`url(#${oracleGlowId})`}>
-      <path d="M180 450 C330 390, 436 338, 556 280 C674 224, 784 172, 940 120" />
-    </g>
-    <g fill="rgba(140,230,255,0.9)" filter={`url(#${oracleGlowId})`}>
-      <circle cx="180" cy="450" r="16" />
-      <circle cx="520" cy="286" r="11" />
-      <circle cx="850" cy="168" r="10" />
-      <circle cx="940" cy="120" r="14" />
-    </g>
-    <g fill="none" stroke="rgba(173,193,255,0.46)" strokeWidth="1.4">
-      <path d="M300 374 A180 100 0 0 1 492 250" />
-      <path d="M340 436 A240 130 0 0 0 594 388" />
-      <path d="M392 486 A255 120 0 0 0 672 472" />
-    </g>
-    <g fill="none" stroke="rgba(115,231,255,0.54)" strokeWidth="1.5" strokeDasharray="5 9">
-      <path d="M624 252 L676 208" />
-      <path d="M780 189 L824 160" />
-    </g>
-  </svg>
-);
+const visualId = 'overview-flow-glow';
 
 export const OverviewHeroVisual = () => (
-  <div className="overview-hero-media" role="img" aria-label="Graph и Oracle: причинные связи, рычаги и прогнозные траектории">
-    <div className="overview-hero-media-pane">
-      <OverviewGraphVisual />
-    </div>
-    <div className="overview-hero-media-seam" />
-    <div className="overview-hero-media-pane">
-      <OverviewOracleVisual />
-    </div>
+  <div className="overview-hero-media" role="img" aria-label="Причина в графе проходит через ядро решения и разворачивается в сценарии Oracle">
+    <svg viewBox="0 0 1200 980" aria-hidden="true" preserveAspectRatio="xMidYMid slice" className="overview-hero-svg">
+      <defs>
+        <linearGradient id="flow-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(5, 17, 30, 0.98)" />
+          <stop offset="46%" stopColor="rgba(6, 12, 24, 0.98)" />
+          <stop offset="100%" stopColor="rgba(4, 9, 20, 0.98)" />
+        </linearGradient>
+        <radialGradient id="graph-zone" cx="32%" cy="14%" r="58%">
+          <stop offset="0%" stopColor="rgba(92, 208, 255, 0.24)" />
+          <stop offset="72%" stopColor="rgba(8, 20, 36, 0)" />
+        </radialGradient>
+        <radialGradient id="oracle-zone" cx="70%" cy="84%" r="62%">
+          <stop offset="0%" stopColor="rgba(120, 102, 255, 0.2)" />
+          <stop offset="78%" stopColor="rgba(9, 16, 32, 0)" />
+        </radialGradient>
+        <radialGradient id="pressure-core" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="rgba(255, 145, 96, 0.95)" />
+          <stop offset="100%" stopColor="rgba(255, 145, 96, 0.05)" />
+        </radialGradient>
+        <filter id={visualId} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      <rect width="1200" height="980" fill="url(#flow-bg)" />
+      <rect width="1200" height="980" fill="url(#graph-zone)" />
+      <rect width="1200" height="980" fill="url(#oracle-zone)" />
+
+      <g strokeLinecap="round" fill="none">
+        <path d="M130 160 L250 194 L370 214 L500 250 L580 330" stroke="rgba(118, 209, 255, 0.52)" strokeWidth="2.8" />
+        <path d="M250 194 L320 110" stroke="rgba(123, 190, 255, 0.28)" strokeWidth="1.7" />
+        <path d="M370 214 L460 140" stroke="rgba(129, 170, 255, 0.24)" strokeWidth="1.6" />
+        <path d="M500 250 L640 190" stroke="rgba(162, 142, 255, 0.22)" strokeWidth="1.5" />
+        <path d="M500 250 L418 318" stroke="rgba(102, 202, 255, 0.2)" strokeWidth="1.5" />
+        <path d="M580 330 L700 346" stroke="rgba(102, 202, 255, 0.16)" strokeWidth="1.4" />
+      </g>
+
+      <g filter={`url(#${visualId})`}>
+        <circle cx="130" cy="160" r="26" fill="url(#pressure-core)" />
+        <circle cx="250" cy="194" r="16" fill="rgba(109, 217, 255, 0.88)" />
+        <circle cx="370" cy="214" r="15" fill="rgba(126, 186, 255, 0.84)" />
+        <circle cx="500" cy="250" r="16" fill="rgba(127, 163, 255, 0.82)" />
+        <circle cx="580" cy="330" r="18" fill="rgba(112, 225, 255, 0.9)" />
+        <circle cx="320" cy="110" r="10" fill="rgba(109, 186, 255, 0.58)" />
+        <circle cx="460" cy="140" r="9" fill="rgba(145, 153, 255, 0.52)" />
+        <circle cx="640" cy="190" r="10" fill="rgba(163, 139, 255, 0.56)" />
+        <circle cx="418" cy="318" r="9" fill="rgba(106, 203, 255, 0.52)" />
+      </g>
+
+      <path d="M580 330 C602 378, 605 418, 602 462" stroke="rgba(133, 228, 255, 0.76)" strokeWidth="4" fill="none" filter={`url(#${visualId})`} />
+
+      <g transform="translate(600,500)">
+        <circle r="72" fill="rgba(24, 46, 84, 0.72)" stroke="rgba(116, 220, 255, 0.46)" strokeWidth="1.5" />
+        <circle r="44" fill="rgba(11, 25, 48, 0.9)" stroke="rgba(154, 206, 255, 0.72)" strokeWidth="2" />
+        <circle r="8" fill="rgba(157, 244, 255, 0.96)" filter={`url(#${visualId})`} />
+        <path d="M-60 -6 C-24 -20, 16 -18, 58 -4" stroke="rgba(125, 203, 255, 0.52)" strokeWidth="1.4" fill="none" />
+        <path d="M-52 16 C-12 28, 20 30, 52 16" stroke="rgba(173, 153, 255, 0.44)" strokeWidth="1.3" fill="none" />
+      </g>
+
+      <g strokeLinecap="round" fill="none">
+        <path d="M600 560 C515 662, 408 758, 250 850" stroke="rgba(99, 199, 255, 0.46)" strokeWidth="3" />
+        <path d="M600 560 C636 676, 706 768, 794 842" stroke="rgba(130, 154, 255, 0.42)" strokeWidth="2.6" />
+        <path d="M600 560 C710 644, 850 716, 1050 800" stroke="rgba(120, 238, 255, 0.88)" strokeWidth="4.2" filter={`url(#${visualId})`} />
+      </g>
+
+      <g filter={`url(#${visualId})`}>
+        <circle cx="250" cy="850" r="18" fill="rgba(92, 152, 220, 0.82)" />
+        <circle cx="794" cy="842" r="16" fill="rgba(136, 128, 225, 0.84)" />
+        <circle cx="1050" cy="800" r="25" fill="rgba(123, 247, 255, 0.98)" />
+      </g>
+
+      <g stroke="rgba(166, 207, 255, 0.18)" strokeWidth="1.2" fill="none">
+        <path d="M180 710 C340 654, 516 654, 720 694" />
+        <path d="M260 760 C430 706, 624 710, 860 772" />
+      </g>
+    </svg>
   </div>
 );
