@@ -318,10 +318,8 @@ button {
 .overview-hero-media,
 .overview-scene-visual {
   min-height: clamp(420px, 78vh, 860px);
-  background-size: cover;
-  background-position: center;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .overview-hero-media {
@@ -358,32 +356,10 @@ button {
   align-items: center;
 }
 
-.overview-scene-visual::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(1, 4, 10, 0.22), rgba(1, 4, 10, 0.8));
-}
-
-.overview-scene-world .overview-scene-visual {
-  background-image:
-    radial-gradient(circle at 24% 30%, rgba(100, 229, 255, 0.36), transparent 45%),
-    radial-gradient(circle at 80% 70%, rgba(85, 157, 255, 0.36), transparent 50%),
-    linear-gradient(135deg, rgba(4, 18, 34, 0.96), rgba(8, 45, 79, 0.78));
-}
-
-.overview-scene-graph .overview-scene-visual {
-  background-image:
-    radial-gradient(circle at 68% 22%, rgba(182, 132, 255, 0.32), transparent 48%),
-    radial-gradient(circle at 18% 78%, rgba(70, 212, 255, 0.3), transparent 52%),
-    linear-gradient(145deg, rgba(8, 16, 30, 0.96), rgba(33, 26, 56, 0.8));
-}
-
+.overview-scene-world .overview-scene-visual,
+.overview-scene-graph .overview-scene-visual,
 .overview-scene-oracle .overview-scene-visual {
-  background-image:
-    radial-gradient(circle at 78% 24%, rgba(121, 255, 205, 0.3), transparent 45%),
-    radial-gradient(circle at 26% 68%, rgba(117, 163, 255, 0.28), transparent 48%),
-    linear-gradient(140deg, rgba(4, 12, 26, 0.97), rgba(21, 37, 68, 0.8));
+  background: none;
 }
 
 .overview-scene-overlay {
