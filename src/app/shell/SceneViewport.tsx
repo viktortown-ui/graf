@@ -62,22 +62,27 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
   const signal = MODE_SIGNAL[mode];
   const styleVars = getThemeVars(settingsState.settings);
   const activeModeLabel = MODES.find((entry) => entry.id === mode)?.label ?? 'Неизвестно';
+  const showServiceHud = mode !== 'overview';
 
   return (
     <section className="scene-viewport" aria-label="Иммерсивная сцена" style={styleVars}>
       <div className="scene-canvas">
         <div className="scene-grid" aria-hidden="true" />
         <div className="scene-core-glow" aria-hidden="true" />
-        <header className="scene-hud">
-          <p className="scene-hud-label">{signal.title}</p>
-          {mode !== 'start' && mode !== 'overview' ? <p className="scene-hud-metric">Пульс {Math.round(signal.pulse * 100)}%</p> : null}
-        </header>
-        <div className="scene-anchor-memory" aria-live="polite">
-          <p>Якорь системы: <strong>{sceneState.selectedGraphNode.name}</strong></p>
-          <p>Планета мира: <strong>{sceneState.selectedPlanetLabel}</strong></p>
-          <p>Давление запуска: <strong>{PRESSURE_OPTIONS.find((entry) => entry.id === sceneState.launchContext.pressureId)?.label ?? 'Не задано'}</strong></p>
-          <p>Контур перехода: <strong>Обзор → Старт → Мир → {mode === 'graph' ? 'Граф причин' : mode === 'oracle' ? 'Прогноз' : 'оперативный выбор'}</strong></p>
-        </div>
+        {showServiceHud ? (
+          <>
+            <header className="scene-hud">
+              <p className="scene-hud-label">{signal.title}</p>
+              {mode !== 'start' ? <p className="scene-hud-metric">Пульс {Math.round(signal.pulse * 100)}%</p> : null}
+            </header>
+            <div className="scene-anchor-memory" aria-live="polite">
+              <p>Якорь системы: <strong>{sceneState.selectedGraphNode.name}</strong></p>
+              <p>Планета мира: <strong>{sceneState.selectedPlanetLabel}</strong></p>
+              <p>Давление запуска: <strong>{PRESSURE_OPTIONS.find((entry) => entry.id === sceneState.launchContext.pressureId)?.label ?? 'Не задано'}</strong></p>
+              <p>Контур перехода: <strong>Обзор → Старт → Мир → {mode === 'graph' ? 'Граф причин' : mode === 'oracle' ? 'Прогноз' : 'оперативный выбор'}</strong></p>
+            </div>
+          </>
+        ) : null}
         <div className={`scene-mode-content ${mode}`}>
           {mode === 'overview' && <OverviewMode onModeChange={onModeChange} />}
           {mode === 'start' && (

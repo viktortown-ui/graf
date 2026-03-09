@@ -4,40 +4,62 @@ type OverviewModeProps = {
   onModeChange: (mode: AppMode) => void;
 };
 
+type SceneSectionProps = {
+  tone: 'world' | 'graph' | 'oracle';
+  title: string;
+  subtitle: string;
+};
+
+const SceneSection = ({ tone, title, subtitle }: SceneSectionProps) => (
+  <section className={`overview-scene overview-scene-${tone}`} aria-label={title}>
+    <div className="overview-scene-visual" role="img" aria-label={`${title}: визуальная сцена`}>
+      <div className="overview-scene-overlay">
+        <p className="scene-mode-kicker">{title}</p>
+        <h3>{subtitle}</h3>
+      </div>
+    </div>
+  </section>
+);
+
 export const OverviewMode = ({ onModeChange }: OverviewModeProps) => (
   <div className="overview-mode">
     <section className="overview-hero" aria-label="Обзор GRAF">
-      <p className="scene-mode-kicker">Обзор системы</p>
-      <h2 className="scene-mode-title">GRAF объединяет Мир, Граф и Оракул в один контур решений.</h2>
-      <p className="scene-mode-copy">
-        Вы видите проблему целиком, находите главный риск, определяете рычаг влияния и выбираете следующий шаг без
-        переключения между разрозненными инструментами.
-      </p>
-
-      <div className="overview-collage" aria-hidden="true">
-        <div className="overview-core">
-          <span>Ядро решения</span>
+      <div className="overview-hero-media" role="img" aria-label="GRAF как единая система: мир, причинность и прогноз" />
+      <div className="overview-hero-copy">
+        <p className="scene-mode-kicker">Иммерсивный обзор</p>
+        <h2 className="scene-mode-title">GRAF собирает Мир, Граф и Оракул в единый контур решений.</h2>
+        <p className="scene-mode-copy">Одна сцена — чтобы увидеть состояние, найти источник давления и выбрать следующий ход без потери контекста.</p>
+        <div className="overview-cta-row">
+          <button type="button" onClick={() => onModeChange('start')}>
+            Перейти в старт
+          </button>
+          <button type="button" className="ghost" onClick={() => onModeChange('world')}>
+            Открыть мир
+          </button>
         </div>
-        <div className="overview-orbit world">Мир</div>
-        <div className="overview-orbit graph">Граф</div>
-        <div className="overview-orbit oracle">Оракул</div>
       </div>
+    </section>
 
-      <div className="overview-points">
-        <p>• увидеть проблему</p>
-        <p>• найти главный риск</p>
-        <p>• понять рычаг</p>
-        <p>• выбрать следующий шаг</p>
-      </div>
+    <SceneSection
+      tone="world"
+      title="Мир"
+      subtitle="Карта состояния доменов, зон давления и контуров устойчивости."
+    />
+    <SceneSection
+      tone="graph"
+      title="Граф"
+      subtitle="Причинные связи, корни проблем и рычаги, которые меняют траекторию."
+    />
+    <SceneSection
+      tone="oracle"
+      title="Оракул"
+      subtitle="Сценарии развития, прогноз последствий и следующий лучший шаг."
+    />
 
-      <div className="overview-cta-row">
-        <button type="button" onClick={() => onModeChange('start')}>
-          Перейти в старт
-        </button>
-        <button type="button" className="ghost" onClick={() => onModeChange('world')}>
-          Открыть мир
-        </button>
-      </div>
+    <section className="overview-final" aria-label="Финальный вход">
+      <p className="scene-mode-kicker">Вход в контур</p>
+      <h3>Запустите старт и перейдите от картины к действию.</h3>
+      <button type="button" onClick={() => onModeChange('start')}>Открыть Start</button>
     </section>
   </div>
 );

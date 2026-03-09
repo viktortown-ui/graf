@@ -296,81 +296,105 @@ button {
 .overview-mode {
   position: absolute;
   inset: 0;
-  padding: 4.1rem 1.2rem 1.2rem;
-  overflow: auto;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+}
+
+.overview-hero,
+.overview-scene,
+.overview-final {
+  min-height: 100%;
+  padding: clamp(2.8rem, 6vh, 4.6rem) clamp(1.2rem, 3vw, 3.2rem);
+  scroll-snap-align: start;
 }
 
 .overview-hero {
-  min-height: 100%;
   display: grid;
-  align-content: center;
-  gap: 1rem;
-  max-width: 72rem;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
+  align-items: center;
+  gap: clamp(1rem, 2.4vw, 2rem);
 }
 
-.overview-collage {
+.overview-hero-media,
+.overview-scene-visual {
+  min-height: clamp(420px, 78vh, 860px);
+  border-radius: clamp(1rem, 2.4vw, 2rem);
+  background-size: cover;
+  background-position: center;
   position: relative;
-  margin-top: 0.35rem;
-  min-height: 17rem;
-  border-radius: 1.4rem;
-  border: 1px solid rgba(126, 170, 238, 0.2);
-  background:
-    radial-gradient(circle at 50% 48%, rgba(117, 192, 255, 0.23), rgba(7, 18, 36, 0.2) 42%, rgba(5, 11, 22, 0.84) 74%),
-    linear-gradient(170deg, rgba(14, 34, 60, 0.8), rgba(6, 14, 28, 0.88));
   overflow: hidden;
 }
 
-.overview-core {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: clamp(8rem, 16vw, 11rem);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 1px solid rgba(137, 229, 255, 0.56);
+.overview-hero-media {
+  background-image:
+    linear-gradient(125deg, rgba(6, 13, 23, 0.84) 10%, rgba(7, 36, 70, 0.54) 45%, rgba(8, 12, 24, 0.9) 100%),
+    radial-gradient(circle at 20% 32%, rgba(96, 190, 255, 0.5), transparent 48%),
+    radial-gradient(circle at 78% 40%, rgba(174, 104, 255, 0.35), transparent 45%),
+    radial-gradient(circle at 42% 84%, rgba(77, 231, 192, 0.25), transparent 52%);
+}
+
+.overview-hero-copy {
   display: grid;
-  place-items: center;
-  color: #ddf4ff;
-  font-size: 0.76rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  background: radial-gradient(circle, rgba(115, 220, 255, 0.26), rgba(9, 22, 40, 0.5));
-  box-shadow: 0 0 42px rgba(61, 170, 255, 0.35);
+  gap: 1rem;
+  max-width: 32rem;
 }
 
-.overview-orbit {
-  position: absolute;
-  border: 1px solid rgba(126, 170, 238, 0.34);
-  border-radius: 999px;
-  padding: 0.34rem 0.66rem;
-  font-size: 0.72rem;
-  color: #c8defa;
-  background: rgba(8, 18, 33, 0.66);
-}
-
-.overview-orbit.world { left: 14%; top: 28%; }
-.overview-orbit.graph { right: 14%; top: 34%; }
-.overview-orbit.oracle { left: 50%; bottom: 12%; transform: translateX(-50%); }
-
-.overview-points {
+.overview-scene {
   display: grid;
-  gap: 0.25rem;
-  color: #a9c6e8;
+  align-items: center;
 }
 
-.overview-points p {
-  margin: 0;
-  font-size: 0.9rem;
+.overview-scene-visual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(1, 4, 10, 0.22), rgba(1, 4, 10, 0.8));
+}
+
+.overview-scene-world .overview-scene-visual {
+  background-image:
+    radial-gradient(circle at 24% 30%, rgba(100, 229, 255, 0.36), transparent 45%),
+    radial-gradient(circle at 80% 70%, rgba(85, 157, 255, 0.36), transparent 50%),
+    linear-gradient(135deg, rgba(4, 18, 34, 0.96), rgba(8, 45, 79, 0.78));
+}
+
+.overview-scene-graph .overview-scene-visual {
+  background-image:
+    radial-gradient(circle at 68% 22%, rgba(182, 132, 255, 0.32), transparent 48%),
+    radial-gradient(circle at 18% 78%, rgba(70, 212, 255, 0.3), transparent 52%),
+    linear-gradient(145deg, rgba(8, 16, 30, 0.96), rgba(33, 26, 56, 0.8));
+}
+
+.overview-scene-oracle .overview-scene-visual {
+  background-image:
+    radial-gradient(circle at 78% 24%, rgba(121, 255, 205, 0.3), transparent 45%),
+    radial-gradient(circle at 26% 68%, rgba(117, 163, 255, 0.28), transparent 48%),
+    linear-gradient(140deg, rgba(4, 12, 26, 0.97), rgba(21, 37, 68, 0.8));
+}
+
+.overview-scene-overlay {
+  position: absolute;
+  left: clamp(1rem, 2.6vw, 2.4rem);
+  bottom: clamp(1rem, 4vh, 2.4rem);
+  max-width: 32rem;
+  z-index: 1;
+}
+
+.overview-scene-overlay h3,
+.overview-final h3 {
+  margin: 0.4rem 0 0;
+  font-size: clamp(1.2rem, 2.2vw, 2rem);
+  line-height: 1.15;
 }
 
 .overview-cta-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.6rem;
 }
 
-.overview-cta-row button {
+.overview-cta-row button,
+.overview-final button {
   border: 1px solid rgba(129, 232, 255, 0.68);
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(34, 95, 152, 0.56), rgba(7, 21, 39, 0.56));
@@ -378,7 +402,7 @@ button {
   font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 0.42rem 0.84rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
 }
 
@@ -386,6 +410,27 @@ button {
   border-color: rgba(145, 178, 230, 0.38);
   background: rgba(10, 18, 33, 0.5);
   color: #a9c4e6;
+}
+
+.overview-final {
+  display: grid;
+  place-content: center;
+  gap: 0.8rem;
+  justify-items: start;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(92, 168, 255, 0.24), transparent 50%),
+    radial-gradient(circle at 80% 74%, rgba(99, 255, 213, 0.18), transparent 45%);
+}
+
+@media (max-width: 1024px) {
+  .overview-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-hero-media,
+  .overview-scene-visual {
+    min-height: 58vh;
+  }
 }
 
 .scene-mode-kicker {
