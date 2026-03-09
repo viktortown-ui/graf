@@ -7,6 +7,17 @@ type ModeGlyphProps = {
 };
 
 const iconByMode: Record<AppMode, ReactNode> = {
+  overview: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="2.2" />
+      <circle cx="12" cy="12" r="6.1" />
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3v2.3" />
+      <path d="M21 12h-2.3" />
+      <path d="M12 21v-2.3" />
+      <path d="M3 12h2.3" />
+    </svg>
+  ),
   start: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 3.5v4.2" />

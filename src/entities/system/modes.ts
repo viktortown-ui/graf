@@ -1,4 +1,4 @@
-export type AppMode = 'start' | 'world' | 'graph' | 'oracle' | 'settings';
+export type AppMode = 'overview' | 'start' | 'world' | 'graph' | 'oracle' | 'settings';
 
 export type ModeDefinition = {
   id: AppMode;
@@ -7,6 +7,11 @@ export type ModeDefinition = {
 };
 
 export const MODES: ModeDefinition[] = [
+  {
+    id: 'overview',
+    label: 'Обзор',
+    summary: 'Единая приветственная сцена для быстрого входа в контур решений GRAF.',
+  },
   {
     id: 'start',
     label: 'Старт',
@@ -34,4 +39,4 @@ export const MODES: ModeDefinition[] = [
   },
 ];
 
-export const DEFAULT_MODE: AppMode = 'start';
+export const DEFAULT_MODE: AppMode = 'overview';

@@ -23,6 +23,7 @@ type StartModeProps = {
 };
 
 const MODE_ACTION_LABEL: Record<AppMode, string> = {
+  overview: 'Открыть обзор',
   start: 'Вернуться в Старт',
   world: 'Открыть Мир',
   graph: 'Разобрать причины',
@@ -52,6 +53,7 @@ const TARGET_HINT: Record<TargetFocusId, string> = {
 };
 
 const PATH_LABEL: Record<AppMode, string> = {
+  overview: 'Обзор: синхронизация контура',
   start: 'Повторный запуск в Старт',
   world: 'Мир: стабилизация состояния',
   graph: 'Граф причин: разбор источника давления',
@@ -59,7 +61,11 @@ const PATH_LABEL: Record<AppMode, string> = {
   settings: 'Настройки',
 };
 
+const SHOW_START_BRIEF_BLOCK = false;
+const SHOW_START_SYSTEM_OUTPUT_BLOCK = false;
+
 const FIRST_STEP_BY_MODE: Record<AppMode, string> = {
+  overview: 'Откройте Обзор и выберите вход в Старт или Мир.',
   start: 'Обновить ввод и пересчитать стартовую рекомендацию.',
   world: 'Откройте Мир и закрепите планету с максимальным давлением.',
   graph: 'Откройте Граф причин и выделите ветку, которая даёт наибольший эффект.',
@@ -107,16 +113,19 @@ export const StartMode = ({
 
   return (
     <div className="start-mode">
-      <section className="start-brief">
+      {SHOW_START_BRIEF_BLOCK ? (
+        <section className="start-brief">
         <p className="scene-mode-kicker">Стартовый запуск</p>
         <h2 className="scene-mode-title">Верните систему в управляемое состояние за один запуск.</h2>
         <p className="scene-mode-copy">
           Выберите текущее давление, желаемый результат и горизонт. Система сразу покажет, где растёт риск,
           где главный рычаг и какой следующий шаг даст лучший эффект.
         </p>
-      </section>
+        </section>
+      ) : null}
 
-      <section className="start-system-output" aria-live="polite" aria-label="Что система уже видит">
+      {SHOW_START_SYSTEM_OUTPUT_BLOCK ? (
+        <section className="start-system-output" aria-live="polite" aria-label="Что система уже видит">
         <p className="start-system-output-kicker">Что система уже видит сейчас</p>
         <div className="start-system-output-grid">
           <p><span>Главная проблема:</span><strong>{mainProblem}</strong></p>
@@ -142,7 +151,8 @@ export const StartMode = ({
             </p>
           </div>
         ) : null}
-      </section>
+        </section>
+      ) : null}
 
       <section className="start-launch-console" aria-label="Параметры стартового запуска">
         <article className="start-control-panel start-control-panel-1">
