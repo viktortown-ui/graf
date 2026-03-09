@@ -25,8 +25,10 @@ export const OverviewHeroVisual = () => (
         </filter>
       </defs>
 
-      <rect width="1200" height="980" fill="url(#graph-zone)" />
-      <rect width="1200" height="980" fill="url(#oracle-zone)" />
+      <g opacity="0.92">
+        <circle cx="350" cy="170" r="340" fill="url(#graph-zone)" />
+        <circle cx="860" cy="760" r="360" fill="url(#oracle-zone)" />
+      </g>
 
       <g strokeLinecap="round" fill="none">
         <path d="M148 156 L270 194 L418 236 L550 304" stroke="rgba(118, 209, 255, 0.56)" strokeWidth="3.2" />
