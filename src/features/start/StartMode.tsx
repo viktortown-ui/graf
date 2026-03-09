@@ -22,20 +22,49 @@ type StartModeProps = {
   onLaunch: (mode: AppMode) => void;
 };
 
-const MODE_LABEL: Record<AppMode, string> = {
-  start: 'Старт',
-  world: 'Мир',
-  graph: 'Граф причин',
-  oracle: 'Прогноз',
+const MODE_ACTION_LABEL: Record<AppMode, string> = {
+  start: 'Вернуться в Старт',
+  world: 'Открыть Мир',
+  graph: 'Разобрать причины',
+  oracle: 'Перейти в прогноз',
+  settings: 'Открыть настройки',
+};
+
+const PRESSURE_HELP: Record<PressureId, string> = {
+  load: 'Слишком много задач и обязательств на текущий ресурс.',
+  'energy-drop': 'Энергии не хватает даже на важное.',
+  'attention-drift': 'Сложно удерживать внимание и темп.',
+  money: 'Расходы и обязательства мешают действовать спокойно.',
+  'goal-slip': 'Есть риск сорвать результат или срок.',
+};
+
+const INTENT_HELP: Record<EntryModeId, string> = {
+  fast: 'За 1 шаг получить действие, которое сразу снижает давление.',
+  analysis: 'Понять, где корень проблемы, чтобы не лечить симптомы.',
+  forecast: 'Сравнить сценарии и выбрать путь с наименьшим риском.',
+};
+
+const TARGET_HINT: Record<TargetFocusId, string> = {
+  'Удержать систему': 'Стабилизировать текущий контур и не допустить срыва.',
+  'Снизить риск': 'Убрать самые опасные точки до того, как они вырастут.',
+  'Усилить цель': 'Сместить ресурс в сторону главного результата.',
+  'Восстановить ресурс': 'Вернуть энергию и рабочий темп без перегрева.',
+};
+
+const PATH_LABEL: Record<AppMode, string> = {
+  start: 'Повторный запуск в Старт',
+  world: 'Мир: стабилизация состояния',
+  graph: 'Граф причин: разбор источника давления',
+  oracle: 'Прогноз: проверка сценариев',
   settings: 'Настройки',
 };
 
-const MODE_ACTION_LABEL: Record<AppMode, string> = {
-  start: 'Войти в Старт',
-  world: 'Войти в Мир',
-  graph: 'Открыть Граф причин',
-  oracle: 'Перейти в прогноз',
-  settings: 'Открыть настройки',
+const FIRST_STEP_BY_MODE: Record<AppMode, string> = {
+  start: 'Обновить ввод и пересчитать стартовую рекомендацию.',
+  world: 'Откройте Мир и закрепите планету с максимальным давлением.',
+  graph: 'Откройте Граф причин и выделите ветку, которая даёт наибольший эффект.',
+  oracle: 'Откройте Прогноз и сравните базовый и усиленный сценарий.',
+  settings: 'Настройте сцену под комфортный режим чтения.',
 };
 
 export const StartMode = ({
@@ -51,6 +80,7 @@ export const StartMode = ({
   const [entryModeId, setEntryModeId] = useState<EntryModeId>(launchContext.entryModeId);
   const [horizonId, setHorizonId] = useState<HorizonId>(launchContext.horizonId);
   const [targetFocus, setTargetFocus] = useState<TargetFocusId>(launchContext.targetFocus);
+  const [showWhy, setShowWhy] = useState(false);
 
   const selectedPressure = useMemo(
     () => PRESSURE_OPTIONS.find((option) => option.id === pressureId) ?? PRESSURE_OPTIONS[0],
@@ -66,23 +96,48 @@ export const StartMode = ({
 
   const suggestedMode = selectedEntryMode.id === 'fast' ? selectedPressure.recommendedMode : selectedEntryMode.recommendedMode;
 
-  const mainZone = selectedPressure.anchorNodeId === selectedNodeId ? selectedNodeName : selectedPressure.label;
-
   const launchState: LaunchContext = { pressureId, entryModeId, horizonId, targetFocus };
+
+  const mainProblem = selectedPressure.label;
+  const weakPoint = selectedPressure.anchorNodeId === selectedNodeId
+    ? `${selectedNodeName} — сейчас уже в фокусе.`
+    : `${selectedNodeName} отстаёт, но главный провал в зоне «${selectedPressure.label.toLowerCase()}».`;
+  const nextRisk = `${selectedPressure.risk} на горизонте «${selectedHorizon.label.toLowerCase()}».`;
 
   return (
     <div className="start-mode">
       <section className="start-brief">
-        <p className="scene-mode-kicker">Контур запуска</p>
-        <h2 className="scene-mode-title">Соберите фокус и откройте сцену как рабочий инструмент, а не витрину.</h2>
+        <p className="scene-mode-kicker">Стартовый запуск</p>
+        <h2 className="scene-mode-title">Верните систему в управляемое состояние за один запуск.</h2>
         <p className="scene-mode-copy">
-          Текущий якорь: <strong>{selectedNodeName}</strong> · Отражение: <strong>{selectedPlanetLabel}</strong>
+          Выберите текущее давление, желаемый результат и горизонт. Система сразу покажет, где растёт риск,
+          где главный рычаг и какой следующий шаг даст лучший эффект.
         </p>
       </section>
 
-      <section className="start-controls" aria-label="Параметры запуска">
-        <div className="start-control-block">
-          <p>Главное давление</p>
+      <section className="start-system-output" aria-live="polite" aria-label="Что система уже видит">
+        <p className="start-system-output-kicker">Что система уже видит сейчас</p>
+        <p><span>Главная проблема:</span><strong>{mainProblem}</strong></p>
+        <p><span>Слабое место:</span><strong>{weakPoint}</strong></p>
+        <p><span>Ближайший риск:</span><strong>{nextRisk}</strong></p>
+        <p><span>Лучший старт:</span><strong>{PATH_LABEL[suggestedMode]}</strong></p>
+        <p><span>Контекст сцены:</span><strong>{selectedPlanetLabel}</strong></p>
+        <button type="button" className="start-why-toggle" onClick={() => setShowWhy((state) => !state)}>
+          {showWhy ? 'Скрыть объяснение' : 'Почему система так решила?'}
+        </button>
+        {showWhy ? (
+          <p className="start-why-copy">
+            На выбор влияют: давление «{selectedPressure.label.toLowerCase()}», запрос «{selectedEntryMode.label.toLowerCase()}»,
+            горизонт «{selectedHorizon.label.toLowerCase()}» и приоритет «{targetFocus.toLowerCase()}».
+          </p>
+        ) : null}
+      </section>
+
+      <section className="start-launch-console" aria-label="Параметры стартового запуска">
+        <article className="start-control-panel">
+          <header>
+            <p>1. Что сейчас мешает сильнее всего?</p>
+          </header>
           <div className="start-chip-row">
             {PRESSURE_OPTIONS.map((option) => (
               <button
@@ -93,47 +148,80 @@ export const StartMode = ({
                   setPressureId(option.id);
                   onAnchorChange(option.anchorNodeId);
                 }}
+                title={PRESSURE_HELP[option.id]}
+              >
+                <span>{option.label}</span>
+                <small>{PRESSURE_HELP[option.id]}</small>
+              </button>
+            ))}
+          </div>
+        </article>
+
+        <article className="start-control-panel compact">
+          <header>
+            <p>2. Что вы хотите получить сейчас?</p>
+          </header>
+          <div className="start-option-grid">
+            {ENTRY_MODES.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={option.id === entryModeId ? 'active' : ''}
+                onClick={() => setEntryModeId(option.id)}
+                title={INTENT_HELP[option.id]}
+              >
+                <span>{option.label}</span>
+                <small>{INTENT_HELP[option.id]}</small>
+              </button>
+            ))}
+          </div>
+        </article>
+
+        <article className="start-control-panel compact">
+          <header>
+            <p>3. На какой срок смотрим?</p>
+          </header>
+          <div className="start-pill-row">
+            {HORIZONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={option.id === horizonId ? 'active' : ''}
+                onClick={() => setHorizonId(option.id)}
               >
                 {option.label}
               </button>
             ))}
           </div>
-        </div>
+          <p className="start-inline-help">Горизонт нужен, чтобы точнее оценить, где риск проявится первым.</p>
+        </article>
 
-        <div className="start-control-grid">
-          <label>
-            <span>Режим входа</span>
-            <select value={entryModeId} onChange={(event) => setEntryModeId(event.target.value as EntryModeId)}>
-              {ENTRY_MODES.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+        <article className="start-control-panel compact">
+          <header>
+            <p>4. Что сейчас важнее всего?</p>
+          </header>
+          <div className="start-pill-row target">
+            {TARGETS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={option === targetFocus ? 'active' : ''}
+                onClick={() => setTargetFocus(option)}
+                title={TARGET_HINT[option]}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+          <p className="start-inline-help">{TARGET_HINT[targetFocus]}</p>
+        </article>
+      </section>
 
-          <label>
-            <span>Горизонт внимания</span>
-            <select value={horizonId} onChange={(event) => setHorizonId(event.target.value as HorizonId)}>
-              {HORIZONS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <span>Целевой фокус</span>
-            <select value={targetFocus} onChange={(event) => setTargetFocus(event.target.value as TargetFocusId)}>
-              {TARGETS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+      <section className="start-verdict" aria-live="polite">
+        <p><span>Главная зона внимания:</span><strong>{mainProblem}</strong></p>
+        <p><span>Ближайший риск:</span><strong>{selectedPressure.risk}</strong></p>
+        <p><span>Лучший путь сейчас:</span><strong>{PATH_LABEL[suggestedMode]}</strong></p>
+        <p><span>Первый шаг:</span><strong>{FIRST_STEP_BY_MODE[suggestedMode]}</strong></p>
 
         <div className="start-launch-row">
           <button
@@ -143,39 +231,22 @@ export const StartMode = ({
               onLaunch(suggestedMode);
             }}
           >
-            {MODE_ACTION_LABEL[suggestedMode]}
+            Открыть рекомендованный режим
           </button>
-          {[...new Set([suggestedMode, 'world', 'graph', 'oracle'])]
-            .filter((mode): mode is AppMode => mode !== 'start')
-            .map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                className="ghost"
-                onClick={() => {
-                  onLaunchContextChange(launchState);
-                  onLaunch(mode);
-                }}
-              >
-                {MODE_ACTION_LABEL[mode]}
-              </button>
-            ))}
+          {[...new Set(['world', 'graph', 'oracle'])].map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className="ghost"
+              onClick={() => {
+                onLaunchContextChange(launchState);
+                onLaunch(mode as AppMode);
+              }}
+            >
+              {MODE_ACTION_LABEL[mode as AppMode]}
+            </button>
+          ))}
         </div>
-      </section>
-
-      <section className="start-verdict" aria-live="polite">
-        <p>
-          Главная зона внимания: <strong>{mainZone}</strong>
-        </p>
-        <p>
-          Первичный риск: <strong>{selectedPressure.risk}</strong>
-        </p>
-        <p>
-          Рекомендуемый режим: <strong>{MODE_LABEL[suggestedMode]}</strong>
-        </p>
-        <p>
-          Линза запуска: <strong>{selectedEntryMode.label}</strong> · {selectedHorizon.label.toLowerCase()} · {targetFocus.toLowerCase()}.
-        </p>
       </section>
     </div>
   );
