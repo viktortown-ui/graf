@@ -117,6 +117,7 @@ const getDefaultAction = (context: LaunchContext, profile: OperationalProfile, l
 };
 
 const actionLabel: Record<AppMode, string> = {
+  overview: 'Открыть обзор',
   world: 'Удержать фокус в Мире',
   graph: 'Перейти в Граф причин',
   oracle: 'Перейти в Прогноз',

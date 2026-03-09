@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { GraphMode } from '../../features/graph/GraphMode';
+import { OverviewMode } from '../../features/overview/OverviewMode';
 import { OracleMode } from '../../features/oracle/OracleMode';
 import { SettingsMode } from '../../features/settings/SettingsMode';
 import { StartMode } from '../../features/start/StartMode';
@@ -69,15 +70,16 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
         <div className="scene-core-glow" aria-hidden="true" />
         <header className="scene-hud">
           <p className="scene-hud-label">{signal.title}</p>
-          {mode !== 'start' ? <p className="scene-hud-metric">Пульс {Math.round(signal.pulse * 100)}%</p> : null}
+          {mode !== 'start' && mode !== 'overview' ? <p className="scene-hud-metric">Пульс {Math.round(signal.pulse * 100)}%</p> : null}
         </header>
         <div className="scene-anchor-memory" aria-live="polite">
           <p>Якорь системы: <strong>{sceneState.selectedGraphNode.name}</strong></p>
           <p>Планета мира: <strong>{sceneState.selectedPlanetLabel}</strong></p>
           <p>Давление запуска: <strong>{PRESSURE_OPTIONS.find((entry) => entry.id === sceneState.launchContext.pressureId)?.label ?? 'Не задано'}</strong></p>
-          <p>Контур перехода: <strong>Старт → Мир → {mode === 'graph' ? 'Граф причин' : mode === 'oracle' ? 'Прогноз' : 'оперативный выбор'}</strong></p>
+          <p>Контур перехода: <strong>Обзор → Старт → Мир → {mode === 'graph' ? 'Граф причин' : mode === 'oracle' ? 'Прогноз' : 'оперативный выбор'}</strong></p>
         </div>
         <div className={`scene-mode-content ${mode}`}>
+          {mode === 'overview' && <OverviewMode onModeChange={onModeChange} />}
           {mode === 'start' && (
             <StartMode
               selectedNodeId={sceneState.selection.graphNodeId}
