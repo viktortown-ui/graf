@@ -24,9 +24,9 @@ export const LeftRail = ({ activeMode, onSelectMode }: LeftRailProps) => (
             type="button"
             onClick={() => onSelectMode(mode.id)}
             className={cn('mode-rail-button', active && 'active')}
-            aria-pressed={active}
+            aria-current={active ? 'page' : undefined}
           >
-            <ModeGlyph mode={mode.id} short={mode.short} active={active} />
+            <ModeGlyph mode={mode.id} active={active} />
             <span>{mode.label}</span>
           </button>
         );
