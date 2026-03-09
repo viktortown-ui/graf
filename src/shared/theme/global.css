@@ -56,19 +56,20 @@ button {
 .app-shell {
   height: 100%;
   display: grid;
-  grid-template-columns: 90px minmax(0, 1fr);
+  grid-template-columns: 116px minmax(0, 1fr);
   background: radial-gradient(circle at 58% 45%, rgba(75, 110, 210, 0.14), transparent 60%);
 }
 
 .left-rail {
   border-right: 1px solid rgba(118, 164, 255, 0.22);
-  background: linear-gradient(180deg, rgba(7, 13, 26, 0.7), rgba(4, 8, 16, 0.86));
+  box-shadow: inset -1px 0 0 rgba(56, 97, 158, 0.3);
+  background: linear-gradient(180deg, rgba(8, 16, 33, 0.82), rgba(3, 7, 14, 0.94));
   font-size: calc(1rem * var(--ui-scale));
-  padding: var(--space-4) var(--space-2) var(--space-3);
+  padding: 1.15rem 0.72rem 0.92rem;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  backdrop-filter: blur(10px);
+  gap: 1.55rem;
+  backdrop-filter: blur(12px);
 }
 
 .brand-lockup {
@@ -94,48 +95,76 @@ button {
 .mode-rail-nav {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 0.62rem;
 }
 
 .mode-rail-button {
-  border: 1px solid transparent;
-  border-radius: 0.8rem;
-  background: transparent;
-  padding: 0.45rem;
+  border: 1px solid rgba(94, 134, 204, 0.22);
+  border-radius: 0.95rem;
+  background: linear-gradient(180deg, rgba(17, 30, 54, 0.42), rgba(8, 15, 28, 0.36));
+  padding: 0.48rem 0.32rem 0.54rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.42rem;
   align-items: center;
   cursor: pointer;
-  color: #9cb4d8;
+  color: #95abcb;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.mode-rail-button:hover {
+  border-color: rgba(117, 174, 252, 0.48);
+  color: #bfd6f4;
+  background: linear-gradient(180deg, rgba(24, 44, 79, 0.62), rgba(10, 19, 36, 0.48));
+  box-shadow: 0 0 18px rgba(68, 127, 226, 0.12);
+  transform: translateY(-1px);
+}
+
+.mode-rail-button:focus-visible {
+  outline: none;
+  border-color: rgba(146, 233, 255, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(115, 220, 255, 0.46), 0 0 0 2px rgba(61, 123, 201, 0.32), 0 0 20px rgba(88, 204, 255, 0.24);
 }
 
 .mode-rail-button.active {
-  border-color: rgba(118, 185, 255, 0.6);
-  box-shadow: inset 0 0 0 1px rgba(61, 120, 194, 0.35), 0 0 26px rgba(88, 172, 255, 0.16);
-  background: linear-gradient(180deg, rgba(28, 58, 101, 0.35), rgba(10, 20, 35, 0.24));
-  color: #e3f2ff;
+  border-color: rgba(126, 202, 255, 0.76);
+  box-shadow: inset 0 0 0 1px rgba(99, 183, 255, 0.32), 0 0 24px rgba(83, 199, 255, 0.24);
+  background: linear-gradient(180deg, rgba(30, 70, 124, 0.62), rgba(12, 28, 49, 0.58));
+  color: #e7f5ff;
 }
 
 .mode-rail-button span:last-child {
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
+  font-size: 0.66rem;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+  font-weight: 560;
 }
 
 .mode-glyph {
-  width: 2rem;
-  height: 2rem;
+  width: 2.16rem;
+  height: 2.16rem;
   border-radius: 999px;
-  border: 1px solid rgba(137, 171, 225, 0.42);
+  border: 1px solid rgba(138, 179, 235, 0.42);
   display: grid;
   place-items: center;
-  font-size: 0.66rem;
+  background: radial-gradient(circle at 50% 28%, rgba(76, 116, 184, 0.35), rgba(10, 21, 38, 0.6) 72%);
+  box-shadow: inset 0 1px 0 rgba(147, 198, 255, 0.18);
+}
+
+.mode-glyph svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .mode-glyph.active {
-  border-color: rgba(130, 220, 255, 0.8);
-  box-shadow: 0 0 18px rgba(96, 216, 255, 0.35);
+  border-color: rgba(124, 228, 255, 0.82);
+  background: radial-gradient(circle at 50% 25%, rgba(82, 189, 255, 0.44), rgba(9, 30, 52, 0.82) 75%);
+  box-shadow: inset 0 1px 0 rgba(178, 234, 255, 0.34), 0 0 18px rgba(96, 216, 255, 0.34);
 }
 
 .scene-stage {
