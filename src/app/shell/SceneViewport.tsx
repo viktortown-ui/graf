@@ -69,7 +69,7 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
         <div className="scene-core-glow" aria-hidden="true" />
         <header className="scene-hud">
           <p className="scene-hud-label">{signal.title}</p>
-          <p className="scene-hud-metric">Пульс {Math.round(signal.pulse * 100)}%</p>
+          {mode !== 'start' ? <p className="scene-hud-metric">Пульс {Math.round(signal.pulse * 100)}%</p> : null}
         </header>
         <div className="scene-anchor-memory" aria-live="polite">
           <p>Якорь системы: <strong>{sceneState.selectedGraphNode.name}</strong></p>

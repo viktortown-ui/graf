@@ -310,17 +310,26 @@ button {
 
 
 .start-mode {
-  position: relative;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+  padding: 4.05rem 1rem 1.02rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr);
+  grid-template-areas:
+    'brief output'
+    'q1 q2'
+    'q3 q4'
+    'verdict verdict';
+  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 0.58rem;
+  align-content: stretch;
+  overflow: auto;
 }
 
 .start-brief {
-  position: absolute;
-  left: 1rem;
-  top: 4.05rem;
-  max-width: 33rem;
-  z-index: 4;
+  grid-area: brief;
   padding: 0.7rem 0.85rem;
   border: 1px solid rgba(141, 181, 246, 0.2);
   border-radius: 0.96rem;
@@ -339,11 +348,9 @@ button {
 }
 
 .start-system-output {
-  position: absolute;
-  right: 1rem;
-  top: 4.05rem;
-  width: min(360px, 33vw);
-  z-index: 4;
+  grid-area: output;
+  width: 100%;
+  min-width: 0;
   padding: 0.68rem 0.78rem;
   border-color: rgba(141, 181, 246, 0.16);
   background: linear-gradient(180deg, rgba(10, 22, 39, 0.72), rgba(7, 14, 25, 0.48));
@@ -413,19 +420,18 @@ button {
 }
 
 .start-launch-console {
-  position: absolute;
-  left: 1rem;
-  right: 22.5rem;
-  bottom: 5.55rem;
-  z-index: 4;
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 0.58rem;
+  display: contents;
 }
 
 .start-control-panel {
   padding: 0.62rem 0.72rem;
+  min-width: 0;
 }
+
+.start-control-panel-1 { grid-area: q1; }
+.start-control-panel-2 { grid-area: q2; }
+.start-control-panel-3 { grid-area: q3; }
+.start-control-panel-4 { grid-area: q4; }
 
 .start-control-panel.compact {
   min-height: 0;
@@ -510,12 +516,14 @@ button {
 }
 
 .start-verdict {
-  position: absolute;
-  left: 1rem;
-  right: 1rem;
-  bottom: 1.02rem;
-  z-index: 4;
+  grid-area: verdict;
   padding: 0.66rem 0.8rem;
+}
+
+@media (max-width: 1220px) {
+  .start-mode {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.92fr);
+  }
 }
 
 .start-launch-row {
