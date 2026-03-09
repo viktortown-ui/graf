@@ -100,9 +100,10 @@ export const StartMode = ({
 
   const mainProblem = selectedPressure.label;
   const weakPoint = selectedPressure.anchorNodeId === selectedNodeId
-    ? `${selectedNodeName} — сейчас уже в фокусе.`
-    : `${selectedNodeName} отстаёт, но главный провал в зоне «${selectedPressure.label.toLowerCase()}».`;
-  const nextRisk = `${selectedPressure.risk} на горизонте «${selectedHorizon.label.toLowerCase()}».`;
+    ? `${selectedNodeName} уже держит главный удар.`
+    : `${selectedNodeName} вне центра внимания, риск уходит в «${selectedPressure.label.toLowerCase()}».`;
+  const nextRisk = `${selectedPressure.risk} на горизонте ${selectedHorizon.label.toLowerCase()}.`;
+  const bestStart = PATH_LABEL[suggestedMode];
 
   return (
     <div className="start-mode">
@@ -117,19 +118,29 @@ export const StartMode = ({
 
       <section className="start-system-output" aria-live="polite" aria-label="Что система уже видит">
         <p className="start-system-output-kicker">Что система уже видит сейчас</p>
-        <p><span>Главная проблема:</span><strong>{mainProblem}</strong></p>
-        <p><span>Слабое место:</span><strong>{weakPoint}</strong></p>
-        <p><span>Ближайший риск:</span><strong>{nextRisk}</strong></p>
-        <p><span>Лучший старт:</span><strong>{PATH_LABEL[suggestedMode]}</strong></p>
-        <p><span>Контекст сцены:</span><strong>{selectedPlanetLabel}</strong></p>
+        <div className="start-system-output-grid">
+          <p><span>Главная проблема:</span><strong>{mainProblem}</strong></p>
+          <p><span>Ближайший риск:</span><strong>{nextRisk}</strong></p>
+          <p><span>Лучший старт:</span><strong>{bestStart}</strong></p>
+          <p><span>Слабое место:</span><strong>{weakPoint}</strong></p>
+        </div>
         <button type="button" className="start-why-toggle" onClick={() => setShowWhy((state) => !state)}>
           {showWhy ? 'Скрыть объяснение' : 'Почему система так решила?'}
         </button>
         {showWhy ? (
-          <p className="start-why-copy">
-            На выбор влияют: давление «{selectedPressure.label.toLowerCase()}», запрос «{selectedEntryMode.label.toLowerCase()}»,
-            горизонт «{selectedHorizon.label.toLowerCase()}» и приоритет «{targetFocus.toLowerCase()}».
-          </p>
+          <div className="start-why-copy">
+            <p>
+              Сейчас доминирует давление «{selectedPressure.label.toLowerCase()}», поэтому система в первую очередь гасит
+              ближайший риск, а не расширяет цели.
+            </p>
+            <p>
+              Режим «{MODE_ACTION_LABEL[suggestedMode]}» выбран, потому что ваш запрос «{selectedEntryMode.label.toLowerCase()}»
+              и приоритет «{targetFocus.toLowerCase()}» дают в нём самый быстрый безопасный старт.
+            </p>
+            <p className="start-why-model-note">
+              Внутренняя опора: якорь «{selectedNodeName}» · сцена «{selectedPlanetLabel}» · горизонт {selectedHorizon.label.toLowerCase()}.
+            </p>
+          </div>
         ) : null}
       </section>
 
