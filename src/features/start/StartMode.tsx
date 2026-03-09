@@ -145,7 +145,7 @@ export const StartMode = ({
       </section>
 
       <section className="start-launch-console" aria-label="Параметры стартового запуска">
-        <article className="start-control-panel">
+        <article className="start-control-panel start-control-panel-1">
           <header>
             <p>1. Что сейчас мешает сильнее всего?</p>
           </header>
@@ -168,7 +168,7 @@ export const StartMode = ({
           </div>
         </article>
 
-        <article className="start-control-panel compact">
+        <article className="start-control-panel start-control-panel-2 compact">
           <header>
             <p>2. Что вы хотите получить сейчас?</p>
           </header>
@@ -188,7 +188,7 @@ export const StartMode = ({
           </div>
         </article>
 
-        <article className="start-control-panel compact">
+        <article className="start-control-panel start-control-panel-3 compact">
           <header>
             <p>3. На какой срок смотрим?</p>
           </header>
@@ -207,7 +207,7 @@ export const StartMode = ({
           <p className="start-inline-help">Горизонт нужен, чтобы точнее оценить, где риск проявится первым.</p>
         </article>
 
-        <article className="start-control-panel compact">
+        <article className="start-control-panel start-control-panel-4 compact">
           <header>
             <p>4. Что сейчас важнее всего?</p>
           </header>
