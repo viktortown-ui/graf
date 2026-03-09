@@ -21,58 +21,58 @@ export const PRESSURE_OPTIONS: LaunchPreset[] = [
     label: 'Перегрузка',
     anchorNodeId: 'domain-stress',
     worldPlanetId: 'stress',
-    risk: 'Рост каскада напряжения',
+    risk: 'Перегрузка начнёт ломать базовые решения',
     recommendedMode: 'world',
     pressureEdgeIds: ['e-sprint-stress', 'e-stress-focus', 'e-money-stress'],
   },
   {
     id: 'energy-drop',
-    label: 'Просадка энергии',
+    label: 'Не хватает сил',
     anchorNodeId: 'domain-energy',
     worldPlanetId: 'energy',
-    risk: 'Потеря темпа восстановления',
+    risk: 'Даже важные задачи уйдут в просадку',
     recommendedMode: 'world',
     pressureEdgeIds: ['e-burnout-energy', 'e-energy-focus'],
   },
   {
     id: 'attention-drift',
-    label: 'Дрейф внимания',
+    label: 'Теряю фокус',
     anchorNodeId: 'risk-distraction',
     worldPlanetId: 'focus',
-    risk: 'Рассыпание контекста выполнения',
+    risk: 'Ошибки и незавершённые дела начнут накапливаться',
     recommendedMode: 'graph',
     pressureEdgeIds: ['e-distraction-focus', 'e-stress-focus'],
   },
   {
     id: 'money',
-    label: 'Давление денег',
+    label: 'Давят деньги',
     anchorNodeId: 'domain-money',
     worldPlanetId: 'money',
-    risk: 'Ослабление буфера решений',
+    risk: 'Финансовое напряжение заблокирует манёвры',
     recommendedMode: 'graph',
     pressureEdgeIds: ['e-money-stress', 'e-cash-money'],
   },
   {
     id: 'goal-slip',
-    label: 'Риск срыва цели',
+    label: 'Цель под угрозой',
     anchorNodeId: 'goal-launch',
     worldPlanetId: 'goal',
-    risk: 'Смещение северной цели',
+    risk: 'Срок и результат могут выйти из-под контроля',
     recommendedMode: 'oracle',
     pressureEdgeIds: ['e-focus-launch', 'e-sprint-launch'],
   },
 ];
 
 export const ENTRY_MODES = [
-  { id: 'fast' as const, label: 'Быстрый запуск', recommendedMode: 'world' as const },
-  { id: 'analysis' as const, label: 'Анализ причин', recommendedMode: 'graph' as const },
-  { id: 'forecast' as const, label: 'Прогноз сценариев', recommendedMode: 'oracle' as const },
+  { id: 'fast' as const, label: 'Быстро вернуть контроль', recommendedMode: 'world' as const },
+  { id: 'analysis' as const, label: 'Понять, где корень проблемы', recommendedMode: 'graph' as const },
+  { id: 'forecast' as const, label: 'Выбрать лучший следующий шаг', recommendedMode: 'oracle' as const },
 ];
 
 export const HORIZONS = [
   { id: 'today' as const, label: 'Сегодня', oracleHorizon: 3 as const },
-  { id: 'week' as const, label: '7 дней', oracleHorizon: 7 as const },
-  { id: 'month' as const, label: '30 дней', oracleHorizon: 14 as const },
+  { id: 'week' as const, label: 'Неделя', oracleHorizon: 7 as const },
+  { id: 'month' as const, label: 'Месяц', oracleHorizon: 14 as const },
 ];
 
 export const TARGETS = ['Удержать систему', 'Снизить риск', 'Усилить цель', 'Восстановить ресурс'] as const;
