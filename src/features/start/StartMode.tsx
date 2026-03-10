@@ -12,6 +12,7 @@ import {
   type TargetFocusId,
 } from '../../app/state/launchContext';
 import type { DailyCheckIn, DailyFactors, DataSpine, Profile, WorkloadLevel } from '../../app/state/dataSpine';
+import { CONFIDENCE_FIELDS, type ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
 
 
 type StartModeProps = {
@@ -22,6 +23,7 @@ type StartModeProps = {
   contextModeSummary: string;
   launchContext: LaunchContext;
   dataSpine: DataSpine;
+  confidence: ConfidenceSnapshot;
   onAnchorChange: (nodeId: string) => void;
   onLaunchContextChange: (context: LaunchContext) => void;
   onDataSpineChange: (payload: { profile: Profile; dailyCheckIn: DailyCheckIn; dailyFactors: DailyFactors }) => void;
@@ -80,6 +82,20 @@ const clamp = (value: number, min = 0, max = 100) => Math.min(max, Math.max(min,
 const round0 = (value: number) => Math.round(value);
 const round1 = (value: number) => Math.round(value * 10) / 10;
 
+
+const DOMAIN_LABEL: Record<string, string> = {
+  finance: 'Финансы',
+  body: 'Тело',
+  work: 'Работа',
+  goal: 'Цель',
+};
+
+const PRIORITY_LABEL: Record<string, string> = {
+  critical: 'critical',
+  recommended: 'recommended',
+  later: 'later',
+};
+
 const SCALE_FIELDS: { key: keyof DailyCheckIn; label: string }[] = [
   { key: 'mood', label: 'Настроение' },
   { key: 'energy', label: 'Энергия' },
@@ -96,6 +112,7 @@ export const StartMode = ({
   contextModeSummary,
   launchContext,
   dataSpine,
+  confidence,
   onAnchorChange,
   onLaunchContextChange,
   onDataSpineChange,
@@ -296,6 +313,29 @@ export const StartMode = ({
           </div>
         </article>
 
+        <article className="start-confidence-zone">
+          <div className="start-confidence-head">
+            <p>Точность данных</p>
+            <strong>{confidence.globalConfidence}%</strong>
+          </div>
+          <div className="mini-meter-track"><span style={{ width: `${confidence.globalConfidence}%` }} /></div>
+          <div className="start-confidence-domains">
+            {(Object.entries(confidence.domainConfidence) as [keyof typeof confidence.domainConfidence, number][]).map(([domain, value]) => (
+              <div key={domain} className="mini-meter">
+                <p>{DOMAIN_LABEL[domain]}</p>
+                <div className="mini-meter-track"><span style={{ width: `${value}%` }} /></div>
+                <strong>{value}%</strong>
+              </div>
+            ))}
+          </div>
+          <p className="start-confidence-missing">
+            Для точного прогноза не хватает: {confidence.missingCriticalFields.length ? confidence.missingCriticalFields.slice(0, 3).join(', ') : 'критичные поля заполнены'}
+          </p>
+          <p className="start-confidence-next">
+            Следующее открытие: {confidence.nextUnlock ? `${confidence.nextUnlock.title} через ${confidence.nextUnlock.daysLeft} дн.` : 'открыты все уровни истории'}
+          </p>
+        </article>
+
         <article className="start-console-verdict">
           <p><span>Система видит:</span><strong>{weakPoint}</strong></p>
           <p><span>Главный риск:</span><strong>{nextRisk}</strong></p>
@@ -336,6 +376,31 @@ export const StartMode = ({
             <div className="start-drawer-head">
               <h3>Обновить входные данные</h3>
               <button type="button" onClick={() => setDrawerOpen(false)}>✕</button>
+            </div>
+
+            <div className="start-drawer-block start-drawer-completeness">
+              <p className="start-drawer-title">Статус заполненности по разделам</p>
+              {(['profile', 'state', 'factors'] as const).map((section) => {
+                const sectionFields = CONFIDENCE_FIELDS.filter((field) => field.section === section);
+                const filled = sectionFields.filter((field) => {
+                  if (field.key === 'checkinRegularity') return confidence.streakDays >= 2 || confidence.historyDepthDays >= 3;
+                  if (field.key === 'heightWeight') return false;
+                  const profile = profileForm as Record<string, unknown>;
+                  const checkin = checkInForm as Record<string, unknown>;
+                  const factors = factorsForm as Record<string, unknown>;
+                  const value = field.key in profile ? profile[field.key] : field.key in checkin ? checkin[field.key] : factors[field.key];
+                  return typeof value === 'number' ? value > 0 : typeof value === 'string' ? value.trim().length > 0 : typeof value === 'boolean';
+                }).length;
+                return <p key={section}><span>{section}</span><strong>{filled}/{sectionFields.length}</strong></p>;
+              })}
+              <div className="start-field-hints">
+                {CONFIDENCE_FIELDS.map((field) => (
+                  <div key={field.key} className="start-field-hint">
+                    <p><strong>{field.label}</strong> <em>{PRIORITY_LABEL[field.priority]}</em></p>
+                    <small>{field.reason}</small>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="start-drawer-block">

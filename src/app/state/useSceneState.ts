@@ -3,6 +3,7 @@ import { DEMO_GRAPH } from '../../features/graph/model';
 import { WORLD_PLANETS } from '../../features/world/worldPlanets';
 import type { DailyCheckIn, DailyFactors, Profile } from './dataSpine';
 import { createDataSpine } from './dataSpine';
+import { evaluateConfidence } from '../../entities/confidence/confidenceEngine';
 import { DEFAULT_LAUNCH_CONTEXT, PRESSURE_OPTIONS, type LaunchContext } from './launchContext';
 
 export type SceneSelection = {
@@ -42,6 +43,8 @@ export const useSceneState = () => {
   const [worldCamera, setWorldCamera] = useState(DEFAULT_WORLD_CAMERA);
   const [launchContext, setLaunchContext] = useState<LaunchContext>(DEFAULT_LAUNCH_CONTEXT);
   const [dataSpine, setDataSpine] = useState(createDataSpine);
+  const [historyDates, setHistoryDates] = useState<string[]>([new Date().toISOString().slice(0, 10)]);
+  const confidence = useMemo(() => evaluateConfidence({ dataSpine, historyDates }), [dataSpine, historyDates]);
 
   const selectedGraphNode = useMemo(
     () => DEMO_GRAPH.nodes.find((node) => node.id === selection.graphNodeId) ?? DEMO_GRAPH.nodes[0],
@@ -100,6 +103,8 @@ export const useSceneState = () => {
 
   const updateDataSpine = (payload: { profile: Profile; dailyCheckIn: DailyCheckIn; dailyFactors: DailyFactors }) => {
     setDataSpine(createDataSpine(payload.profile, payload.dailyCheckIn, payload.dailyFactors));
+    const today = new Date().toISOString().slice(0, 10);
+    setHistoryDates((current) => (current[current.length - 1] === today ? current : [...current, today]));
   };
 
   return {
@@ -110,6 +115,8 @@ export const useSceneState = () => {
     worldCamera,
     launchContext,
     dataSpine,
+    historyDates,
+    confidence,
     setGraphLens,
     setWorldCamera,
     applyLaunchContext,
@@ -129,6 +136,7 @@ export const useSceneState = () => {
       setLaunchContext(DEFAULT_LAUNCH_CONTEXT);
       setSelection(DEFAULT_SELECTION);
       setDataSpine(createDataSpine());
+      setHistoryDates([new Date().toISOString().slice(0, 10)]);
     },
   };
 };
