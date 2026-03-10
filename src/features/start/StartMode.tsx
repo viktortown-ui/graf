@@ -11,14 +11,20 @@ import {
   type PressureId,
   type TargetFocusId,
 } from '../../app/state/launchContext';
+import type { DailyCheckIn, DailyFactors, DataSpine, Profile, WorkloadLevel } from '../../app/state/dataSpine';
+
 
 type StartModeProps = {
   selectedNodeId: string;
   selectedNodeName: string;
   selectedPlanetLabel: string;
+  contextModeLabel: string;
+  contextModeSummary: string;
   launchContext: LaunchContext;
+  dataSpine: DataSpine;
   onAnchorChange: (nodeId: string) => void;
   onLaunchContextChange: (context: LaunchContext) => void;
+  onDataSpineChange: (payload: { profile: Profile; dailyCheckIn: DailyCheckIn; dailyFactors: DailyFactors }) => void;
   onLaunch: (mode: AppMode) => void;
 };
 
@@ -29,14 +35,6 @@ const MODE_ACTION_LABEL: Record<AppMode, string> = {
   graph: 'Разобрать причины',
   oracle: 'Открыть прогноз',
   settings: 'Открыть настройки',
-};
-
-const PRESSURE_HELP: Record<PressureId, string> = {
-  load: 'Слишком много задач и обязательств на текущий ресурс.',
-  'energy-drop': 'Энергии не хватает даже на важное.',
-  'attention-drift': 'Сложно удерживать внимание и темп.',
-  money: 'Расходы и обязательства мешают действовать спокойно.',
-  'goal-slip': 'Есть риск сорвать результат или срок.',
 };
 
 const INTENT_HELP: Record<EntryModeId, string> = {
@@ -53,11 +51,11 @@ const TARGET_HINT: Record<TargetFocusId, string> = {
 };
 
 const ENTRY_SCENE_OPTIONS = [
-  { id: 'fast' as const, label: 'Вернуть контроль', tone: 'stabilize' },
-  { id: 'analysis' as const, label: 'Найти корень проблемы', tone: 'analyze' },
-  { id: 'forecast' as const, label: 'Выбрать лучший следующий шаг', tone: 'trajectory' },
-  { id: 'fast' as const, label: 'Стабилизировать состояние', tone: 'stabilize' },
-  { id: 'analysis' as const, label: 'Восстановить ресурс', tone: 'recover' },
+  { id: 'fast' as const, label: 'Вернуть контроль' },
+  { id: 'analysis' as const, label: 'Найти корень проблемы' },
+  { id: 'forecast' as const, label: 'Выбрать лучший следующий шаг' },
+  { id: 'fast' as const, label: 'Стабилизировать состояние' },
+  { id: 'analysis' as const, label: 'Восстановить ресурс' },
 ];
 
 const PATH_LABEL: Record<AppMode, string> = {
@@ -78,42 +76,29 @@ const FIRST_STEP_BY_MODE: Record<AppMode, string> = {
   settings: 'Настройте интерфейс под комфорт чтения.',
 };
 
-const PRESSURE_SCORE: Record<PressureId, number> = {
-  load: 88,
-  'energy-drop': 72,
-  'attention-drift': 66,
-  money: 74,
-  'goal-slip': 81,
-};
-
-const HORIZON_FACTOR: Record<HorizonId, number> = {
-  today: 1,
-  week: 0.92,
-  month: 0.84,
-};
-
-const TARGET_SHIFT: Record<TargetFocusId, number> = {
-  'Удержать систему': 4,
-  'Снизить риск': 10,
-  'Усилить цель': -6,
-  'Восстановить ресурс': 7,
-};
-
-const ENTRY_SHIFT: Record<EntryModeId, number> = {
-  fast: 8,
-  analysis: 2,
-  forecast: -4,
-};
-
 const clamp = (value: number, min = 0, max = 100) => Math.min(max, Math.max(min, value));
+const round0 = (value: number) => Math.round(value);
+const round1 = (value: number) => Math.round(value * 10) / 10;
+
+const SCALE_FIELDS: { key: keyof DailyCheckIn; label: string }[] = [
+  { key: 'mood', label: 'Настроение' },
+  { key: 'energy', label: 'Энергия' },
+  { key: 'focus', label: 'Фокус' },
+  { key: 'pressure', label: 'Давление' },
+  { key: 'recovery', label: 'Восстановление' },
+];
 
 export const StartMode = ({
   selectedNodeId,
   selectedNodeName,
   selectedPlanetLabel,
+  contextModeLabel,
+  contextModeSummary,
   launchContext,
+  dataSpine,
   onAnchorChange,
   onLaunchContextChange,
+  onDataSpineChange,
   onLaunch,
 }: StartModeProps) => {
   const [pressureId, setPressureId] = useState<PressureId>(launchContext.pressureId);
@@ -121,6 +106,10 @@ export const StartMode = ({
   const [horizonId, setHorizonId] = useState<HorizonId>(launchContext.horizonId);
   const [targetFocus, setTargetFocus] = useState<TargetFocusId>(launchContext.targetFocus);
   const [showWhy, setShowWhy] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState<Profile>(dataSpine.profile);
+  const [checkInForm, setCheckInForm] = useState<DailyCheckIn>(dataSpine.dailyCheckIn);
+  const [factorsForm, setFactorsForm] = useState<DailyFactors>(dataSpine.dailyFactors);
 
   const selectedPressure = useMemo(
     () => PRESSURE_OPTIONS.find((option) => option.id === pressureId) ?? PRESSURE_OPTIONS[0],
@@ -132,17 +121,23 @@ export const StartMode = ({
   );
   const selectedHorizon = useMemo(() => HORIZONS.find((option) => option.id === horizonId) ?? HORIZONS[0], [horizonId]);
 
-  const suggestedMode = selectedEntryMode.id === 'fast' ? selectedPressure.recommendedMode : selectedEntryMode.recommendedMode;
+  const suggestedMode = useMemo(() => {
+    const { pressureValue, riskValue, readinessValue } = dataSpine.derived;
+    if (riskValue > 68 || pressureValue > 70) return 'world';
+    if (entryModeId === 'analysis') return 'graph';
+    if (entryModeId === 'forecast') return 'oracle';
+    if (readinessValue < 40) return 'world';
+    return selectedEntryMode.id === 'fast' ? selectedPressure.recommendedMode : selectedEntryMode.recommendedMode;
+  }, [dataSpine.derived, entryModeId, selectedEntryMode, selectedPressure]);
+
   const launchState: LaunchContext = { pressureId, entryModeId, horizonId, targetFocus };
 
-  const pressureValue = clamp(PRESSURE_SCORE[pressureId] * HORIZON_FACTOR[horizonId]);
-  const riskValue = clamp(pressureValue + TARGET_SHIFT[targetFocus] + ENTRY_SHIFT[entryModeId]);
-  const stabilityValue = clamp(100 - riskValue + (targetFocus === 'Восстановить ресурс' ? 10 : 0));
-  const readinessValue = clamp(100 - pressureValue + (entryModeId === 'fast' ? 15 : 6));
-  const leverageValue = clamp((stabilityValue + readinessValue) / 2 + (entryModeId === 'analysis' ? 8 : 0));
-  const errorCostValue = clamp(riskValue - (horizonId === 'month' ? 8 : 0));
+  const pressureValue = clamp(round1(dataSpine.derived.pressureValue));
+  const riskValue = clamp(round1(dataSpine.derived.riskValue));
+  const stabilityValue = clamp(round1(dataSpine.derived.stabilityValue));
+  const readinessValue = clamp(round1(dataSpine.derived.readinessValue));
+  const leverageValue = clamp(round1(dataSpine.derived.leverageValue));
 
-  const mainProblem = selectedPressure.label;
   const nextRisk = `${selectedPressure.risk} на горизонте ${selectedHorizon.label.toLowerCase()}.`;
   const bestStart = PATH_LABEL[suggestedMode];
   const weakPoint =
@@ -151,6 +146,15 @@ export const StartMode = ({
       : `${selectedNodeName} вне центра внимания, риск уходит в «${selectedPressure.label.toLowerCase()}».`;
 
   const dialAngle = -120 + (readinessValue / 100) * 240;
+
+  const updateScale = (key: keyof DailyCheckIn, value: number) => {
+    setCheckInForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const submitData = () => {
+    onDataSpineChange({ profile: profileForm, dailyCheckIn: checkInForm, dailyFactors: factorsForm });
+    setDrawerOpen(false);
+  };
 
   return (
     <div className="start-mode">
@@ -175,7 +179,7 @@ export const StartMode = ({
                 }}
               >
                 <span>{option.label}</span>
-                <small>{PRESSURE_HELP[option.id]}</small>
+                <small>{option.risk}</small>
               </button>
             ))}
           </div>
@@ -240,12 +244,7 @@ export const StartMode = ({
             </header>
             <div className="start-priority-capsules">
               {TARGETS.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className={option === targetFocus ? 'active' : ''}
-                  onClick={() => setTargetFocus(option)}
-                >
+                <button key={option} type="button" className={option === targetFocus ? 'active' : ''} onClick={() => setTargetFocus(option)}>
                   {option}
                 </button>
               ))}
@@ -255,12 +254,13 @@ export const StartMode = ({
       </section>
 
       <section className="start-console" aria-live="polite" aria-label="Launch console">
-        <article className="start-scene-context">
-          <p><span>Проблема</span><strong>{mainProblem}</strong></p>
-          <p><span>Цель</span><strong>{selectedEntryMode.label}</strong></p>
-          <p><span>Горизонт</span><strong>{selectedHorizon.label}</strong></p>
-          <p><span>Приоритет</span><strong>{targetFocus}</strong></p>
+        <article className="start-scene-context start-console-header">
+          <p className="start-context-kicker">Контекст сцены</p>
+          <p><span>Режим</span><strong>{contextModeLabel}</strong></p>
+          <p><span>Описание</span><strong>{contextModeSummary}</strong></p>
+          <p><span>Якорь</span><strong>{selectedNodeName}</strong></p>
           <p><span>Сцена</span><strong>{selectedPlanetLabel}</strong></p>
+          <button type="button" className="start-update-data" onClick={() => setDrawerOpen(true)}>Обновить входные данные</button>
         </article>
 
         <article className="start-main-dial" aria-label="Главный прибор состояния">
@@ -269,13 +269,13 @@ export const StartMode = ({
             <div className="dial-needle" style={{ transform: `translateX(-50%) rotate(${dialAngle}deg)` }} />
             <div className="dial-core">
               <p>Готовность хода</p>
-              <strong>{readinessValue}%</strong>
+              <strong>{round0(readinessValue)}%</strong>
             </div>
           </div>
           <div className="dial-legend">
-            <p><span>Давление</span><strong>{pressureValue}%</strong></p>
-            <p><span>Риск</span><strong>{riskValue}%</strong></p>
-            <p><span>Устойчивость</span><strong>{stabilityValue}%</strong></p>
+            <p><span>Давление</span><strong>{round1(pressureValue)}%</strong></p>
+            <p><span>Риск</span><strong>{round1(riskValue)}%</strong></p>
+            <p><span>Устойчивость</span><strong>{round1(stabilityValue)}%</strong></p>
           </div>
         </article>
 
@@ -284,21 +284,15 @@ export const StartMode = ({
             {[
               { label: 'Давление', value: pressureValue },
               { label: 'Рычаг', value: leverageValue },
-              { label: 'Цена ошибки', value: errorCostValue },
+              { label: 'Риск', value: riskValue },
               { label: 'Потенциал хода', value: readinessValue },
             ].map((metric) => (
               <div key={metric.label} className="mini-meter">
                 <p>{metric.label}</p>
                 <div className="mini-meter-track"><span style={{ width: `${metric.value}%` }} /></div>
-                <strong>{metric.value}%</strong>
+                <strong>{round1(metric.value)}%</strong>
               </div>
             ))}
-          </div>
-          <div className="start-mini-scene" aria-label="Мини-сцена запуска">
-            <div className="mini-scene-line" />
-            <div className="mini-scene-node input">Проблема</div>
-            <div className="mini-scene-node core">Ядро</div>
-            <div className="mini-scene-node output">Ход</div>
           </div>
         </article>
 
@@ -336,6 +330,53 @@ export const StartMode = ({
             ))}
           </div>
         </article>
+
+        {drawerOpen ? (
+          <aside className="start-data-drawer" aria-label="Обновить входные данные">
+            <div className="start-drawer-head">
+              <h3>Обновить входные данные</h3>
+              <button type="button" onClick={() => setDrawerOpen(false)}>✕</button>
+            </div>
+
+            <div className="start-drawer-block">
+              <p className="start-drawer-title">A. Профиль</p>
+              <label>Доход в месяц<input type="number" value={profileForm.monthlyIncome} onChange={(e) => setProfileForm((c) => ({ ...c, monthlyIncome: Number(e.target.value) }))} /></label>
+              <label>Фикс. расходы<input type="number" value={profileForm.monthlyFixedExpenses} onChange={(e) => setProfileForm((c) => ({ ...c, monthlyFixedExpenses: Number(e.target.value) }))} /></label>
+              <label>Резерв<input type="number" value={profileForm.reserveAmount} onChange={(e) => setProfileForm((c) => ({ ...c, reserveAmount: Number(e.target.value) }))} /></label>
+              <label>Норма сна (часы)<input type="number" step="0.5" value={profileForm.sleepTargetHours} onChange={(e) => setProfileForm((c) => ({ ...c, sleepTargetHours: Number(e.target.value) }))} /></label>
+              <label>База рабочей ёмкости (1-10)<input type="number" min={1} max={10} value={profileForm.workCapacityBaseline} onChange={(e) => setProfileForm((c) => ({ ...c, workCapacityBaseline: Number(e.target.value) }))} /></label>
+              <label>Активная цель<input type="text" value={profileForm.activeGoalTitle} onChange={(e) => setProfileForm((c) => ({ ...c, activeGoalTitle: e.target.value }))} /></label>
+              <label>Дедлайн цели<input type="date" value={profileForm.activeGoalDeadline} onChange={(e) => setProfileForm((c) => ({ ...c, activeGoalDeadline: e.target.value }))} /></label>
+              <label>Цена провала цели<input type="number" value={profileForm.activeGoalFailureCost} onChange={(e) => setProfileForm((c) => ({ ...c, activeGoalFailureCost: Number(e.target.value) }))} /></label>
+            </div>
+
+            <div className="start-drawer-block">
+              <p className="start-drawer-title">B. Состояние</p>
+              {SCALE_FIELDS.map((field) => (
+                <div key={field.key} className="scale-control">
+                  <p>{field.label}<strong>{checkInForm[field.key]}</strong></p>
+                  <input type="range" min={1} max={10} value={checkInForm[field.key]} onChange={(e) => updateScale(field.key, Number(e.target.value))} />
+                </div>
+              ))}
+            </div>
+
+            <div className="start-drawer-block">
+              <p className="start-drawer-title">C. Факторы</p>
+              <label>Сон (часы)<input type="number" step="0.5" value={factorsForm.sleepHours} onChange={(e) => setFactorsForm((c) => ({ ...c, sleepHours: Number(e.target.value) }))} /></label>
+              <label>Неплановые траты<input type="number" value={factorsForm.unplannedSpend} onChange={(e) => setFactorsForm((c) => ({ ...c, unplannedSpend: Number(e.target.value) }))} /></label>
+              <div className="workload-segment" role="tablist" aria-label="Уровень нагрузки">
+                {(['low', 'medium', 'high'] as WorkloadLevel[]).map((level) => (
+                  <button key={level} type="button" className={factorsForm.workloadLevel === level ? 'active' : ''} onClick={() => setFactorsForm((c) => ({ ...c, workloadLevel: level }))}>{level}</button>
+                ))}
+              </div>
+              <label className="toggle-row"><input type="checkbox" checked={factorsForm.hadConflict} onChange={(e) => setFactorsForm((c) => ({ ...c, hadConflict: e.target.checked }))} /> Был конфликт</label>
+              <label className="toggle-row"><input type="checkbox" checked={factorsForm.hadWorkout} onChange={(e) => setFactorsForm((c) => ({ ...c, hadWorkout: e.target.checked }))} /> Была тренировка</label>
+              <label className="toggle-row"><input type="checkbox" checked={factorsForm.lateCaffeine} onChange={(e) => setFactorsForm((c) => ({ ...c, lateCaffeine: e.target.checked }))} /> Кофеин поздно</label>
+            </div>
+
+            <button type="button" className="start-drawer-save" onClick={submitData}>Применить и пересчитать</button>
+          </aside>
+        ) : null}
       </section>
     </div>
   );
