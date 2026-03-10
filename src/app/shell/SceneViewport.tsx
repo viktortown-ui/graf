@@ -95,6 +95,7 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               contextModeLabel={activeModeLabel}
               contextModeSummary={activeModeSummary}
               dataSpine={sceneState.dataSpine}
+              confidence={sceneState.confidence}
               onDataSpineChange={sceneState.updateDataSpine}
               onAnchorChange={(id) => sceneState.selectGraphNode(id, settingsState.settings.autoFocusNode)}
               launchContext={sceneState.launchContext}
