@@ -81,6 +81,8 @@ const FIRST_STEP_BY_MODE: Record<AppMode, string> = {
 const clamp = (value: number, min = 0, max = 100) => Math.min(max, Math.max(min, value));
 const round0 = (value: number) => Math.round(value);
 const round1 = (value: number) => Math.round(value * 10) / 10;
+const formatPercent0 = (value: number) => `${round0(clamp(value))}%`;
+const formatPercent1 = (value: number) => `${round1(clamp(value)).toFixed(1)}%`;
 
 
 const DOMAIN_LABEL: Record<string, string> = {
@@ -91,9 +93,15 @@ const DOMAIN_LABEL: Record<string, string> = {
 };
 
 const PRIORITY_LABEL: Record<string, string> = {
-  critical: 'critical',
-  recommended: 'recommended',
-  later: 'later',
+  critical: 'Критично',
+  recommended: 'Рекомендуется',
+  later: 'Позже',
+};
+
+const SECTION_LABEL: Record<'profile' | 'state' | 'factors', string> = {
+  profile: 'Профиль',
+  state: 'Состояние',
+  factors: 'Факторы',
 };
 
 const SCALE_FIELDS: { key: keyof DailyCheckIn; label: string }[] = [
@@ -163,6 +171,12 @@ export const StartMode = ({
       : `${selectedNodeName} вне центра внимания, риск уходит в «${selectedPressure.label.toLowerCase()}».`;
 
   const dialAngle = -120 + (readinessValue / 100) * 240;
+  const missingHighlights = confidence.missingCriticalFields.length
+    ? confidence.missingCriticalFields.slice(0, 3).map((field) => field.replace(/\s*\([^)]*\)/g, '')).join(', ')
+    : 'критичные поля заполнены';
+  const nextUnlockText = confidence.nextUnlock
+    ? `${confidence.nextUnlock.title} через ${confidence.nextUnlock.daysLeft} дн.`
+    : 'все уровни истории уже открыты';
 
   const updateScale = (key: keyof DailyCheckIn, value: number) => {
     setCheckInForm((current) => ({ ...current, [key]: value }));
@@ -284,15 +298,15 @@ export const StartMode = ({
           <div className="dial-shell">
             <div className="dial-ring" style={{ ['--dial-progress' as string]: `${readinessValue}` }} />
             <div className="dial-needle" style={{ transform: `translateX(-50%) rotate(${dialAngle}deg)` }} />
-            <div className="dial-core">
+          <div className="dial-core">
               <p>Готовность хода</p>
-              <strong>{round0(readinessValue)}%</strong>
+              <strong>{formatPercent0(readinessValue)}</strong>
             </div>
           </div>
           <div className="dial-legend">
-            <p><span>Давление</span><strong>{round1(pressureValue)}%</strong></p>
-            <p><span>Риск</span><strong>{round1(riskValue)}%</strong></p>
-            <p><span>Устойчивость</span><strong>{round1(stabilityValue)}%</strong></p>
+            <p><span>Давление</span><strong>{formatPercent1(pressureValue)}</strong></p>
+            <p><span>Риск</span><strong>{formatPercent1(riskValue)}</strong></p>
+            <p><span>Устойчивость</span><strong>{formatPercent1(stabilityValue)}</strong></p>
           </div>
         </article>
 
@@ -307,7 +321,7 @@ export const StartMode = ({
               <div key={metric.label} className="mini-meter">
                 <p>{metric.label}</p>
                 <div className="mini-meter-track"><span style={{ width: `${metric.value}%` }} /></div>
-                <strong>{round1(metric.value)}%</strong>
+                <strong>{formatPercent1(metric.value)}</strong>
               </div>
             ))}
           </div>
@@ -315,8 +329,8 @@ export const StartMode = ({
 
         <article className="start-confidence-zone">
           <div className="start-confidence-head">
-            <p>Точность данных</p>
-            <strong>{confidence.globalConfidence}%</strong>
+            <p>Уверенность модели</p>
+            <strong>{formatPercent0(confidence.globalConfidence)}</strong>
           </div>
           <div className="mini-meter-track"><span style={{ width: `${confidence.globalConfidence}%` }} /></div>
           <div className="start-confidence-domains">
@@ -324,15 +338,15 @@ export const StartMode = ({
               <div key={domain} className="mini-meter">
                 <p>{DOMAIN_LABEL[domain]}</p>
                 <div className="mini-meter-track"><span style={{ width: `${value}%` }} /></div>
-                <strong>{value}%</strong>
+                <strong>{formatPercent0(value)}</strong>
               </div>
             ))}
           </div>
           <p className="start-confidence-missing">
-            Для точного прогноза не хватает: {confidence.missingCriticalFields.length ? confidence.missingCriticalFields.slice(0, 3).join(', ') : 'критичные поля заполнены'}
+            <span>Для точного прогноза:</span> {missingHighlights}
           </p>
           <p className="start-confidence-next">
-            Следующее открытие: {confidence.nextUnlock ? `${confidence.nextUnlock.title} через ${confidence.nextUnlock.daysLeft} дн.` : 'открыты все уровни истории'}
+            <span>Следующее открытие:</span> {nextUnlockText}
           </p>
         </article>
 
@@ -391,12 +405,12 @@ export const StartMode = ({
                   const value = field.key in profile ? profile[field.key] : field.key in checkin ? checkin[field.key] : factors[field.key];
                   return typeof value === 'number' ? value > 0 : typeof value === 'string' ? value.trim().length > 0 : typeof value === 'boolean';
                 }).length;
-                return <p key={section}><span>{section}</span><strong>{filled}/{sectionFields.length}</strong></p>;
+                return <p key={section}><span>{SECTION_LABEL[section]}</span><strong>{filled}/{sectionFields.length}</strong></p>;
               })}
               <div className="start-field-hints">
                 {CONFIDENCE_FIELDS.map((field) => (
                   <div key={field.key} className="start-field-hint">
-                    <p><strong>{field.label}</strong> <em>{PRIORITY_LABEL[field.priority]}</em></p>
+                    <p><strong>{field.label}</strong><em>{PRIORITY_LABEL[field.priority]}</em></p>
                     <small>{field.reason}</small>
                   </div>
                 ))}
