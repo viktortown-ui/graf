@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { DEMO_GRAPH } from '../../features/graph/model';
 import { WORLD_PLANETS } from '../../features/world/worldPlanets';
+import type { DailyCheckIn, DailyFactors, Profile } from './dataSpine';
+import { createDataSpine } from './dataSpine';
 import { DEFAULT_LAUNCH_CONTEXT, PRESSURE_OPTIONS, type LaunchContext } from './launchContext';
 
 export type SceneSelection = {
@@ -39,6 +41,7 @@ export const useSceneState = () => {
   const [graphLens, setGraphLens] = useState<SpatialLens>(DEFAULT_GRAPH_LENS);
   const [worldCamera, setWorldCamera] = useState(DEFAULT_WORLD_CAMERA);
   const [launchContext, setLaunchContext] = useState<LaunchContext>(DEFAULT_LAUNCH_CONTEXT);
+  const [dataSpine, setDataSpine] = useState(createDataSpine);
 
   const selectedGraphNode = useMemo(
     () => DEMO_GRAPH.nodes.find((node) => node.id === selection.graphNodeId) ?? DEMO_GRAPH.nodes[0],
@@ -95,6 +98,10 @@ export const useSceneState = () => {
     }));
   };
 
+  const updateDataSpine = (payload: { profile: Profile; dailyCheckIn: DailyCheckIn; dailyFactors: DailyFactors }) => {
+    setDataSpine(createDataSpine(payload.profile, payload.dailyCheckIn, payload.dailyFactors));
+  };
+
   return {
     selection,
     selectedGraphNode,
@@ -102,9 +109,11 @@ export const useSceneState = () => {
     graphLens,
     worldCamera,
     launchContext,
+    dataSpine,
     setGraphLens,
     setWorldCamera,
     applyLaunchContext,
+    updateDataSpine,
     selectWorldPlanet,
     selectGraphNode,
     resetView: () => {
@@ -119,6 +128,7 @@ export const useSceneState = () => {
     resetLaunch: () => {
       setLaunchContext(DEFAULT_LAUNCH_CONTEXT);
       setSelection(DEFAULT_SELECTION);
+      setDataSpine(createDataSpine());
     },
   };
 };

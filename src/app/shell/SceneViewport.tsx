@@ -61,7 +61,9 @@ const getThemeVars = (settings: AppSettings) => {
 export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }: SceneViewportProps) => {
   const signal = MODE_SIGNAL[mode];
   const styleVars = getThemeVars(settingsState.settings);
-  const activeModeLabel = MODES.find((entry) => entry.id === mode)?.label ?? 'Неизвестно';
+  const activeModeDefinition = MODES.find((entry) => entry.id === mode);
+  const activeModeLabel = activeModeDefinition?.label ?? 'Неизвестно';
+  const activeModeSummary = activeModeDefinition?.summary ?? '';
   const showServiceHud = mode !== 'overview';
 
   return (
@@ -90,6 +92,10 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               selectedNodeId={sceneState.selection.graphNodeId}
               selectedNodeName={sceneState.selectedGraphNode.name}
               selectedPlanetLabel={sceneState.selectedPlanetLabel}
+              contextModeLabel={activeModeLabel}
+              contextModeSummary={activeModeSummary}
+              dataSpine={sceneState.dataSpine}
+              onDataSpineChange={sceneState.updateDataSpine}
               onAnchorChange={(id) => sceneState.selectGraphNode(id, settingsState.settings.autoFocusNode)}
               launchContext={sceneState.launchContext}
               onLaunchContextChange={sceneState.applyLaunchContext}
