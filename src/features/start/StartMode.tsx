@@ -52,6 +52,13 @@ const TARGET_HINT: Record<TargetFocusId, string> = {
   'Восстановить ресурс': 'Возвращаем энергию и рабочий ритм без перегрева.',
 };
 
+const MODULE_DETAILS = {
+  pressure: 'Показывает главный источник давления — именно от него зависит, куда уйдёт система без вмешательства.',
+  intent: 'Фиксирует желаемый результат запуска: не «от чего бежим», а «куда направляем усилие».',
+  horizon: 'Горизонт задаёт окно оценки: один и тот же шаг по-разному выглядит на сегодня, неделю и месяц.',
+  priority: 'Режим приоритета определяет, что получит ресурс в первую очередь при ограниченной ёмкости.',
+} as const;
+
 const ENTRY_SCENE_OPTIONS = [
   { id: 'fast' as const, label: 'Вернуть контроль' },
   { id: 'analysis' as const, label: 'Найти корень проблемы' },
@@ -131,6 +138,7 @@ export const StartMode = ({
   const [horizonId, setHorizonId] = useState<HorizonId>(launchContext.horizonId);
   const [targetFocus, setTargetFocus] = useState<TargetFocusId>(launchContext.targetFocus);
   const [showWhy, setShowWhy] = useState(false);
+  const [openHint, setOpenHint] = useState<keyof typeof MODULE_DETAILS | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [profileForm, setProfileForm] = useState<Profile>(dataSpine.profile);
   const [checkInForm, setCheckInForm] = useState<DailyCheckIn>(dataSpine.dailyCheckIn);
@@ -197,13 +205,17 @@ export const StartMode = ({
               <p className="start-module-kicker">Блок 1</p>
               <h3>Что мешает сильнее всего</h3>
             </div>
+            <button type="button" className="start-module-info" aria-label="Пояснение к блоку проблемы" onClick={() => setOpenHint((current) => current === 'pressure' ? null : 'pressure')}>?</button>
           </header>
+          <p className="start-module-helper">Выберите главный источник давления, который перехватывает управление прямо сейчас.</p>
+          {openHint === 'pressure' ? <p className="start-module-detail">{MODULE_DETAILS.pressure}</p> : null}
           <div className="start-select-list">
             {PRESSURE_OPTIONS.map((option) => (
               <button
                 key={option.id}
                 type="button"
                 className={option.id === pressureId ? 'active' : ''}
+                aria-pressed={option.id === pressureId}
                 onClick={() => {
                   setPressureId(option.id);
                   onAnchorChange(option.anchorNodeId);
@@ -214,6 +226,7 @@ export const StartMode = ({
               </button>
             ))}
           </div>
+          <p className="start-active-line pressure">Главное давление: <strong>{selectedPressure.label}</strong> · {selectedPressure.risk}.</p>
         </article>
 
         <article className="start-module start-module-intent">
@@ -223,13 +236,17 @@ export const StartMode = ({
               <p className="start-module-kicker">Блок 2</p>
               <h3>Что хотите получить сейчас</h3>
             </div>
+            <button type="button" className="start-module-info" aria-label="Пояснение к блоку цели" onClick={() => setOpenHint((current) => current === 'intent' ? null : 'intent')}>?</button>
           </header>
+          <p className="start-module-helper">Зафиксируйте намерение запуска: к какому результату ведёте систему в этом цикле.</p>
+          {openHint === 'intent' ? <p className="start-module-detail">{MODULE_DETAILS.intent}</p> : null}
           <div className="start-select-list intent">
             {ENTRY_SCENE_OPTIONS.map((option, index) => (
               <button
                 key={`${option.label}-${index}`}
                 type="button"
                 className={option.id === entryModeId ? 'active' : ''}
+                aria-pressed={option.id === entryModeId}
                 onClick={() => setEntryModeId(option.id)}
                 title={INTENT_HELP[option.id]}
               >
@@ -238,6 +255,7 @@ export const StartMode = ({
               </button>
             ))}
           </div>
+          <p className="start-active-line intent">Текущий вектор: <strong>{selectedEntryMode.label}</strong>.</p>
         </article>
 
         <div className="start-bottom-row">
@@ -248,7 +266,10 @@ export const StartMode = ({
                 <p className="start-module-kicker">Блок 3</p>
                 <h3>Горизонт</h3>
               </div>
+              <button type="button" className="start-module-info" aria-label="Пояснение к горизонту" onClick={() => setOpenHint((current) => current === 'horizon' ? null : 'horizon')}>?</button>
             </header>
+            <p className="start-module-helper">Окно оценки результата: когда вы хотите увидеть эффект первого хода.</p>
+            {openHint === 'horizon' ? <p className="start-module-detail">{MODULE_DETAILS.horizon}</p> : null}
             <div className="start-segmented" role="tablist" aria-label="Горизонт запуска">
               {HORIZONS.map((option) => (
                 <button
@@ -259,10 +280,12 @@ export const StartMode = ({
                   className={option.id === horizonId ? 'active' : ''}
                   onClick={() => setHorizonId(option.id)}
                 >
-                  {option.label}
+                  <span>{option.label}</span>
+                  <small>{option.oracleHorizon} шага</small>
                 </button>
               ))}
             </div>
+            <p className="start-active-line horizon">Смотрим на горизонт: <strong>{selectedHorizon.label}</strong>.</p>
           </article>
 
           <article className="start-module start-module-priority">
@@ -272,14 +295,18 @@ export const StartMode = ({
                 <p className="start-module-kicker">Блок 4</p>
                 <h3>Что сейчас важнее</h3>
               </div>
+              <button type="button" className="start-module-info" aria-label="Пояснение к режиму приоритета" onClick={() => setOpenHint((current) => current === 'priority' ? null : 'priority')}>?</button>
             </header>
+            <p className="start-module-helper">Режим распределения ресурса: что система должна защищать в первую очередь.</p>
+            {openHint === 'priority' ? <p className="start-module-detail">{MODULE_DETAILS.priority}</p> : null}
             <div className="start-priority-capsules">
               {TARGETS.map((option) => (
-                <button key={option} type="button" className={option === targetFocus ? 'active' : ''} onClick={() => setTargetFocus(option)}>
-                  {option}
+                <button key={option} type="button" className={option === targetFocus ? 'active' : ''} aria-pressed={option === targetFocus} onClick={() => setTargetFocus(option)}>
+                  <span>{option}</span>
                 </button>
               ))}
             </div>
+            <p className="start-active-line priority">Приоритет режима: <strong>{targetFocus}</strong>.</p>
           </article>
         </div>
       </section>
