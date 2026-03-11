@@ -1395,6 +1395,18 @@ button {
   letter-spacing: 0.04em;
 }
 
+
+.world-domain-node-hit {
+  cursor: pointer;
+}
+
+.world-domain-score {
+  fill: #f1fbff;
+  font-size: 14px;
+  font-weight: 560;
+  letter-spacing: 0.02em;
+}
+
 .scene-mode-content.graph {
   inset: 0;
   display: block;
@@ -1879,7 +1891,7 @@ button {
 .world-domain-grid {
   position: absolute;
   right: 1rem;
-  top: 16.2rem;
+  top: 11.7rem;
   z-index: 4;
   width: min(360px, 31vw);
   display: grid;
@@ -1890,7 +1902,7 @@ button {
   border: 1px solid rgba(136, 172, 230, 0.2);
   border-radius: 0.7rem;
   background: rgba(7, 16, 33, 0.45);
-  padding: 0.5rem 0.58rem;
+  padding: 0.42rem 0.55rem;
 }
 
 .world-domain-card.active {
@@ -1901,7 +1913,7 @@ button {
 .world-domain-card-title {
   margin: 0 0 0.2rem;
   color: #edfbff;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
 }
 
 .world-domain-card p {
