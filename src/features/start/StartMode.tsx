@@ -30,15 +30,6 @@ type StartModeProps = {
   onLaunch: (mode: AppMode) => void;
 };
 
-const MODE_ACTION_LABEL: Record<AppMode, string> = {
-  overview: 'Открыть обзор',
-  start: 'Вернуться в Старт',
-  world: 'Открыть Мир',
-  graph: 'Разобрать причины',
-  oracle: 'Открыть прогноз',
-  settings: 'Открыть настройки',
-};
-
 const INTENT_HELP: Record<EntryModeId, string> = {
   fast: 'За 1 шаг вернуть управляемость и снять перегруз.',
   analysis: 'Найти корень, чтобы не бороться с симптомами.',
@@ -83,6 +74,15 @@ const FIRST_STEP_BY_MODE: Record<AppMode, string> = {
   graph: 'Откройте граф причин и выделите ветку с наибольшим эффектом.',
   oracle: 'Откройте прогноз и сравните базовый и усиленный сценарий.',
   settings: 'Настройте интерфейс под комфорт чтения.',
+};
+
+const MODE_SHORT_LABEL: Record<AppMode, string> = {
+  overview: 'Обзор',
+  start: 'Старт',
+  world: 'Мир',
+  graph: 'Граф',
+  oracle: 'Прогноз',
+  settings: 'Настройки',
 };
 
 const clamp = (value: number, min = 0, max = 100) => Math.min(max, Math.max(min, value));
@@ -170,6 +170,8 @@ export const StartMode = ({
   const stabilityValue = clamp(round1(dataSpine.derived.stabilityValue));
   const readinessValue = clamp(round1(dataSpine.derived.readinessValue));
   const leverageValue = clamp(round1(dataSpine.derived.leverageValue));
+  const movePotential = clamp(round1((readinessValue * 0.64) + (leverageValue * 0.36)));
+  const errorCostValue = clamp(round1((riskValue * 0.55) + (pressureValue * 0.45)));
 
   const nextRisk = `${selectedPressure.risk} на горизонте ${selectedHorizon.label.toLowerCase()}.`;
   const bestStart = PATH_LABEL[suggestedMode];
@@ -185,6 +187,8 @@ export const StartMode = ({
   const nextUnlockText = confidence.nextUnlock
     ? `${confidence.nextUnlock.title} через ${confidence.nextUnlock.daysLeft} дн.`
     : 'все уровни истории уже открыты';
+  const readinessState = readinessValue >= 70 ? 'Готов к запуску' : readinessValue >= 45 ? 'Нужен точный первый ход' : 'Сначала стабилизация';
+  const confidenceState = confidence.globalConfidence >= 70 ? 'доверие устойчивое' : confidence.globalConfidence >= 45 ? 'доверие среднее' : 'доверие низкое';
 
   const updateScale = (key: keyof DailyCheckIn, value: number) => {
     setCheckInForm((current) => ({ ...current, [key]: value }));
@@ -315,9 +319,11 @@ export const StartMode = ({
         <article className="start-scene-context start-console-header">
           <p className="start-context-kicker">Контекст сцены</p>
           <p><span>Режим</span><strong>{contextModeLabel}</strong></p>
-          <p><span>Описание</span><strong>{contextModeSummary}</strong></p>
-          <p><span>Якорь</span><strong>{selectedNodeName}</strong></p>
-          <p><span>Сцена</span><strong>{selectedPlanetLabel}</strong></p>
+          <p><span>Контур</span><strong>{selectedPlanetLabel} · {contextModeSummary}</strong></p>
+          <p><span>Проблема</span><strong>{selectedPressure.label}</strong></p>
+          <p><span>Цель</span><strong>{selectedEntryMode.label}</strong></p>
+          <p><span>Горизонт</span><strong>{selectedHorizon.label}</strong></p>
+          <p><span>Приоритет</span><strong>{targetFocus}</strong></p>
           <button type="button" className="start-update-data" onClick={() => setDrawerOpen(true)}>Обновить входные данные</button>
         </article>
 
@@ -326,26 +332,29 @@ export const StartMode = ({
             <div className="dial-ring" style={{ ['--dial-progress' as string]: `${readinessValue}` }} />
             <div className="dial-needle" style={{ transform: `translateX(-50%) rotate(${dialAngle}deg)` }} />
           <div className="dial-core">
-              <p>Готовность хода</p>
+              <p>Readiness</p>
               <strong>{formatPercent0(readinessValue)}</strong>
+              <small>{readinessState}</small>
             </div>
           </div>
           <div className="dial-legend">
-            <p><span>Давление</span><strong>{formatPercent1(pressureValue)}</strong></p>
-            <p><span>Риск</span><strong>{formatPercent1(riskValue)}</strong></p>
-            <p><span>Устойчивость</span><strong>{formatPercent1(stabilityValue)}</strong></p>
+            <p><span>Контур сейчас</span><strong>{readinessState}</strong></p>
+            <p><span>Доверие модели</span><strong>{confidenceState}</strong></p>
+            <p><span>Ядро напряжения</span><strong>{selectedNodeName}</strong></p>
           </div>
         </article>
 
         <article className="start-secondary-zone">
           <div className="start-meter-grid">
             {[
-              { label: 'Давление', value: pressureValue },
-              { label: 'Рычаг', value: leverageValue },
-              { label: 'Риск', value: riskValue },
-              { label: 'Потенциал хода', value: readinessValue },
+              { label: 'Давление', value: pressureValue, tone: 'alert' },
+              { label: 'Риск', value: riskValue, tone: 'alert' },
+              { label: 'Устойчивость', value: stabilityValue, tone: 'good' },
+              { label: 'Рычаг', value: leverageValue, tone: 'good' },
+              { label: 'Потенциал хода', value: movePotential, tone: 'good' },
+              { label: 'Цена ошибки', value: errorCostValue, tone: 'alert' },
             ].map((metric) => (
-              <div key={metric.label} className="mini-meter">
+              <div key={metric.label} className={`mini-meter ${metric.tone}`}>
                 <p>{metric.label}</p>
                 <div className="mini-meter-track"><span style={{ width: `${metric.value}%` }} /></div>
                 <strong>{formatPercent1(metric.value)}</strong>
@@ -360,6 +369,7 @@ export const StartMode = ({
             <strong>{formatPercent0(confidence.globalConfidence)}</strong>
           </div>
           <div className="mini-meter-track"><span style={{ width: `${confidence.globalConfidence}%` }} /></div>
+          <p className="start-confidence-note">Текущий уровень: <strong>{confidenceState}</strong>.</p>
           <div className="start-confidence-domains">
             {(Object.entries(confidence.domainConfidence) as [keyof typeof confidence.domainConfidence, number][]).map(([domain, value]) => (
               <div key={domain} className="mini-meter">
@@ -370,17 +380,33 @@ export const StartMode = ({
             ))}
           </div>
           <p className="start-confidence-missing">
-            <span>Для точного прогноза:</span> {missingHighlights}
+            <span>Для точного прогноза не хватает:</span> {missingHighlights}
           </p>
           <p className="start-confidence-next">
             <span>Следующее открытие:</span> {nextUnlockText}
           </p>
         </article>
 
+        <article className="start-mini-scene" aria-label="Проблема ядро ход">
+          <span className="mini-scene-line" aria-hidden="true" />
+          <div className="mini-scene-node">
+            <p>Проблема</p>
+            <strong>{selectedPressure.label}</strong>
+          </div>
+          <div className="mini-scene-node core">
+            <p>Ядро</p>
+            <strong>{selectedNodeName}</strong>
+          </div>
+          <div className="mini-scene-node action">
+            <p>Первый ход</p>
+            <strong>{MODE_SHORT_LABEL[suggestedMode]}</strong>
+          </div>
+        </article>
+
         <article className="start-console-verdict">
-          <p><span>Система видит:</span><strong>{weakPoint}</strong></p>
+          <p><span>Вердикт:</span><strong>{weakPoint}</strong></p>
           <p><span>Главный риск:</span><strong>{nextRisk}</strong></p>
-          <p><span>Лучший рычаг:</span><strong>{TARGET_HINT[targetFocus]}</strong></p>
+          <p><span>Рычаг:</span><strong>{TARGET_HINT[targetFocus]}</strong></p>
           <p><span>Первый ход:</span><strong>{FIRST_STEP_BY_MODE[suggestedMode]}</strong></p>
           <button type="button" className="start-why-toggle" onClick={() => setShowWhy((state) => !state)}>
             {showWhy ? 'Скрыть почему' : 'Почему система так решила?'}
@@ -388,13 +414,14 @@ export const StartMode = ({
           {showWhy ? <p className="start-why-line">{bestStart}. {INTENT_HELP[entryModeId]}</p> : null}
           <div className="start-launch-row">
             <button
+              className="primary"
               type="button"
               onClick={() => {
                 onLaunchContextChange(launchState);
                 onLaunch(suggestedMode);
               }}
             >
-              Перейти в рекомендованный режим
+              Запустить: {MODE_SHORT_LABEL[suggestedMode]}
             </button>
             {(['world', 'graph', 'oracle'] as AppMode[]).map((mode) => (
               <button
@@ -406,7 +433,7 @@ export const StartMode = ({
                   onLaunch(mode);
                 }}
               >
-                {MODE_ACTION_LABEL[mode]}
+                {MODE_SHORT_LABEL[mode]}
               </button>
             ))}
           </div>
