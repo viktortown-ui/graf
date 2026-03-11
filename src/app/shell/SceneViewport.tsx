@@ -100,6 +100,7 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               onDataSpineChange={sceneState.updateDataSpine}
               onAnchorChange={(id) => sceneState.selectGraphNode(id, settingsState.settings.autoFocusNode)}
               launchContext={sceneState.launchContext}
+              chainContext={sceneState.chainContext}
               onLaunchContextChange={sceneState.applyLaunchContext}
               onLaunch={onModeChange}
             />
@@ -110,6 +111,7 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               launchContext={sceneState.launchContext}
               dataSpine={sceneState.dataSpine}
               confidence={sceneState.confidence}
+              chainContext={sceneState.chainContext}
               onSelectPlanet={sceneState.selectWorldPlanet}
               onModeChange={onModeChange}
               onGraphHandoff={sceneState.applyWorldGraphHandoff}
@@ -127,6 +129,7 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               settings={settingsState.settings}
               confidence={sceneState.confidence}
               handoff={sceneState.graphHandoff}
+              chainContext={sceneState.chainContext}
               onModeChange={onModeChange}
               onOracleHandoff={sceneState.applyGraphOracleHandoff}
             />
@@ -138,6 +141,8 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               launchContext={sceneState.launchContext}
               settings={settingsState.settings}
               handoff={sceneState.oracleHandoff}
+              chainContext={sceneState.chainContext}
+              onApplyScenario={sceneState.applyOracleScenario}
               onModeChange={onModeChange}
             />
           )}

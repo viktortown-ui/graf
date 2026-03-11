@@ -3,7 +3,7 @@ import type { AppMode } from '../../entities/system/modes';
 import { DEMO_GRAPH } from '../graph/model';
 import { HORIZONS, PRESSURE_OPTIONS, type LaunchContext } from '../../app/state/launchContext';
 import type { AppSettings } from '../../app/state/settingsModel';
-import type { OracleExecutionHandoff } from '../../app/state/useSceneState';
+import type { AcceptedScenario, ChainContext, OracleExecutionHandoff } from '../../app/state/useSceneState';
 import { propagateGraphScenario } from '../graph/engine';
 
 type Horizon = 3 | 7 | 14;
@@ -19,6 +19,8 @@ type OracleModeProps = {
     zoom: number;
   };
   handoff: OracleExecutionHandoff | null;
+  chainContext: ChainContext;
+  onApplyScenario: (scenario: AcceptedScenario) => void;
   onModeChange: (mode: AppMode) => void;
 };
 
@@ -37,7 +39,7 @@ type ScenarioCard = {
 
 const scoreToLabel = (value: number) => (value >= 66 ? 'высокий' : value >= 45 ? 'средний' : 'низкий');
 
-export const OracleMode = ({ launchContext, selectedNodeId, handoff, onModeChange }: OracleModeProps) => {
+export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContext, onApplyScenario, onModeChange }: OracleModeProps) => {
   const pressure = PRESSURE_OPTIONS.find((option) => option.id === launchContext.pressureId) ?? PRESSURE_OPTIONS[0];
   const horizon = (HORIZONS.find((entry) => entry.id === launchContext.horizonId)?.oracleHorizon ?? 7) as Horizon;
 
@@ -132,8 +134,27 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, onModeChang
 
   const recommendedScenario = scenarios.find((entry) => entry.recommended) ?? scenarios[1];
 
+  const applyScenario = (scenario: ScenarioCard) => {
+    const nextMode = scenario.id === 'collect-data' ? 'start' : scenario.id === 'cautious' ? 'world' : 'graph';
+    onApplyScenario({
+      id: scenario.id,
+      title: scenario.title,
+      move: scenario.move,
+      sourceDomain: oracleContext.activeDomain,
+      nextMode,
+    });
+    onModeChange(nextMode);
+  };
+
   return (
     <div className={`oracle-mode oracle-execution ${lowConfidence ? 'is-caution' : ''}`} aria-label="Oracle 2.0 выбор сценария">
+      <div className="chain-route-memory" aria-label="Маршрут GRAF">
+        {(['start', 'world', 'graph', 'oracle'] as const).map((step) => (
+          <span key={step} className={`chain-step ${chainContext.currentStep === step ? 'active' : ''} ${chainContext.routeMemory.includes(step) ? 'visited' : ''}`}>
+            {step === 'start' ? 'Start' : step === 'world' ? 'Мир' : step === 'graph' ? 'Graph' : 'Oracle'}
+          </span>
+        ))}
+      </div>
       <header className="oracle-summary-compact">
         <p className="scene-mode-kicker">Oracle 2.0 · execution chooser</p>
         <h3>{oracleContext.activeDomain} · линза «{oracleContext.selectedLens}»</h3>
@@ -173,11 +194,18 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, onModeChang
       </aside>
 
       <div className="oracle-cta-path">
-        <button type="button" onClick={() => onModeChange('world')}>Принять сценарий: {recommendedScenario.title}</button>
+        <button type="button" onClick={() => applyScenario(recommendedScenario)}>Принять сценарий: {recommendedScenario.title}</button>
         <button type="button" className="ghost" onClick={() => onModeChange('graph')}>Вернуться в Graph</button>
         <button type="button" className="ghost" onClick={() => onModeChange('world')}>Вернуться в Мир</button>
         <button type="button" className="ghost" onClick={() => onModeChange('start')}>Подкрутить запуск в Start</button>
       </div>
+
+      {chainContext.lastAcceptedScenario ? (
+        <aside className="oracle-accepted-state" aria-label="Принятый сценарий">
+          <p>Принятый сценарий: <strong>{chainContext.lastAcceptedScenario.title}</strong></p>
+          <p>Тип хода: <strong>{chainContext.lastAcceptedScenario.id}</strong> · следующий шаг: <strong>{chainContext.lastAcceptedScenario.nextMode === 'world' ? 'Мир' : chainContext.lastAcceptedScenario.nextMode === 'graph' ? 'Graph' : 'Start'}</strong></p>
+        </aside>
+      ) : null}
     </div>
   );
 };

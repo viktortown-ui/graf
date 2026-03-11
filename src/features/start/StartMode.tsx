@@ -11,6 +11,7 @@ import {
   type PressureId,
   type TargetFocusId,
 } from '../../app/state/launchContext';
+import type { ChainContext } from '../../app/state/useSceneState';
 import type { DailyCheckIn, DailyFactors, DataSpine, Profile, WorkloadLevel } from '../../app/state/dataSpine';
 import { CONFIDENCE_FIELDS, type ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
 
@@ -22,6 +23,7 @@ type StartModeProps = {
   contextModeLabel: string;
   contextModeSummary: string;
   launchContext: LaunchContext;
+  chainContext: ChainContext;
   dataSpine: DataSpine;
   confidence: ConfidenceSnapshot;
   onAnchorChange: (nodeId: string) => void;
@@ -189,6 +191,7 @@ export const StartMode = ({
   contextModeLabel,
   contextModeSummary,
   launchContext,
+  chainContext,
   dataSpine,
   confidence,
   onAnchorChange,
@@ -379,6 +382,16 @@ export const StartMode = ({
 
   return (
     <div className="start-mode">
+      <div className="chain-route-memory" aria-label="Маршрут GRAF">
+        {(['start', 'world', 'graph', 'oracle'] as const).map((step) => (
+          <span
+            key={step}
+            className={`chain-step ${chainContext.currentStep === step ? 'active' : ''} ${chainContext.routeMemory.includes(step) ? 'visited' : ''}`}
+          >
+            {step === 'start' ? 'Start' : step === 'world' ? 'Мир' : step === 'graph' ? 'Graph' : 'Oracle'}
+          </span>
+        ))}
+      </div>
       <section className="start-input-column" aria-label="Входные условия запуска">
         <article className="start-module start-module-pressure">
           <header>
