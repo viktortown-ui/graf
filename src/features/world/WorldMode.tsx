@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'react';
 import type { AppMode } from '../../entities/system/modes';
 import { HORIZONS, PRESSURE_OPTIONS, TARGET_EDGE_HINT, type LaunchContext } from '../../app/state/launchContext';
-import type { GraphReadingLens, WorldGraphHandoff } from '../../app/state/useSceneState';
+import type { ChainContext, GraphReadingLens, WorldGraphHandoff } from '../../app/state/useSceneState';
 import type { DataSpine } from '../../app/state/dataSpine';
 import type { AppSettings } from '../../app/state/settingsModel';
 import type { ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
@@ -198,6 +198,7 @@ type WorldModeProps = {
   launchContext: LaunchContext;
   dataSpine: DataSpine;
   confidence: ConfidenceSnapshot;
+  chainContext: ChainContext;
   onSelectPlanet: (planetId: string) => void;
   onModeChange: (mode: AppMode) => void;
   onGraphHandoff: (handoff: WorldGraphHandoff) => void;
@@ -208,6 +209,7 @@ export const WorldMode = ({
   launchContext,
   dataSpine,
   confidence,
+  chainContext,
   onSelectPlanet,
   onModeChange,
   camera,
@@ -537,6 +539,13 @@ export const WorldMode = ({
 
   return (
     <div className="world-mode" aria-label="Сцена системного мира">
+      <div className="chain-route-memory" aria-label="Маршрут GRAF">
+        {(['start', 'world', 'graph', 'oracle'] as const).map((step) => (
+          <span key={step} className={`chain-step ${chainContext.currentStep === step ? 'active' : ''} ${chainContext.routeMemory.includes(step) ? 'visited' : ''}`}>
+            {step === 'start' ? 'Start' : step === 'world' ? 'Мир' : step === 'graph' ? 'Graph' : 'Oracle'}
+          </span>
+        ))}
+      </div>
       <div className="world-overlay">
         <p className="world-kicker">Мир 2.0 · Операционная карта</p>
         <p className="world-selected">Активный контур: {activeDomain.label} · {round(activeDomain.pressure)}% давления</p>
@@ -549,6 +558,7 @@ export const WorldMode = ({
         <p>Главный сигнал: <strong>{layer === 'resources' ? `устойчивость ${round(activeDomain.stability)}%` : `${round(activeDomain.pressure)}% давления · ${round(activeDomain.risk)}% риска`}</strong></p>
         {weakestConfidenceDomain.confidence < 58 ? <p>Предупреждение по уверенности: <strong>{weakestConfidenceDomain.label}</strong> ({weakestConfidenceDomain.confidence}%).</p> : null}
         <p>Следующий переход: <strong>{ctaMode === 'graph' ? `Граф — причины в ${activeDomain.label.toLowerCase()}` : `Оракул — ход для ${activeDomain.label.toLowerCase()}`}</strong>.</p>
+        {chainContext.lastAcceptedScenario ? <p>Принят в Oracle: <strong>{chainContext.lastAcceptedScenario.title}</strong> → следующий цикл для «{chainContext.lastAcceptedScenario.sourceDomain}».</p> : null}
         <p>{lensBehavior.ctaHint}</p>
       </div>
 

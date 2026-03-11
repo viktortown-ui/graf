@@ -32,6 +32,10 @@ export const AppShell = () => {
     }
   }, [activeMode, devLabEnabled, setActiveMode]);
 
+  useEffect(() => {
+    sceneState.registerModeVisit(activeMode);
+  }, [activeMode, sceneState]);
+
   const visibleModes = useMemo(
     () => MODES.filter((mode) => (mode.id === 'datalab' ? devLabEnabled : true)),
     [devLabEnabled],

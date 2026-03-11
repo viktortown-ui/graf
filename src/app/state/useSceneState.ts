@@ -48,6 +48,31 @@ export type SceneSelection = {
   graphNodeId: string;
 };
 
+type ChainStep = 'start' | 'world' | 'graph' | 'oracle';
+
+export type AcceptedScenario = {
+  id: 'cautious' | 'base' | 'strong' | 'collect-data';
+  title: string;
+  move: string;
+  sourceDomain: string;
+  nextMode: ChainStep;
+};
+
+export type ChainContext = {
+  launchContext: LaunchContext;
+  activeDomain: WorldGraphHandoff['activeDomain'] | null;
+  selectedLens: GraphReadingLens;
+  worldToGraphHandoff: WorldGraphHandoff | null;
+  graphToOracleHandoff: OracleExecutionHandoff | null;
+  selectedOracleScenario: AcceptedScenario | null;
+  lastAcceptedScenario: AcceptedScenario | null;
+  recommendedPath: ChainStep[];
+  routeMemory: ChainStep[];
+  currentStep: ChainStep;
+  lastBlocker: string | null;
+  lastLeverage: string | null;
+};
+
 export type SpatialLens = {
   panX: number;
   panY: number;
@@ -90,6 +115,20 @@ export const useSceneState = () => {
   const [historyDates, setHistoryDates] = useState<string[]>([new Date().toISOString().slice(0, 10)]);
   const [graphHandoff, setGraphHandoff] = useState<WorldGraphHandoff | null>(null);
   const [oracleHandoff, setOracleHandoff] = useState<OracleExecutionHandoff | null>(null);
+  const [chainContext, setChainContext] = useState<ChainContext>({
+    launchContext: DEFAULT_LAUNCH_CONTEXT,
+    activeDomain: null,
+    selectedLens: 'pressure',
+    worldToGraphHandoff: null,
+    graphToOracleHandoff: null,
+    selectedOracleScenario: null,
+    lastAcceptedScenario: null,
+    recommendedPath: ['start', 'world', 'graph', 'oracle'],
+    routeMemory: ['start'],
+    currentStep: 'start',
+    lastBlocker: null,
+    lastLeverage: null,
+  });
   const confidence = useMemo(() => evaluateConfidence({ dataSpine, historyDates }), [dataSpine, historyDates]);
 
   const selectedGraphNode = useMemo(
@@ -145,6 +184,14 @@ export const useSceneState = () => {
       worldPlanetId: selectedPlanet ?? current.worldPlanetId,
       graphNodeId: selectedGraph ?? current.graphNodeId,
     }));
+    setChainContext((current) => ({
+      ...current,
+      launchContext: next,
+      selectedOracleScenario: null,
+      recommendedPath: ['start', 'world', next.entryModeId === 'forecast' ? 'oracle' : 'graph', 'oracle'],
+      routeMemory: ['start'],
+      currentStep: 'start',
+    }));
   };
 
   const applyWorldGraphHandoff = (handoff: WorldGraphHandoff) => {
@@ -155,10 +202,47 @@ export const useSceneState = () => {
     if (handoff.confidence.global < 55) {
       setGraphLens((current) => ({ ...current, zoom: 0.92 }));
     }
+    setChainContext((current) => ({
+      ...current,
+      launchContext: handoff.launchContext,
+      activeDomain: handoff.activeDomain,
+      selectedLens: handoff.selectedLens,
+      worldToGraphHandoff: handoff,
+      recommendedPath: ['start', 'world', handoff.recommendedTransition === 'oracle' ? 'oracle' : 'graph', 'oracle'],
+    }));
   };
 
   const applyGraphOracleHandoff = (handoff: OracleExecutionHandoff) => {
     setOracleHandoff(handoff);
+    setChainContext((current) => ({
+      ...current,
+      launchContext: handoff.launchContext,
+      activeDomain: handoff.activeDomain,
+      selectedLens: handoff.selectedLens,
+      graphToOracleHandoff: handoff,
+      lastBlocker: handoff.blocker,
+      lastLeverage: handoff.leverageNode,
+      recommendedPath: ['start', 'world', 'graph', 'oracle'],
+    }));
+  };
+
+  const applyOracleScenario = (scenario: AcceptedScenario) => {
+    setChainContext((current) => ({
+      ...current,
+      selectedOracleScenario: scenario,
+      lastAcceptedScenario: scenario,
+      recommendedPath: ['start', 'world', 'graph', 'oracle'],
+    }));
+  };
+
+  const registerModeVisit = (mode: string) => {
+    if (!['start', 'world', 'graph', 'oracle'].includes(mode)) return;
+    const step = mode as ChainStep;
+    setChainContext((current) => ({
+      ...current,
+      currentStep: step,
+      routeMemory: current.routeMemory.includes(step) ? current.routeMemory : [...current.routeMemory, step],
+    }));
   };
 
   const updateDataSpine = (payload: { profile: Profile; dailyCheckIn: DailyCheckIn; dailyFactors: DailyFactors }) => {
@@ -179,11 +263,14 @@ export const useSceneState = () => {
     confidence,
     graphHandoff,
     oracleHandoff,
+    chainContext,
     setGraphLens,
     setWorldCamera,
     applyLaunchContext,
     applyWorldGraphHandoff,
     applyGraphOracleHandoff,
+    applyOracleScenario,
+    registerModeVisit,
     updateDataSpine,
     selectWorldPlanet,
     selectGraphNode,
@@ -203,6 +290,20 @@ export const useSceneState = () => {
       setHistoryDates([new Date().toISOString().slice(0, 10)]);
       setGraphHandoff(null);
       setOracleHandoff(null);
+      setChainContext({
+        launchContext: DEFAULT_LAUNCH_CONTEXT,
+        activeDomain: null,
+        selectedLens: 'pressure',
+        worldToGraphHandoff: null,
+        graphToOracleHandoff: null,
+        selectedOracleScenario: null,
+        lastAcceptedScenario: null,
+        recommendedPath: ['start', 'world', 'graph', 'oracle'],
+        routeMemory: ['start'],
+        currentStep: 'start',
+        lastBlocker: null,
+        lastLeverage: null,
+      });
     },
   };
 };
