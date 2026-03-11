@@ -112,6 +112,7 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               confidence={sceneState.confidence}
               onSelectPlanet={sceneState.selectWorldPlanet}
               onModeChange={onModeChange}
+              onGraphHandoff={sceneState.applyWorldGraphHandoff}
               camera={sceneState.worldCamera}
               onCameraChange={sceneState.setWorldCamera}
               settings={settingsState.settings}
@@ -123,8 +124,10 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               onSelectNode={(id) => sceneState.selectGraphNode(id, settingsState.settings.autoFocusNode)}
               lens={sceneState.graphLens}
               onLensChange={sceneState.setGraphLens}
-              launchContext={sceneState.launchContext}
               settings={settingsState.settings}
+              confidence={sceneState.confidence}
+              handoff={sceneState.graphHandoff}
+              onModeChange={onModeChange}
             />
           )}
           {mode === 'oracle' && (

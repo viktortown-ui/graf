@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'react';
 import type { AppMode } from '../../entities/system/modes';
 import { HORIZONS, PRESSURE_OPTIONS, TARGET_EDGE_HINT, type LaunchContext } from '../../app/state/launchContext';
+import type { GraphReadingLens, WorldGraphHandoff } from '../../app/state/useSceneState';
 import type { DataSpine } from '../../app/state/dataSpine';
 import type { AppSettings } from '../../app/state/settingsModel';
 import type { ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
@@ -199,6 +200,7 @@ type WorldModeProps = {
   confidence: ConfidenceSnapshot;
   onSelectPlanet: (planetId: string) => void;
   onModeChange: (mode: AppMode) => void;
+  onGraphHandoff: (handoff: WorldGraphHandoff) => void;
 };
 
 export const WorldMode = ({
@@ -211,6 +213,7 @@ export const WorldMode = ({
   camera,
   onCameraChange,
   settings,
+  onGraphHandoff,
 }: WorldModeProps) => {
   const [time, setTime] = useState(0);
   const [hoveredPlanetId, setHoveredPlanetId] = useState<string | null>(null);
@@ -369,6 +372,35 @@ export const WorldMode = ({
 
   const weakestConfidenceDomain = domainCards.slice().sort((a, b) => a.confidence - b.confidence)[0] ?? domainCards[0];
   const ctaMode = layer === 'resources' || layer === 'goals' ? 'oracle' : getRecommendedMode(activeDomain);
+
+  const worldLayerToGraphLens: Record<WorldLayer, GraphReadingLens> = {
+    pressure: 'pressure',
+    resources: 'resources',
+    goals: 'goals',
+    risks: 'causes',
+  };
+
+  const handoff: WorldGraphHandoff = {
+    activeDomain: {
+      id: activeDomain.id,
+      label: activeDomain.label,
+      nodeId: PLANET_TO_DOMAIN_NODE[activeDomain.primaryPlanetId] ?? pressure.anchorNodeId,
+    },
+    selectedLens: worldLayerToGraphLens[layer],
+    launchContext,
+    derivedMetrics: {
+      pressure: activeDomain.pressure,
+      risk: activeDomain.risk,
+      leverage: activeDomain.leverage,
+      stability: activeDomain.stability,
+      readiness: activeDomain.readiness,
+    },
+    confidence: {
+      global: confidence.globalConfidence,
+      domain: activeDomain.confidence,
+    },
+    recommendedTransition: ctaMode === 'oracle' ? 'oracle' : activeDomain.confidence < 50 ? 'world' : 'graph',
+  };
 
   const recommendedProfile = profiles
     .slice()
@@ -568,7 +600,7 @@ export const WorldMode = ({
       </div>
 
       <div className="world-handoff">
-        <button type="button" className={ctaMode === 'graph' ? '' : 'ghost'} onClick={() => onModeChange('graph')}>Graph: раскрыть причины в «{activeDomain.label}»</button>
+        <button type="button" className={ctaMode === 'graph' ? '' : 'ghost'} onClick={() => { onGraphHandoff(handoff); onModeChange('graph'); }}>Graph: раскрыть причины в «{activeDomain.label}»</button>
         <button type="button" onClick={() => onModeChange('oracle')} className={ctaMode === 'oracle' ? '' : 'ghost'}>Oracle: выбрать ход для «{activeDomain.label}»</button>
         <button type="button" className="ghost" onClick={() => onModeChange('start')}>Start: перенастроить запуск под эту карту</button>
       </div>

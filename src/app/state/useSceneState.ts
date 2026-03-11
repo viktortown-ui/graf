@@ -6,6 +6,30 @@ import { createDataSpine } from './dataSpine';
 import { evaluateConfidence } from '../../entities/confidence/confidenceEngine';
 import { DEFAULT_LAUNCH_CONTEXT, PRESSURE_OPTIONS, type LaunchContext } from './launchContext';
 
+export type GraphReadingLens = 'pressure' | 'resources' | 'goals' | 'causes';
+
+export type WorldGraphHandoff = {
+  activeDomain: {
+    id: 'finance' | 'body' | 'work' | 'goal';
+    label: string;
+    nodeId: string;
+  };
+  selectedLens: GraphReadingLens;
+  launchContext: LaunchContext;
+  derivedMetrics: {
+    pressure: number;
+    risk: number;
+    leverage: number;
+    stability: number;
+    readiness: number;
+  };
+  confidence: {
+    global: number;
+    domain: number;
+  };
+  recommendedTransition: 'graph' | 'oracle' | 'world' | 'start';
+};
+
 export type SceneSelection = {
   worldPlanetId: string;
   graphNodeId: string;
@@ -24,6 +48,13 @@ const DEFAULT_SELECTION: SceneSelection = {
 
 const DEFAULT_GRAPH_LENS: SpatialLens = { panX: 0, panY: 0, zoom: 1 };
 const DEFAULT_WORLD_CAMERA = { rotation: 0, panX: 0, panY: 0, zoom: 1 };
+
+const DOMAIN_TO_GRAPH_NODE: Record<WorldGraphHandoff['activeDomain']['id'], string> = {
+  finance: 'domain-money',
+  body: 'domain-energy',
+  work: 'domain-focus',
+  goal: 'goal-launch',
+};
 
 const WORLD_TO_GRAPH_NODE: Record<string, string> = {
   energy: 'domain-energy',
@@ -44,6 +75,7 @@ export const useSceneState = () => {
   const [launchContext, setLaunchContext] = useState<LaunchContext>(DEFAULT_LAUNCH_CONTEXT);
   const [dataSpine, setDataSpine] = useState(createDataSpine);
   const [historyDates, setHistoryDates] = useState<string[]>([new Date().toISOString().slice(0, 10)]);
+  const [graphHandoff, setGraphHandoff] = useState<WorldGraphHandoff | null>(null);
   const confidence = useMemo(() => evaluateConfidence({ dataSpine, historyDates }), [dataSpine, historyDates]);
 
   const selectedGraphNode = useMemo(
@@ -101,6 +133,16 @@ export const useSceneState = () => {
     }));
   };
 
+  const applyWorldGraphHandoff = (handoff: WorldGraphHandoff) => {
+    setGraphHandoff(handoff);
+    setLaunchContext(handoff.launchContext);
+    const focusNode = DOMAIN_TO_GRAPH_NODE[handoff.activeDomain.id] ?? handoff.activeDomain.nodeId;
+    selectGraphNode(focusNode, true);
+    if (handoff.confidence.global < 55) {
+      setGraphLens((current) => ({ ...current, zoom: 0.92 }));
+    }
+  };
+
   const updateDataSpine = (payload: { profile: Profile; dailyCheckIn: DailyCheckIn; dailyFactors: DailyFactors }) => {
     setDataSpine(createDataSpine(payload.profile, payload.dailyCheckIn, payload.dailyFactors));
     const today = new Date().toISOString().slice(0, 10);
@@ -117,9 +159,11 @@ export const useSceneState = () => {
     dataSpine,
     historyDates,
     confidence,
+    graphHandoff,
     setGraphLens,
     setWorldCamera,
     applyLaunchContext,
+    applyWorldGraphHandoff,
     updateDataSpine,
     selectWorldPlanet,
     selectGraphNode,
@@ -137,6 +181,7 @@ export const useSceneState = () => {
       setSelection(DEFAULT_SELECTION);
       setDataSpine(createDataSpine());
       setHistoryDates([new Date().toISOString().slice(0, 10)]);
+      setGraphHandoff(null);
     },
   };
 };
