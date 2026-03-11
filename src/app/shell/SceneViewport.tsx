@@ -108,6 +108,8 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
             <WorldMode
               selectedPlanetId={sceneState.selection.worldPlanetId}
               launchContext={sceneState.launchContext}
+              dataSpine={sceneState.dataSpine}
+              confidence={sceneState.confidence}
               onSelectPlanet={sceneState.selectWorldPlanet}
               onModeChange={onModeChange}
               camera={sceneState.worldCamera}
