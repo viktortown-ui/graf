@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { AppMode } from '../../entities/system/modes';
 import { DEMO_GRAPH } from '../graph/model';
 import { HORIZONS, PRESSURE_OPTIONS, type LaunchContext } from '../../app/state/launchContext';
 import type { AppSettings } from '../../app/state/settingsModel';
 import type { AcceptedScenario, ChainContext, OracleExecutionHandoff } from '../../app/state/useSceneState';
 import { propagateGraphScenario } from '../graph/engine';
+import { ChainRouteMemory } from '../../shared/ui/ChainRouteMemory';
+import { AcceptedScenarioCard } from '../../shared/ui/AcceptedScenarioCard';
 
 type Horizon = 3 | 7 | 14;
 type ScenarioTone = 'cautious' | 'base' | 'strong' | 'collect-data';
@@ -40,6 +42,7 @@ type ScenarioCard = {
 const scoreToLabel = (value: number) => (value >= 66 ? 'высокий' : value >= 45 ? 'средний' : 'низкий');
 
 export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContext, onApplyScenario, onModeChange }: OracleModeProps) => {
+  const [postApplyNextMode, setPostApplyNextMode] = useState<AppMode | null>(null);
   const pressure = PRESSURE_OPTIONS.find((option) => option.id === launchContext.pressureId) ?? PRESSURE_OPTIONS[0];
   const horizon = (HORIZONS.find((entry) => entry.id === launchContext.horizonId)?.oracleHorizon ?? 7) as Horizon;
 
@@ -143,20 +146,14 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
       sourceDomain: oracleContext.activeDomain,
       nextMode,
     });
-    onModeChange(nextMode);
+    setPostApplyNextMode(nextMode);
   };
 
   return (
     <div className={`oracle-mode oracle-execution ${lowConfidence ? 'is-caution' : ''}`} aria-label="Oracle 2.0 выбор сценария">
-      <div className="chain-route-memory" aria-label="Маршрут GRAF">
-        {(['start', 'world', 'graph', 'oracle'] as const).map((step) => (
-          <span key={step} className={`chain-step ${chainContext.currentStep === step ? 'active' : ''} ${chainContext.routeMemory.includes(step) ? 'visited' : ''}`}>
-            {step === 'start' ? 'Start' : step === 'world' ? 'Мир' : step === 'graph' ? 'Graph' : 'Oracle'}
-          </span>
-        ))}
-      </div>
+      <ChainRouteMemory chainContext={chainContext} />
       <header className="oracle-summary-compact">
-        <p className="scene-mode-kicker">Oracle 2.0 · execution chooser</p>
+        <p className="scene-mode-kicker">Oracle · выбор сценария</p>
         <h3>{oracleContext.activeDomain} · линза «{oracleContext.selectedLens}»</h3>
         <p>Blocker: <strong>{oracleContext.blocker}</strong> · Leverage: <strong>{oracleContext.leverageNode}</strong></p>
         <p>
@@ -194,17 +191,18 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
       </aside>
 
       <div className="oracle-cta-path">
-        <button type="button" onClick={() => applyScenario(recommendedScenario)}>Принять сценарий: {recommendedScenario.title}</button>
+        <button type="button" onClick={() => applyScenario(recommendedScenario)}>Принять сценарий</button>
         <button type="button" className="ghost" onClick={() => onModeChange('graph')}>Вернуться в Graph</button>
         <button type="button" className="ghost" onClick={() => onModeChange('world')}>Вернуться в Мир</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Подкрутить запуск в Start</button>
+        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Start</button>
       </div>
 
-      {chainContext.lastAcceptedScenario ? (
-        <aside className="oracle-accepted-state" aria-label="Принятый сценарий">
-          <p>Принятый сценарий: <strong>{chainContext.lastAcceptedScenario.title}</strong></p>
-          <p>Тип хода: <strong>{chainContext.lastAcceptedScenario.id}</strong> · следующий шаг: <strong>{chainContext.lastAcceptedScenario.nextMode === 'world' ? 'Мир' : chainContext.lastAcceptedScenario.nextMode === 'graph' ? 'Graph' : 'Start'}</strong></p>
-        </aside>
+      {chainContext.lastAcceptedScenario ? <AcceptedScenarioCard scenario={chainContext.lastAcceptedScenario} tone="oracle" /> : null}
+      {postApplyNextMode ? (
+        <div className="oracle-post-apply">
+          <p>Сценарий сохранён. Следующий лучший шаг — <strong>{postApplyNextMode === 'world' ? 'вернуться в Мир' : postApplyNextMode === 'graph' ? 'вернуться в Graph' : 'вернуться в Start'}</strong>.</p>
+          <button type="button" onClick={() => onModeChange(postApplyNextMode)}>Продолжить</button>
+        </div>
       ) : null}
     </div>
   );

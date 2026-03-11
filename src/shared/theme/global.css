@@ -2499,14 +2499,19 @@ button {
 
 .chain-step {
   font-size: 0.64rem;
-  color: #88a7cf;
+  color: #7f97b8;
   padding: 0.22rem 0.5rem;
   border-radius: 999px;
   border: 1px solid transparent;
 }
 
 .chain-step.visited {
-  color: #c5dbf7;
+  color: #bfd7f6;
+}
+
+.chain-step.next {
+  color: #96b7de;
+  border-color: rgba(119, 162, 224, 0.28);
 }
 
 .chain-step.active {
@@ -2515,15 +2520,41 @@ button {
   background: rgba(42, 90, 146, 0.46);
 }
 
-.oracle-accepted-state {
+.accepted-scenario-card {
   border: 1px solid rgba(126, 228, 186, 0.38);
   background: rgba(12, 35, 28, 0.52);
   border-radius: 0.8rem;
-  padding: 0.7rem 0.9rem;
+  padding: 0.62rem 0.82rem;
+  margin-top: 0.7rem;
 }
 
-.oracle-accepted-state p {
-  margin: 0.2rem 0;
+.accepted-scenario-card.oracle {
+  margin-top: 0.2rem;
+}
+
+.accepted-scenario-card p {
+  margin: 0.16rem 0;
   font-size: 0.8rem;
   color: #c8f1df;
+}
+
+.accepted-scenario-card .accepted-scenario-title {
+  color: #daf9eb;
+}
+
+.oracle-post-apply {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  border: 1px solid rgba(137, 189, 255, 0.35);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.72rem;
+  background: rgba(12, 20, 36, 0.7);
+}
+
+.oracle-post-apply p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #d6e6ff;
 }

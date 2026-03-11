@@ -79,10 +79,26 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               {mode !== 'start' ? <p className="scene-hud-metric">Пульс {Math.round(signal.pulse * 100)}%</p> : null}
             </header>
             <div className="scene-anchor-memory" aria-live="polite">
-              <p>Якорь системы: <strong>{sceneState.selectedGraphNode.name}</strong></p>
-              <p>Планета мира: <strong>{sceneState.selectedPlanetLabel}</strong></p>
-              <p>Давление запуска: <strong>{PRESSURE_OPTIONS.find((entry) => entry.id === sceneState.launchContext.pressureId)?.label ?? 'Не задано'}</strong></p>
-              <p>Контур перехода: <strong>Обзор → Старт → Мир → {mode === 'graph' ? 'Граф причин' : mode === 'oracle' ? 'Прогноз' : mode === 'datalab' ? 'Data Lab' : 'оперативный выбор'}</strong></p>
+              {mode === 'start' ? <p>Запуск цикла: <strong>подтвердите вход и выберите первый шаг</strong>.</p> : null}
+              {mode === 'world' ? (
+                <>
+                  <p>Активный контур: <strong>{sceneState.chainContext.activeDomain?.label ?? sceneState.selectedPlanetLabel}</strong></p>
+                  <p>Режим чтения: <strong>{sceneState.chainContext.selectedLens}</strong></p>
+                </>
+              ) : null}
+              {mode === 'graph' ? (
+                <>
+                  <p>Домен: <strong>{sceneState.chainContext.activeDomain?.label ?? 'не выбран'}</strong> · линза <strong>{sceneState.chainContext.selectedLens}</strong></p>
+                  <p>Causal focus: <strong>{sceneState.chainContext.lastBlocker ?? sceneState.selectedGraphNode.name}</strong></p>
+                </>
+              ) : null}
+              {mode === 'oracle' ? (
+                <>
+                  <p>Blocker: <strong>{sceneState.chainContext.lastBlocker ?? 'уточняется'}</strong> · Leverage: <strong>{sceneState.chainContext.lastLeverage ?? 'уточняется'}</strong></p>
+                  <p>Режим: <strong>выбор сценария</strong></p>
+                </>
+              ) : null}
+              {mode === 'datalab' ? <p>Давление запуска: <strong>{PRESSURE_OPTIONS.find((entry) => entry.id === sceneState.launchContext.pressureId)?.label ?? 'Не задано'}</strong></p> : null}
             </div>
           </>
         ) : null}
