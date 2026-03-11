@@ -123,6 +123,7 @@ const actionLabel: Record<AppMode, string> = {
   oracle: 'Перейти в Прогноз',
   start: 'Вернуться в Старт',
   settings: 'Открыть настройки',
+  datalab: 'Открыть Data Lab',
 };
 
 type WorldModeProps = {

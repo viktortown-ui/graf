@@ -59,6 +59,16 @@ const iconByMode: Record<AppMode, ReactNode> = {
       <path d="M8.2 18.2h6.2" />
     </svg>
   ),
+  datalab: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4.8 6.5h14.4" />
+      <path d="M6.4 12h11.2" />
+      <path d="M8.2 17.5h7.6" />
+      <circle cx="7" cy="6.5" r="1.4" />
+      <circle cx="12" cy="12" r="1.4" />
+      <circle cx="16.6" cy="17.5" r="1.4" />
+    </svg>
+  ),
   settings: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M5.2 7h13.6" />

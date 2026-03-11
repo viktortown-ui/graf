@@ -3,6 +3,7 @@ import { GraphMode } from '../../features/graph/GraphMode';
 import { OverviewMode } from '../../features/overview/OverviewMode';
 import { OracleMode } from '../../features/oracle/OracleMode';
 import { SettingsMode } from '../../features/settings/SettingsMode';
+import { DataLabMode } from '../../features/dataLab/DataLabMode';
 import { StartMode } from '../../features/start/StartMode';
 import { WorldMode } from '../../features/world/WorldMode';
 import type { AppMode } from '../../entities/system/modes';
@@ -81,7 +82,7 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               <p>Якорь системы: <strong>{sceneState.selectedGraphNode.name}</strong></p>
               <p>Планета мира: <strong>{sceneState.selectedPlanetLabel}</strong></p>
               <p>Давление запуска: <strong>{PRESSURE_OPTIONS.find((entry) => entry.id === sceneState.launchContext.pressureId)?.label ?? 'Не задано'}</strong></p>
-              <p>Контур перехода: <strong>Обзор → Старт → Мир → {mode === 'graph' ? 'Граф причин' : mode === 'oracle' ? 'Прогноз' : 'оперативный выбор'}</strong></p>
+              <p>Контур перехода: <strong>Обзор → Старт → Мир → {mode === 'graph' ? 'Граф причин' : mode === 'oracle' ? 'Прогноз' : mode === 'datalab' ? 'Data Lab' : 'оперативный выбор'}</strong></p>
             </div>
           </>
         ) : null}
@@ -130,6 +131,14 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               sharedLens={sceneState.graphLens}
               launchContext={sceneState.launchContext}
               settings={settingsState.settings}
+            />
+          )}
+          {mode === 'datalab' && (
+            <DataLabMode
+              dataSpine={sceneState.dataSpine}
+              confidence={sceneState.confidence}
+              historyDates={sceneState.historyDates}
+              onApplySandbox={sceneState.updateDataSpine}
             />
           )}
           {mode === 'settings' && (
