@@ -1848,6 +1848,68 @@ button {
   border-color: rgba(123, 232, 255, 0.8);
 }
 
+
+.world-operational-summary {
+  position: absolute;
+  left: 1rem;
+  top: 9.3rem;
+  z-index: 4;
+  width: min(390px, 35vw);
+  border: 1px solid rgba(131, 170, 230, 0.24);
+  border-radius: 0.76rem;
+  background: linear-gradient(180deg, rgba(8, 18, 37, 0.52), rgba(6, 11, 22, 0.2));
+  padding: 0.58rem 0.7rem;
+  backdrop-filter: blur(7px);
+}
+
+.world-operational-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9fc5ef;
+}
+
+.world-operational-summary p {
+  margin: 0.2rem 0;
+  font-size: 0.72rem;
+  color: #bed3ee;
+}
+
+.world-domain-grid {
+  position: absolute;
+  right: 1rem;
+  top: 16.2rem;
+  z-index: 4;
+  width: min(360px, 31vw);
+  display: grid;
+  gap: 0.42rem;
+}
+
+.world-domain-card {
+  border: 1px solid rgba(136, 172, 230, 0.2);
+  border-radius: 0.7rem;
+  background: rgba(7, 16, 33, 0.45);
+  padding: 0.5rem 0.58rem;
+}
+
+.world-domain-card.active {
+  border-color: rgba(132, 238, 255, 0.8);
+  box-shadow: 0 0 16px rgba(115, 210, 255, 0.2);
+}
+
+.world-domain-card-title {
+  margin: 0 0 0.2rem;
+  color: #edfbff;
+  font-size: 0.8rem;
+}
+
+.world-domain-card p {
+  margin: 0.14rem 0;
+  color: #b9cfed;
+  font-size: 0.7rem;
+}
+
 .world-domain-readout {
   position: absolute;
   right: 1rem;
