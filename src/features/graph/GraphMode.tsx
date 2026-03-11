@@ -3,6 +3,7 @@ import type { AppMode } from '../../entities/system/modes';
 import type { ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
 import type { AppSettings } from '../../app/state/settingsModel';
 import type { ChainContext, GraphReadingLens, OracleExecutionHandoff, WorldGraphHandoff } from '../../app/state/useSceneState';
+import { ChainRouteMemory } from '../../shared/ui/ChainRouteMemory';
 import { DEMO_GRAPH, type GraphEdge, type GraphEdgeType, type GraphNode } from './model';
 
 type GraphModeProps = {
@@ -210,21 +211,15 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
 
   return (
     <div className={`graph-mode ${lowConfidence ? 'confidence-low' : ''}`}>
-      <div className="chain-route-memory" aria-label="Маршрут GRAF">
-        {(['start', 'world', 'graph', 'oracle'] as const).map((step) => (
-          <span key={step} className={`chain-step ${chainContext.currentStep === step ? 'active' : ''} ${chainContext.routeMemory.includes(step) ? 'visited' : ''}`}>
-            {step === 'start' ? 'Start' : step === 'world' ? 'Мир' : step === 'graph' ? 'Graph' : 'Oracle'}
-          </span>
-        ))}
-      </div>
+      <ChainRouteMemory chainContext={chainContext} />
       <header className="graph-summary-bar">
         <div>
-          <p className="graph-kicker">Graph 2.0 · causal drilldown</p>
+          <p className="graph-kicker">Graph · причинный фокус</p>
           <h3>{handoff?.activeDomain.label ?? 'Активный домен'} · линза «{LENS_LABEL[activeLens]}»</h3>
-          <p>Risk signal: {Math.round(handoff?.derivedMetrics.risk ?? 0)}% · Pressure: {Math.round(handoff?.derivedMetrics.pressure ?? 0)}%</p>
+          <p>Сейчас главное: blocker «{blocker}» и рычаг «{leverageNode}».</p>
         </div>
         <div className="graph-summary-confidence">
-          <p>Confidence {Math.round(confidenceGlobal)}% / domain {Math.round(confidenceDomain)}%</p>
+          <p>Уверенность {Math.round(confidenceGlobal)}% / домен {Math.round(confidenceDomain)}%</p>
           {lowConfidence ? <p className="graph-warning">Низкая уверенность: {confidencePrompt}</p> : <p className="graph-ok">Причинная картина достаточно устойчива.</p>}
         </div>
       </header>
@@ -279,9 +274,9 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
       </aside>
 
       <div className="graph-cta-row">
+        <button type="button" className={recommendedRoute === 'oracle' ? '' : 'ghost'} onClick={() => { onOracleHandoff(oracleHandoff); onModeChange('oracle'); }}>Продолжить в Oracle</button>
         <button type="button" className={recommendedRoute === 'world' ? '' : 'ghost'} onClick={() => onModeChange('world')}>Вернуться в Мир</button>
-        <button type="button" className={recommendedRoute === 'oracle' ? '' : 'ghost'} onClick={() => { onOracleHandoff(oracleHandoff); onModeChange('oracle'); }}>Перейти в Oracle</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Подкрутить запуск в Start</button>
+        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Start</button>
       </div>
     </div>
   );

@@ -7,6 +7,8 @@ import type { AppSettings } from '../../app/state/settingsModel';
 import type { ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
 import { DEMO_GRAPH, type GraphEdge, type GraphNode } from '../graph/model';
 import { STATE_COPY, WORLD_PLANETS } from './worldPlanets';
+import { ChainRouteMemory } from '../../shared/ui/ChainRouteMemory';
+import { AcceptedScenarioCard } from '../../shared/ui/AcceptedScenarioCard';
 
 export type CameraState = {
   rotation: number;
@@ -539,13 +541,7 @@ export const WorldMode = ({
 
   return (
     <div className="world-mode" aria-label="Сцена системного мира">
-      <div className="chain-route-memory" aria-label="Маршрут GRAF">
-        {(['start', 'world', 'graph', 'oracle'] as const).map((step) => (
-          <span key={step} className={`chain-step ${chainContext.currentStep === step ? 'active' : ''} ${chainContext.routeMemory.includes(step) ? 'visited' : ''}`}>
-            {step === 'start' ? 'Start' : step === 'world' ? 'Мир' : step === 'graph' ? 'Graph' : 'Oracle'}
-          </span>
-        ))}
-      </div>
+      <ChainRouteMemory chainContext={chainContext} />
       <div className="world-overlay">
         <p className="world-kicker">Мир 2.0 · Операционная карта</p>
         <p className="world-selected">Активный контур: {activeDomain.label} · {round(activeDomain.pressure)}% давления</p>
@@ -555,11 +551,9 @@ export const WorldMode = ({
       <div className="world-operational-summary" aria-live="polite">
         <p className="world-operational-title">Короткая сводка</p>
         <p>Контур: <strong>{activeDomain.label}</strong> · {lensBehavior.summarySignal}</p>
-        <p>Главный сигнал: <strong>{layer === 'resources' ? `устойчивость ${round(activeDomain.stability)}%` : `${round(activeDomain.pressure)}% давления · ${round(activeDomain.risk)}% риска`}</strong></p>
-        {weakestConfidenceDomain.confidence < 58 ? <p>Предупреждение по уверенности: <strong>{weakestConfidenceDomain.label}</strong> ({weakestConfidenceDomain.confidence}%).</p> : null}
-        <p>Следующий переход: <strong>{ctaMode === 'graph' ? `Граф — причины в ${activeDomain.label.toLowerCase()}` : `Оракул — ход для ${activeDomain.label.toLowerCase()}`}</strong>.</p>
-        {chainContext.lastAcceptedScenario ? <p>Принят в Oracle: <strong>{chainContext.lastAcceptedScenario.title}</strong> → следующий цикл для «{chainContext.lastAcceptedScenario.sourceDomain}».</p> : null}
-        <p>{lensBehavior.ctaHint}</p>
+        <p>Сейчас главное: <strong>{layer === 'resources' ? `устойчивость ${round(activeDomain.stability)}%` : `${round(activeDomain.pressure)}% давления · ${round(activeDomain.risk)}% риска`}</strong></p>
+        {weakestConfidenceDomain.confidence < 58 ? <p>Почему осторожно: <strong>{weakestConfidenceDomain.label}</strong> ({weakestConfidenceDomain.confidence}% уверенности).</p> : null}
+        <p>Дальше: <strong>{ctaMode === 'graph' ? `перейти в Graph` : `перейти в Oracle`}</strong>.</p>
       </div>
 
       <div className="world-domain-grid">
@@ -610,10 +604,12 @@ export const WorldMode = ({
       </div>
 
       <div className="world-handoff">
-        <button type="button" className={ctaMode === 'graph' ? '' : 'ghost'} onClick={() => { onGraphHandoff(handoff); onModeChange('graph'); }}>Graph: раскрыть причины в «{activeDomain.label}»</button>
-        <button type="button" onClick={() => onModeChange('oracle')} className={ctaMode === 'oracle' ? '' : 'ghost'}>Oracle: выбрать ход для «{activeDomain.label}»</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Start: перенастроить запуск под эту карту</button>
+        <button type="button" className={ctaMode === 'graph' ? '' : 'ghost'} onClick={() => { onGraphHandoff(handoff); onModeChange('graph'); }}>Продолжить в Graph</button>
+        <button type="button" onClick={() => onModeChange('oracle')} className={ctaMode === 'oracle' ? '' : 'ghost'}>Продолжить в Oracle</button>
+        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Start</button>
       </div>
+
+      {chainContext.lastAcceptedScenario ? <AcceptedScenarioCard scenario={chainContext.lastAcceptedScenario} /> : null}
 
       <svg
         className="world-scene"
