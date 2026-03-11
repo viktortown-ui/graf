@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'r
 import type { AppMode } from '../../entities/system/modes';
 import type { ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
 import type { AppSettings } from '../../app/state/settingsModel';
-import type { GraphReadingLens, WorldGraphHandoff } from '../../app/state/useSceneState';
+import type { GraphReadingLens, OracleExecutionHandoff, WorldGraphHandoff } from '../../app/state/useSceneState';
 import { DEMO_GRAPH, type GraphEdge, type GraphEdgeType, type GraphNode } from './model';
 
 type GraphModeProps = {
@@ -12,6 +12,7 @@ type GraphModeProps = {
   handoff: WorldGraphHandoff | null;
   onSelectNode: (nodeId: string) => void;
   onModeChange: (mode: AppMode) => void;
+  onOracleHandoff: (handoff: OracleExecutionHandoff) => void;
   lens: {
     panX: number;
     panY: number;
@@ -75,7 +76,7 @@ const scoreEdge = (edge: GraphEdge, nodeMap: Map<string, GraphNode>, lens: Graph
   return impact * (0.7 + targetPressure * 0.55);
 };
 
-export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, settings, handoff, confidence, onModeChange }: GraphModeProps) => {
+export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, settings, handoff, confidence, onModeChange, onOracleHandoff }: GraphModeProps) => {
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const [manualLens, setManualLens] = useState<GraphReadingLens | null>(null);
 
@@ -129,7 +130,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
     if (secondaryEdges[0]) map.set(secondaryEdges[0].target, 'secondary');
     if (handoff?.activeDomain.nodeId) map.set(handoff.activeDomain.nodeId, 'result');
     return map;
-  }, [blockerEdge, handoff?.activeDomain.nodeId, leverageEdge, pressureEdge, primaryChain, secondaryEdges]);
+  }, [blockerEdge, handoff, leverageEdge, pressureEdge, primaryChain, secondaryEdges]);
 
   const confidenceGlobal = handoff?.confidence.global ?? confidence.globalConfidence;
   const confidenceDomain = handoff?.confidence.domain ?? confidence.globalConfidence;
@@ -146,6 +147,35 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
   const confidencePrompt = lowConfidence
     ? confidence.missingCriticalFields[0] ?? 'Нужен дополнительный check-in по ключевым полям.'
     : 'Картина причин стабильна, можно перейти к выбору хода.';
+
+  const pressureSource = pressureEdge ? `${nodeMap.get(pressureEdge.source)?.name ?? 'н/д'} → ${nodeMap.get(pressureEdge.target)?.name ?? 'н/д'}` : 'н/д';
+  const blocker = blockerEdge ? `${nodeMap.get(blockerEdge.source)?.name ?? 'н/д'} → ${nodeMap.get(blockerEdge.target)?.name ?? 'н/д'}` : 'н/д';
+  const leverageNode = leverageEdge ? `${nodeMap.get(leverageEdge.source)?.name ?? 'н/д'} → ${nodeMap.get(leverageEdge.target)?.name ?? 'н/д'}` : 'н/д';
+  const resultNode = handoff?.activeDomain.label ?? selectedNode.name;
+
+  const oracleHandoff: OracleExecutionHandoff = {
+    activeDomain: handoff?.activeDomain ?? { id: 'work', label: 'Работа', nodeId: selectedNode.id },
+    selectedLens: activeLens,
+    launchContext: handoff?.launchContext ?? {
+      pressureId: 'load',
+      entryModeId: 'analysis',
+      horizonId: 'week',
+      targetFocus: 'Удержать систему',
+    },
+    derivedMetrics: handoff?.derivedMetrics ?? {
+      pressure: 52,
+      risk: 48,
+      leverage: 56,
+      stability: 54,
+      readiness: 51,
+    },
+    confidence: { global: confidenceGlobal, domain: confidenceDomain },
+    pressureSource,
+    blocker,
+    leverageNode,
+    resultNode,
+    recommendedTransition: recommendedRoute,
+  };
 
   const nodeRadius = (node: GraphNode) => {
     const base = NODE_BASE[node.type].radius;
@@ -233,16 +263,16 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
 
       <aside className="graph-tactical-panel">
         <h4>Тактическая интерпретация</h4>
-        <p><strong>Главный источник:</strong> {pressureEdge ? `${nodeMap.get(pressureEdge.source)?.name} → ${nodeMap.get(pressureEdge.target)?.name}` : 'н/д'}</p>
-        <p><strong>Ближайший блокер:</strong> {blockerEdge ? `${nodeMap.get(blockerEdge.source)?.name} → ${nodeMap.get(blockerEdge.target)?.name}` : 'н/д'}</p>
-        <p><strong>Лучший рычаг:</strong> {leverageEdge ? `${nodeMap.get(leverageEdge.source)?.name} → ${nodeMap.get(leverageEdge.target)?.name}` : 'н/д'}</p>
+        <p><strong>Главный источник:</strong> {pressureSource}</p>
+        <p><strong>Ближайший блокер:</strong> {blocker}</p>
+        <p><strong>Лучший рычаг:</strong> {leverageNode}</p>
         <p><strong>Focus/result:</strong> {handoff?.activeDomain.label ?? 'домен'} · readiness {Math.round(handoff?.derivedMetrics.readiness ?? 0)}%</p>
         <p><strong>Confidence:</strong> {Math.round(confidenceGlobal)}% · {lowConfidence ? `не хватает: ${confidencePrompt}` : 'достаточно для тактического хода'}</p>
       </aside>
 
       <div className="graph-cta-row">
         <button type="button" className={recommendedRoute === 'world' ? '' : 'ghost'} onClick={() => onModeChange('world')}>Вернуться в Мир</button>
-        <button type="button" className={recommendedRoute === 'oracle' ? '' : 'ghost'} onClick={() => onModeChange('oracle')}>Перейти в Oracle</button>
+        <button type="button" className={recommendedRoute === 'oracle' ? '' : 'ghost'} onClick={() => { onOracleHandoff(oracleHandoff); onModeChange('oracle'); }}>Перейти в Oracle</button>
         <button type="button" className="ghost" onClick={() => onModeChange('start')}>Подкрутить запуск в Start</button>
       </div>
     </div>

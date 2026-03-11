@@ -2395,3 +2395,90 @@ button {
   filter: saturate(0.82) blur(0.2px);
   opacity: 0.9;
 }
+
+.oracle-execution {
+  display: grid;
+  gap: 1rem;
+}
+
+.oracle-summary-compact {
+  border: 1px solid rgba(145, 189, 255, 0.35);
+  border-radius: 16px;
+  padding: 1rem 1.2rem;
+  background: linear-gradient(180deg, rgba(11, 20, 40, 0.78), rgba(6, 12, 25, 0.65));
+}
+
+.oracle-caution-pill {
+  margin-left: 0.8rem;
+  border: 1px solid rgba(255, 170, 150, 0.6);
+  color: #ffd5c5;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.74rem;
+}
+
+.oracle-scenario-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8rem;
+}
+
+.oracle-scenario-card {
+  border: 1px solid rgba(132, 166, 229, 0.28);
+  border-radius: 14px;
+  padding: 0.8rem;
+  background: rgba(9, 17, 34, 0.72);
+}
+
+.oracle-scenario-card.recommended {
+  border-color: rgba(121, 255, 202, 0.78);
+  box-shadow: 0 0 0 1px rgba(121, 255, 202, 0.45);
+}
+
+.oracle-card-title {
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.oracle-scenario-card ul {
+  margin: 0.55rem 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.22rem;
+}
+
+.oracle-card-why {
+  color: #b5cfff;
+  font-size: 0.82rem;
+}
+
+.oracle-recommended-mark {
+  color: #80ffd7;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.oracle-tactical-reasoning {
+  border: 1px solid rgba(130, 154, 210, 0.35);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  background: rgba(10, 16, 32, 0.76);
+}
+
+.oracle-cta-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.oracle-cta-path button {
+  border-radius: 10px;
+  border: 1px solid rgba(130, 177, 255, 0.5);
+  background: rgba(85, 145, 255, 0.18);
+  color: #deebff;
+  padding: 0.5rem 0.85rem;
+}
+
+.oracle-cta-path button.ghost {
+  background: transparent;
+}

@@ -30,6 +30,19 @@ export type WorldGraphHandoff = {
   recommendedTransition: 'graph' | 'oracle' | 'world' | 'start';
 };
 
+export type OracleExecutionHandoff = {
+  activeDomain: WorldGraphHandoff['activeDomain'];
+  selectedLens: GraphReadingLens;
+  launchContext: LaunchContext;
+  derivedMetrics: WorldGraphHandoff['derivedMetrics'];
+  confidence: WorldGraphHandoff['confidence'];
+  pressureSource: string;
+  blocker: string;
+  leverageNode: string;
+  resultNode: string;
+  recommendedTransition: WorldGraphHandoff['recommendedTransition'];
+};
+
 export type SceneSelection = {
   worldPlanetId: string;
   graphNodeId: string;
@@ -76,6 +89,7 @@ export const useSceneState = () => {
   const [dataSpine, setDataSpine] = useState(createDataSpine);
   const [historyDates, setHistoryDates] = useState<string[]>([new Date().toISOString().slice(0, 10)]);
   const [graphHandoff, setGraphHandoff] = useState<WorldGraphHandoff | null>(null);
+  const [oracleHandoff, setOracleHandoff] = useState<OracleExecutionHandoff | null>(null);
   const confidence = useMemo(() => evaluateConfidence({ dataSpine, historyDates }), [dataSpine, historyDates]);
 
   const selectedGraphNode = useMemo(
@@ -143,6 +157,10 @@ export const useSceneState = () => {
     }
   };
 
+  const applyGraphOracleHandoff = (handoff: OracleExecutionHandoff) => {
+    setOracleHandoff(handoff);
+  };
+
   const updateDataSpine = (payload: { profile: Profile; dailyCheckIn: DailyCheckIn; dailyFactors: DailyFactors }) => {
     setDataSpine(createDataSpine(payload.profile, payload.dailyCheckIn, payload.dailyFactors));
     const today = new Date().toISOString().slice(0, 10);
@@ -160,10 +178,12 @@ export const useSceneState = () => {
     historyDates,
     confidence,
     graphHandoff,
+    oracleHandoff,
     setGraphLens,
     setWorldCamera,
     applyLaunchContext,
     applyWorldGraphHandoff,
+    applyGraphOracleHandoff,
     updateDataSpine,
     selectWorldPlanet,
     selectGraphNode,
@@ -182,6 +202,7 @@ export const useSceneState = () => {
       setDataSpine(createDataSpine());
       setHistoryDates([new Date().toISOString().slice(0, 10)]);
       setGraphHandoff(null);
+      setOracleHandoff(null);
     },
   };
 };
