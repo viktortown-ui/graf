@@ -128,6 +128,7 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               confidence={sceneState.confidence}
               handoff={sceneState.graphHandoff}
               onModeChange={onModeChange}
+              onOracleHandoff={sceneState.applyGraphOracleHandoff}
             />
           )}
           {mode === 'oracle' && (
@@ -136,6 +137,8 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               sharedLens={sceneState.graphLens}
               launchContext={sceneState.launchContext}
               settings={settingsState.settings}
+              handoff={sceneState.oracleHandoff}
+              onModeChange={onModeChange}
             />
           )}
           {mode === 'datalab' && (
