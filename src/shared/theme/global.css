@@ -2200,3 +2200,64 @@ button {
   color: #91b2d6;
   line-height: 1.32;
 }
+
+.scene-mode-content.datalab {
+  inset: 0;
+  display: block;
+}
+
+.data-lab-mode {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 3.4rem 1.1rem 1rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.data-lab-section {
+  border: 1px solid rgba(126, 194, 255, 0.26);
+  border-radius: 0.95rem;
+  background: rgba(10, 20, 40, 0.58);
+  padding: 0.8rem;
+}
+
+.data-lab-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.data-lab-summary-grid article {
+  border: 1px solid rgba(126, 194, 255, 0.2);
+  border-radius: 0.7rem;
+  padding: 0.5rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.data-lab-summary-grid span { font-size: 0.72rem; color: #9fc0e5; }
+
+.data-lab-filters { display: flex; gap: 0.5rem; margin-bottom: 0.6rem; }
+.data-lab-filters input, .data-lab-filters select, .sandbox-list input {
+  background: rgba(9, 18, 34, 0.86);
+  border: 1px solid rgba(112, 177, 255, 0.34);
+  color: #e8f5ff;
+  border-radius: 0.45rem;
+  padding: 0.35rem 0.45rem;
+}
+
+.registry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+.registry-domain { border: 1px solid rgba(126, 194, 255, 0.2); border-radius: 0.65rem; padding: 0.5rem; }
+.registry-domain h4 { margin: 0 0 0.4rem; }
+.registry-row { width: 100%; text-align: left; border: 1px solid rgba(126, 194, 255, 0.15); background: rgba(8, 16, 30, 0.5); border-radius: 0.5rem; padding: 0.38rem; margin-bottom: 0.3rem; }
+.registry-row.active { border-color: rgba(123, 237, 255, 0.82); }
+.registry-row small { display: block; color: #90afce; }
+
+.inspector-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.pack-card, .control-preview { border: 1px solid rgba(126, 194, 255, 0.2); border-radius: 0.65rem; padding: 0.45rem; margin-bottom: 0.4rem; }
+.control-preview div { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.control-preview span { border: 1px solid rgba(126, 194, 255, 0.26); border-radius: 999px; padding: 0.12rem 0.42rem; font-size: 0.7rem; }
+
+.sandbox-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; margin-bottom: 0.6rem; }
+.sandbox-list label { display: grid; gap: 0.25rem; font-size: 0.75rem; color: #b2c8e6; }

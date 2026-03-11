@@ -7,4 +7,5 @@ export const MODE_SIGNAL: Record<AppMode, { pulse: number; hue: string; title: s
   graph: { pulse: 0.91, hue: '#71ffe4', title: 'Линза графа' },
   oracle: { pulse: 0.74, hue: '#cf8cff', title: 'Прогноз оракула' },
   settings: { pulse: 0.66, hue: '#7bd4ff', title: 'Системный контроль' },
+  datalab: { pulse: 0.79, hue: '#7affd8', title: 'Data Lab · инженерный контур' },
 };

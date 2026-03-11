@@ -1,13 +1,14 @@
-import { MODES, type AppMode } from '../../entities/system/modes';
+import type { ModeDefinition, AppMode } from '../../entities/system/modes';
 import { cn } from '../../shared/lib/cn';
 import { ModeGlyph } from '../../shared/ui/ModeGlyph';
 
 type LeftRailProps = {
   activeMode: AppMode;
+  modes: ModeDefinition[];
   onSelectMode: (mode: AppMode) => void;
 };
 
-export const LeftRail = ({ activeMode, onSelectMode }: LeftRailProps) => (
+export const LeftRail = ({ activeMode, modes, onSelectMode }: LeftRailProps) => (
   <aside className="left-rail" aria-label="Панель режимов">
     <div className="brand-lockup">
       <p className="brand">GRAF</p>
@@ -15,7 +16,7 @@ export const LeftRail = ({ activeMode, onSelectMode }: LeftRailProps) => (
     </div>
 
     <nav className="mode-rail-nav" aria-label="Основные режимы">
-      {MODES.map((mode) => {
+      {modes.map((mode) => {
         const active = mode.id === activeMode;
 
         return (

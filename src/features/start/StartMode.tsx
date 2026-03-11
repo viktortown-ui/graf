@@ -65,6 +65,7 @@ const PATH_LABEL: Record<AppMode, string> = {
   graph: 'Граф причин: разбор источника давления',
   oracle: 'Прогноз: проверка сценариев',
   settings: 'Настройки',
+  datalab: 'Data Lab (dev)',
 };
 
 const FIRST_STEP_BY_MODE: Record<AppMode, string> = {
@@ -74,6 +75,7 @@ const FIRST_STEP_BY_MODE: Record<AppMode, string> = {
   graph: 'Откройте граф причин и выделите ветку с наибольшим эффектом.',
   oracle: 'Откройте прогноз и сравните базовый и усиленный сценарий.',
   settings: 'Настройте интерфейс под комфорт чтения.',
+  datalab: 'Откройте Data Lab для инженерной диагностики данных.',
 };
 
 const MODE_SHORT_LABEL: Record<AppMode, string> = {
@@ -83,6 +85,7 @@ const MODE_SHORT_LABEL: Record<AppMode, string> = {
   graph: 'Граф',
   oracle: 'Прогноз',
   settings: 'Настройки',
+  datalab: 'Data Lab (dev)',
 };
 
 const clamp = (value: number, min = 0, max = 100) => Math.min(max, Math.max(min, value));

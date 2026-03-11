@@ -1,4 +1,4 @@
-export type AppMode = 'overview' | 'start' | 'world' | 'graph' | 'oracle' | 'settings';
+export type AppMode = 'overview' | 'start' | 'world' | 'graph' | 'oracle' | 'settings' | 'datalab';
 
 export type ModeDefinition = {
   id: AppMode;
@@ -31,6 +31,11 @@ export const MODES: ModeDefinition[] = [
     id: 'oracle',
     label: 'Оракул',
     summary: 'Прогноз сценариев и выбор следующего шага.',
+  },
+  {
+    id: 'datalab',
+    label: 'Data Lab',
+    summary: 'Скрытая инженерная подстанция данных: registry, prompts, confidence и sandbox.',
   },
   {
     id: 'settings',
