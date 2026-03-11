@@ -67,17 +67,54 @@ const LAYER_LABEL: Record<WorldLayer, string> = {
 };
 
 const DOMAIN_LABEL: Record<DomainId, string> = {
-  finance: 'Finance',
-  body: 'Body',
-  work: 'Work',
-  goal: 'Goal',
+  finance: 'Финансы',
+  body: 'Тело',
+  work: 'Работа',
+  goal: 'Цель',
 };
 
 const DOMAIN_SECONDARY_LABELS: Record<DomainId, string[]> = {
-  finance: ['Ресурсы'],
+  finance: ['Резерв', 'Поток'],
   body: ['Энергия'],
-  work: ['Фокус', 'Дисциплина', 'Напряжение'],
-  goal: ['Цель', 'Поддержка'],
+  work: ['Фокус', 'Дисциплина', 'Нагрузка'],
+  goal: ['Прогресс', 'Поддержка'],
+};
+
+const LENS_BEHAVIOR: Record<WorldLayer, {
+  primaryMetric: keyof Pick<DomainOperational, 'pressure' | 'risk' | 'stability' | 'leverage'>;
+  secondaryMetric: keyof Pick<DomainOperational, 'pressure' | 'risk' | 'stability' | 'leverage'>;
+  summaryTitle: string;
+  summarySignal: string;
+  ctaHint: string;
+}> = {
+  risks: {
+    primaryMetric: 'risk',
+    secondaryMetric: 'pressure',
+    summaryTitle: 'Режим: контроль рисков',
+    summarySignal: 'Приоритет — ранние сигналы срыва и уязвимые связи.',
+    ctaHint: 'Ведём в Граф: разобрать источник риска и точку блокировки.',
+  },
+  resources: {
+    primaryMetric: 'stability',
+    secondaryMetric: 'leverage',
+    summaryTitle: 'Режим: восстановление ресурса',
+    summarySignal: 'Приоритет — устойчивость, опоры и рычаги восстановления.',
+    ctaHint: 'Ведём в Оракул: выбрать ход с лучшим восстановлением.',
+  },
+  goals: {
+    primaryMetric: 'leverage',
+    secondaryMetric: 'pressure',
+    summaryTitle: 'Режим: продвижение цели',
+    summarySignal: 'Приоритет — прогресс цели, конфликты и дедлайн-напряжение.',
+    ctaHint: 'Ведём в Оракул: выбрать путь, который двигает активную цель.',
+  },
+  pressure: {
+    primaryMetric: 'pressure',
+    secondaryMetric: 'risk',
+    summaryTitle: 'Режим: управление давлением',
+    summarySignal: 'Приоритет — источники перегруза и точки вероятного срыва.',
+    ctaHint: 'Ведём в Граф: разложить каскад давления по причинам.',
+  },
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -308,10 +345,30 @@ export const WorldMode = ({
   }, [confidence.domainConfidence, dataSpine.derived, profiles]);
 
   const mainContour = domainCards.slice().sort((a, b) => b.importance - a.importance)[0] ?? domainCards[0];
+  const lensBehavior = LENS_BEHAVIOR[layer];
+  const lensMainDomain = domainCards
+    .slice()
+    .sort((a, b) => {
+      const metricDiff = (b[lensBehavior.primaryMetric] - a[lensBehavior.primaryMetric]) * 1.15;
+      const secondaryDiff = b[lensBehavior.secondaryMetric] - a[lensBehavior.secondaryMetric];
+      const fallbackDiff = b.importance - a.importance;
+      return metricDiff + secondaryDiff * 0.7 + fallbackDiff * 0.35;
+    })[0] ?? mainContour;
+
   const selectedDomainId = getPlanetDomainId(selectedPlanet.id);
-  const activeDomain = domainCards.find((domain) => domain.id === selectedDomainId) ?? mainContour;
+  const isPinnedSelection = Boolean(lockedPlanet && lockedPlanet === selectedPlanet.id);
+  const activeDomain = isPinnedSelection
+    ? domainCards.find((domain) => domain.id === selectedDomainId) ?? lensMainDomain
+    : lensMainDomain;
+
+  useEffect(() => {
+    if (isPinnedSelection) return;
+    if (selectedDomainId === lensMainDomain.id) return;
+    onSelectPlanet(lensMainDomain.primaryPlanetId);
+  }, [isPinnedSelection, lensMainDomain.id, lensMainDomain.primaryPlanetId, onSelectPlanet, selectedDomainId]);
+
   const weakestConfidenceDomain = domainCards.slice().sort((a, b) => a.confidence - b.confidence)[0] ?? domainCards[0];
-  const ctaMode = getRecommendedMode(activeDomain);
+  const ctaMode = layer === 'resources' || layer === 'goals' ? 'oracle' : getRecommendedMode(activeDomain);
 
   const recommendedProfile = profiles
     .slice()
@@ -449,17 +506,18 @@ export const WorldMode = ({
   return (
     <div className="world-mode" aria-label="Сцена системного мира">
       <div className="world-overlay">
-        <p className="world-kicker">Мир 2.0 · Operational Map</p>
-        <p className="world-selected">Активный контур: {activeDomain.label} · давление {round(activeDomain.pressure)}%</p>
-        <p className="world-launch-lens">Handoff: {pressure.label} · {launchContext.entryModeId} · {horizon.label.toLowerCase()} · {launchContext.targetFocus}</p>
+        <p className="world-kicker">Мир 2.0 · Операционная карта</p>
+        <p className="world-selected">Активный контур: {activeDomain.label} · {round(activeDomain.pressure)}% давления</p>
+        <p className="world-launch-lens">{lensBehavior.summaryTitle}</p>
       </div>
 
       <div className="world-operational-summary" aria-live="polite">
-        <p className="world-operational-title">Operational summary</p>
-        <p>Main contour: <strong>{activeDomain.label}</strong></p>
-        <p>Primary pressure: <strong>{round(activeDomain.pressure)}%</strong> · risk {round(activeDomain.risk)}%</p>
-        <p>Confidence warning: <strong>{weakestConfidenceDomain.label}</strong> ({weakestConfidenceDomain.confidence}%)</p>
-        <p>Next best transition: <strong>{ctaMode === 'graph' ? `Граф: причины ${activeDomain.label}` : `Оракул: ход для ${activeDomain.label}`}</strong></p>
+        <p className="world-operational-title">Короткая сводка</p>
+        <p>Контур: <strong>{activeDomain.label}</strong> · {lensBehavior.summarySignal}</p>
+        <p>Главный сигнал: <strong>{layer === 'resources' ? `устойчивость ${round(activeDomain.stability)}%` : `${round(activeDomain.pressure)}% давления · ${round(activeDomain.risk)}% риска`}</strong></p>
+        {weakestConfidenceDomain.confidence < 58 ? <p>Предупреждение по уверенности: <strong>{weakestConfidenceDomain.label}</strong> ({weakestConfidenceDomain.confidence}%).</p> : null}
+        <p>Следующий переход: <strong>{ctaMode === 'graph' ? `Граф — причины в ${activeDomain.label.toLowerCase()}` : `Оракул — ход для ${activeDomain.label.toLowerCase()}`}</strong>.</p>
+        <p>{lensBehavior.ctaHint}</p>
       </div>
 
       <div className="world-domain-grid">
@@ -473,13 +531,12 @@ export const WorldMode = ({
               <p className="world-domain-card-title">{domain.label}</p>
               {active ? (
                 <>
-                  <p>Pressure {round(domain.pressure)}% · Risk {round(domain.risk)}%</p>
-                  <p>Stability {round(domain.stability)}% · Leverage {round(domain.leverage)}%</p>
-                  <p>Readiness {round(domain.readiness)}% · Confidence {domain.confidence}%</p>
-                  <p>Secondary: {DOMAIN_SECONDARY_LABELS[domain.id].join(' · ')}</p>
+                  <p>{layer === 'resources' ? `Устойчивость ${round(domain.stability)}%` : layer === 'goals' ? `Рычаг ${round(domain.leverage)}%` : `Давление ${round(domain.pressure)}%`}</p>
+                  <p>Риск {round(domain.risk)}% · Уверенность {domain.confidence}%</p>
+                  <p>Аспекты: {DOMAIN_SECONDARY_LABELS[domain.id].join(' · ')}</p>
                 </>
               ) : (
-                <p>Pressure {round(domain.pressure)}% · Confidence {domain.confidence}%</p>
+                <p>{layer === 'resources' ? `Устойчивость ${round(domain.stability)}%` : `Давление ${round(domain.pressure)}%`} · уверенность {domain.confidence}%</p>
               )}
             </article>
           );
@@ -493,9 +550,8 @@ export const WorldMode = ({
         <p>Давление: {round(selectedProfile.pressure)}%</p>
         <p>Риск: {round(selectedProfile.risk)}%</p>
         <p>Стабильность: {round(100 - selectedProfile.pressure * 0.6)}%</p>
-        <p>Leverage: {round(selectedProfile.goal)}%</p>
-        <p>Readiness: {round((selectedProfile.resource * 0.52) + (selectedProfile.goal * 0.48))}%</p>
-        <p>Цена ошибки: {errorCost}% · Потенциал хода: {movePotential}%</p>
+        <p>Рычаг: {round(selectedProfile.goal)}%</p>
+        <p>Потенциал хода: {movePotential}% · Цена ошибки: {errorCost}%</p>
       </div>
 
       <div className="world-layer-switch">
@@ -512,9 +568,9 @@ export const WorldMode = ({
       </div>
 
       <div className="world-handoff">
-        <button type="button" onClick={() => onModeChange('graph')}>Graph: причины {activeDomain.label}</button>
-        <button type="button" onClick={() => onModeChange('oracle')} className={ctaMode === 'oracle' ? '' : 'ghost'}>Oracle: ход по {activeDomain.label}</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Start: перенастроить запуск</button>
+        <button type="button" className={ctaMode === 'graph' ? '' : 'ghost'} onClick={() => onModeChange('graph')}>Graph: раскрыть причины в «{activeDomain.label}»</button>
+        <button type="button" onClick={() => onModeChange('oracle')} className={ctaMode === 'oracle' ? '' : 'ghost'}>Oracle: выбрать ход для «{activeDomain.label}»</button>
+        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Start: перенастроить запуск под эту карту</button>
       </div>
 
       <svg
@@ -577,8 +633,8 @@ export const WorldMode = ({
               x2={target.x}
               y2={target.y}
               stroke={EDGE_SIGN[edge.type] > 0 ? '#9dffda' : '#ff9888'}
-              strokeWidth={hot ? 2.2 : inActiveDomain ? 1.8 : 1.05}
-              strokeOpacity={relevant ? 0.74 : inActiveDomain ? 0.46 : 0.16}
+              strokeWidth={hot ? 2.2 : relevant ? 1.9 : inActiveDomain ? 1.4 : 0.92}
+              strokeOpacity={relevant ? 0.78 : inActiveDomain ? 0.38 : 0.09}
               strokeDasharray={EDGE_SIGN[edge.type] > 0 ? '0' : '4 8'}
             />
           ))}
@@ -611,10 +667,11 @@ export const WorldMode = ({
                 }}
                 className="world-planet-hit"
               >
-                <circle r={planet.r * (1.55 + (1 - planet.stability) * 0.35)} fill={planet.color} opacity={(inActiveDomain ? 0.1 : 0.04) + planet.pulse * 0.08} />
+                <circle r={planet.r * (1.55 + (1 - planet.stability) * 0.35)} fill={planet.color} opacity={(inActiveDomain ? 0.12 : 0.028) + planet.pulse * (inActiveDomain ? 0.09 : 0.03)} />
                 <circle r={planet.r * emphasis} fill={planet.color} opacity={clamp((planet.brightness * 0.66 + planet.pulse * 0.22) * (inActiveDomain ? 1 : 0.58), 0.24, 0.98)} />
                 <circle r={planet.r * (1.1 + confidenceFog * 0.8)} fill="#e5f2ff" opacity={confidenceFog * 0.28} />
-                <text className="world-planet-label" x={0} y={planet.r + 20} textAnchor="middle" opacity={inActiveDomain ? 1 : 0.62}>{planet.label}</text>
+                <text className="world-planet-label" x={0} y={planet.r + 20} textAnchor="middle" opacity={inActiveDomain ? 1 : 0.52}>{planet.label}</text>
+                {inActiveDomain ? <text className="world-secondary-aspect" x={0} y={planet.r + 34} textAnchor="middle">аспект домена «{activeDomain.label.toLowerCase()}»</text> : null}
               </g>
             );
           })}

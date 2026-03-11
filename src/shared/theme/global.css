@@ -1360,14 +1360,14 @@ button {
 .world-kicker {
   margin: 0;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.14em;
   font-size: 0.64rem;
   color: #99bee9;
 }
 
 .world-selected {
   margin: 0.28rem 0 0;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   color: #c7dcf8;
 }
 
@@ -1850,8 +1850,7 @@ button {
   color: #aac6e9;
   border-radius: 999px;
   font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   padding: 0.34rem 0.64rem;
 }
 
@@ -1866,10 +1865,10 @@ button {
   left: 1rem;
   top: 9.3rem;
   z-index: 4;
-  width: min(390px, 35vw);
+  width: min(370px, 33vw);
   border: 1px solid rgba(131, 170, 230, 0.24);
   border-radius: 0.76rem;
-  background: linear-gradient(180deg, rgba(8, 18, 37, 0.52), rgba(6, 11, 22, 0.2));
+  background: linear-gradient(180deg, rgba(8, 18, 37, 0.44), rgba(6, 11, 22, 0.16));
   padding: 0.58rem 0.7rem;
   backdrop-filter: blur(7px);
 }
@@ -1877,8 +1876,7 @@ button {
 .world-operational-title {
   margin: 0 0 0.35rem;
   font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: #9fc5ef;
 }
 
@@ -1891,9 +1889,9 @@ button {
 .world-domain-grid {
   position: absolute;
   right: 1rem;
-  top: 11.7rem;
+  top: 11.1rem;
   z-index: 4;
-  width: min(360px, 31vw);
+  width: min(320px, 28vw);
   display: grid;
   gap: 0.42rem;
 }
@@ -1901,8 +1899,8 @@ button {
 .world-domain-card {
   border: 1px solid rgba(136, 172, 230, 0.2);
   border-radius: 0.7rem;
-  background: rgba(7, 16, 33, 0.45);
-  padding: 0.42rem 0.55rem;
+  background: rgba(7, 16, 33, 0.38);
+  padding: 0.38rem 0.5rem;
 }
 
 .world-domain-card.active {
@@ -1917,9 +1915,9 @@ button {
 }
 
 .world-domain-card p {
-  margin: 0.14rem 0;
+  margin: 0.1rem 0;
   color: #b9cfed;
-  font-size: 0.7rem;
+  font-size: 0.67rem;
 }
 
 .world-domain-readout {
@@ -1927,17 +1925,17 @@ button {
   right: 1rem;
   top: 4.2rem;
   z-index: 4;
-  width: min(330px, 30vw);
+  width: min(300px, 26vw);
   border: 1px solid rgba(131, 170, 230, 0.26);
   border-radius: 0.76rem;
-  background: linear-gradient(180deg, rgba(8, 18, 37, 0.5), rgba(6, 11, 22, 0.2));
+  background: linear-gradient(180deg, rgba(8, 18, 37, 0.42), rgba(6, 11, 22, 0.14));
   padding: 0.6rem 0.7rem;
   backdrop-filter: blur(8px);
 }
 
 .world-domain-readout p {
-  margin: 0.2rem 0;
-  font-size: 0.74rem;
+  margin: 0.14rem 0;
+  font-size: 0.7rem;
   color: #bed2ee;
 }
 
@@ -1962,8 +1960,7 @@ button {
   background: linear-gradient(180deg, rgba(34, 95, 152, 0.56), rgba(7, 21, 39, 0.56));
   color: #ecf8ff;
   font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   padding: 0.34rem 0.62rem;
 }
 
@@ -1975,8 +1972,15 @@ button {
 
 .world-launch-lens {
   margin: 0.2rem 0 0;
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   color: #b7d4f8;
+}
+
+.world-secondary-aspect {
+  fill: #b7cae7;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
 }
 
 .world-priority-hint {
