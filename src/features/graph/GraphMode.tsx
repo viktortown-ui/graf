@@ -1,60 +1,17 @@
 import { useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'react';
-import { neighborsOf, nodeLayerIndex, propagateGraphState, summarizeNodeInfluence } from './engine';
-import { DEMO_GRAPH, type GraphEdgeType, type GraphNode } from './model';
-import { PRESSURE_OPTIONS, TARGET_EDGE_HINT, type LaunchContext } from '../../app/state/launchContext';
+import type { AppMode } from '../../entities/system/modes';
+import type { ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
 import type { AppSettings } from '../../app/state/settingsModel';
-
-type LayerFilter = 'risks' | 'actions' | 'goals' | 'delays';
-
-const FILTER_LABEL: Record<LayerFilter, string> = {
-  risks: 'Риски',
-  actions: 'Действия',
-  goals: 'Цели',
-  delays: 'Задержки',
-};
-
-const NODE_TYPE_LABEL: Record<GraphNode['type'], string> = {
-  domain: 'Ядро',
-  factor: 'Фактор',
-  action: 'Действие',
-  risk: 'Риск',
-  goal: 'Цель',
-};
-
-const EDGE_STYLE: Record<GraphEdgeType, { color: string; dash?: string }> = {
-  boosts: { color: '#82ffe2' },
-  drags: { color: '#ff9f84' },
-  blocks: { color: '#ff6f8a', dash: '8 6' },
-  conflicts: { color: '#ffc58f', dash: '4 5' },
-  delayed: { color: '#9ec8ff', dash: '2 7' },
-};
-
-const NODE_STYLE: Record<GraphNode['type'], { fill: string; stroke: string; radius: number }> = {
-  domain: { fill: '#6ec6ff', stroke: '#c7e6ff', radius: 23 },
-  factor: { fill: '#97b1ff', stroke: '#d9e2ff', radius: 14 },
-  action: { fill: '#8affc6', stroke: '#cbffe8', radius: 16 },
-  risk: { fill: '#ff8678', stroke: '#ffd4cc', radius: 17 },
-  goal: { fill: '#ffe08c', stroke: '#fff3c7', radius: 18 },
-};
-
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-
-const toPercent = (value: number) => `${Math.round(value)}%`;
-
-const edgePath = (from: GraphNode, to: GraphNode) => {
-  const curve = clamp((to.position.x - from.position.x) * 0.22, -70, 70);
-  const c1x = from.position.x + curve;
-  const c1y = from.position.y;
-  const c2x = to.position.x - curve;
-  const c2y = to.position.y;
-  return `M ${from.position.x} ${from.position.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${to.position.x} ${to.position.y}`;
-};
+import type { GraphReadingLens, WorldGraphHandoff } from '../../app/state/useSceneState';
+import { DEMO_GRAPH, type GraphEdge, type GraphEdgeType, type GraphNode } from './model';
 
 type GraphModeProps = {
   settings: AppSettings;
-  launchContext: LaunchContext;
+  confidence: ConfidenceSnapshot;
   selectedNodeId: string;
+  handoff: WorldGraphHandoff | null;
   onSelectNode: (nodeId: string) => void;
+  onModeChange: (mode: AppMode) => void;
   lens: {
     panX: number;
     panY: number;
@@ -63,262 +20,231 @@ type GraphModeProps = {
   onLensChange: (lens: { panX: number; panY: number; zoom: number }) => void;
 };
 
-export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, launchContext, settings }: GraphModeProps) => {
-  const [filters, setFilters] = useState<Record<LayerFilter, boolean>>({ risks: true, actions: true, goals: true, delays: true });
+type CausalRole = 'primary' | 'secondary' | 'pressure' | 'blocker' | 'leverage' | 'result';
+
+const EDGE_STYLE: Record<GraphEdgeType, { color: string; dash?: string }> = {
+  boosts: { color: '#86ffd6' },
+  drags: { color: '#ff996f' },
+  blocks: { color: '#ff6d90', dash: '7 6' },
+  conflicts: { color: '#ffcc8f', dash: '4 4' },
+  delayed: { color: '#9ac8ff', dash: '2 7' },
+};
+
+const LENS_LABEL: Record<GraphReadingLens, string> = {
+  pressure: 'Давление',
+  resources: 'Ресурсы',
+  goals: 'Цели',
+  causes: 'Причины',
+};
+
+const NODE_BASE: Record<GraphNode['type'], { fill: string; stroke: string; radius: number }> = {
+  domain: { fill: '#74c9ff', stroke: '#cae9ff', radius: 22 },
+  factor: { fill: '#9eb5ff', stroke: '#dbe3ff', radius: 14 },
+  action: { fill: '#8fffd2', stroke: '#d7ffef', radius: 16 },
+  risk: { fill: '#ff8b7c', stroke: '#ffd4cc', radius: 17 },
+  goal: { fill: '#ffe29a', stroke: '#fff3ca', radius: 18 },
+};
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const lensEdgeBoost = (type: GraphEdgeType, lens: GraphReadingLens) => {
+  if (lens === 'pressure') return type === 'drags' || type === 'blocks' || type === 'conflicts' ? 1.45 : 0.8;
+  if (lens === 'resources') return type === 'boosts' ? 1.35 : type === 'delayed' ? 1.1 : 0.78;
+  if (lens === 'goals') return type === 'boosts' || type === 'delayed' ? 1.3 : 0.88;
+  return type === 'drags' || type === 'blocks' ? 1.2 : 1;
+};
+
+const edgePath = (from: GraphNode, to: GraphNode) => {
+  const curve = clamp((to.position.x - from.position.x) * 0.2, -68, 68);
+  return `M ${from.position.x} ${from.position.y} C ${from.position.x + curve} ${from.position.y}, ${to.position.x - curve} ${to.position.y}, ${to.position.x} ${to.position.y}`;
+};
+
+const focusNodeByDomain: Record<WorldGraphHandoff['activeDomain']['id'], string[]> = {
+  work: ['domain-focus', 'domain-stress', 'risk-distraction', 'action-sprint', 'goal-launch', 'factor-routine'],
+  finance: ['domain-money', 'domain-stress', 'factor-cashflow', 'action-review', 'goal-launch', 'risk-distraction'],
+  body: ['domain-energy', 'risk-burnout', 'factor-sleep', 'goal-health', 'domain-focus', 'domain-stress'],
+  goal: ['goal-launch', 'domain-focus', 'action-sprint', 'goal-health', 'domain-stress', 'risk-distraction'],
+};
+
+const scoreEdge = (edge: GraphEdge, nodeMap: Map<string, GraphNode>, lens: GraphReadingLens) => {
+  const source = nodeMap.get(edge.source);
+  const target = nodeMap.get(edge.target);
+  if (!source || !target) return 0;
+  const impact = edge.weight * edge.confidence * lensEdgeBoost(edge.type, lens);
+  const targetPressure = (100 - target.state) / 100;
+  return impact * (0.7 + targetPressure * 0.55);
+};
+
+export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, settings, handoff, confidence, onModeChange }: GraphModeProps) => {
   const dragRef = useRef<{ x: number; y: number } | null>(null);
+  const [manualLens, setManualLens] = useState<GraphReadingLens | null>(null);
 
-  const nodes = useMemo(() => propagateGraphState(DEMO_GRAPH, 2), []);
-  const nodeMap = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
+  const nodeMap = useMemo(() => new Map(DEMO_GRAPH.nodes.map((node) => [node.id, node])), []);
+  const activeLens = manualLens ?? handoff?.selectedLens ?? 'pressure';
 
-  const selectedNode = nodeMap.get(selectedNodeId) ?? nodes[0];
-  const neighborhood = neighborsOf(DEMO_GRAPH, selectedNode.id);
+  const focusSet = useMemo(() => {
+    const domain = handoff?.activeDomain.id ?? 'work';
+    const seed = focusNodeByDomain[domain];
+    return new Set(seed);
+  }, [handoff?.activeDomain.id]);
 
-  const visibleNodes = useMemo(() => {
-    return nodes.filter((node) => {
-      if (node.type === 'risk' && !filters.risks) {
-        return false;
-      }
-      if (node.type === 'action' && !filters.actions) {
-        return false;
-      }
-      if (node.type === 'goal' && !filters.goals) {
-        return false;
-      }
-      if (node.type === 'factor' && node.parentDomainId && selectedNode.type !== 'domain') {
-        return neighborhood.nodeIds.has(node.id);
-      }
-      if (node.type === 'factor' && node.parentDomainId && selectedNode.type === 'domain') {
-        return node.parentDomainId === selectedNode.id || neighborhood.nodeIds.has(node.id);
-      }
-      return true;
-    });
-  }, [filters.actions, filters.goals, filters.risks, neighborhood.nodeIds, nodes, selectedNode.id, selectedNode.type]);
+  const focusNodes = useMemo(() => DEMO_GRAPH.nodes.filter((node) => focusSet.has(node.id)), [focusSet]);
+  const focusNodeIds = useMemo(() => new Set(focusNodes.map((node) => node.id)), [focusNodes]);
 
-  const visibleNodeIds = useMemo(() => new Set(visibleNodes.map((node) => node.id)), [visibleNodes]);
-
-  const visibleEdges = useMemo(
-    () =>
-      DEMO_GRAPH.edges.filter((edge) => {
-        if (!visibleNodeIds.has(edge.source) || !visibleNodeIds.has(edge.target)) {
-          return false;
-        }
-        if (edge.type === 'delayed' && (!filters.delays || !settings.showDelays)) {
-          return false;
-        }
-        if (!settings.showSecondaryLinks && !neighborhood.edgeIds.has(edge.id)) {
-          return false;
-        }
-        return true;
-      }),
-    [filters.delays, neighborhood.edgeIds, settings.showDelays, settings.showSecondaryLinks, visibleNodeIds],
+  const focusEdges = useMemo(
+    () => DEMO_GRAPH.edges.filter((edge) => focusNodeIds.has(edge.source) && focusNodeIds.has(edge.target)),
+    [focusNodeIds],
   );
 
-  const summary = summarizeNodeInfluence(DEMO_GRAPH, selectedNode.id);
+  const sortedEdges = useMemo(
+    () => focusEdges.map((edge) => ({ edge, score: scoreEdge(edge, nodeMap, activeLens) })).sort((a, b) => b.score - a.score),
+    [activeLens, focusEdges, nodeMap],
+  );
 
-  const pressure = PRESSURE_OPTIONS.find((option) => option.id === launchContext.pressureId) ?? PRESSURE_OPTIONS[0];
-  const pressureEdgeIds = new Set(pressure.pressureEdgeIds);
-  const targetEdgeIds = new Set(TARGET_EDGE_HINT[launchContext.targetFocus]);
-  const strategicEdges = useMemo(() => {
-    const candidates = DEMO_GRAPH.edges
-      .filter((edge) => neighborhood.edgeIds.has(edge.id))
-      .map((edge) => ({
-        edge,
-        score: edge.weight * edge.confidence,
-        isPressure: edge.type === 'drags' || edge.type === 'blocks' || edge.type === 'conflicts',
-      }))
-      .sort((a, b) => b.score - a.score);
+  const pressureEdge = sortedEdges.find((entry) => entry.edge.type === 'drags' || entry.edge.type === 'blocks' || entry.edge.type === 'conflicts')?.edge;
+  const blockerEdge = sortedEdges.find((entry) => entry.edge.type === 'blocks' && entry.edge.id !== pressureEdge?.id)?.edge ?? pressureEdge;
+  const leverageEdge = sortedEdges.find((entry) => entry.edge.type === 'boosts' || entry.edge.type === 'delayed')?.edge;
 
-    return {
-      pressure: candidates.filter((entry) => entry.isPressure).slice(0, 2),
-      boost: candidates.filter((entry) => !entry.isPressure).slice(0, 2),
-    };
-  }, [neighborhood.edgeIds]);
+  const primaryChain = useMemo(() => {
+    const main = [pressureEdge, blockerEdge, leverageEdge].filter(Boolean) as GraphEdge[];
+    const fallback = sortedEdges.slice(0, 3).map((entry) => entry.edge);
+    const chain = (main.length >= 2 ? main : fallback).slice(0, 3);
+    return Array.from(new Set(chain));
+  }, [blockerEdge, leverageEdge, pressureEdge, sortedEdges]);
+
+  const secondaryEdges = sortedEdges
+    .map((entry) => entry.edge)
+    .filter((edge) => !primaryChain.find((primary) => primary.id === edge.id))
+    .slice(0, 3);
+
+  const selectedNode = nodeMap.get(selectedNodeId) ?? nodeMap.get(handoff?.activeDomain.nodeId ?? 'domain-focus') ?? DEMO_GRAPH.nodes[0];
+
+  const roleMap = useMemo(() => {
+    const map = new Map<string, CausalRole>();
+    if (pressureEdge) map.set(pressureEdge.source, 'pressure');
+    if (blockerEdge) map.set(blockerEdge.source, 'blocker');
+    if (leverageEdge) map.set(leverageEdge.source, 'leverage');
+    if (primaryChain[0]) map.set(primaryChain[0].target, 'primary');
+    if (primaryChain[1]) map.set(primaryChain[1].target, 'primary');
+    if (secondaryEdges[0]) map.set(secondaryEdges[0].target, 'secondary');
+    if (handoff?.activeDomain.nodeId) map.set(handoff.activeDomain.nodeId, 'result');
+    return map;
+  }, [blockerEdge, handoff?.activeDomain.nodeId, leverageEdge, pressureEdge, primaryChain, secondaryEdges]);
+
+  const confidenceGlobal = handoff?.confidence.global ?? confidence.globalConfidence;
+  const confidenceDomain = handoff?.confidence.domain ?? confidence.globalConfidence;
+  const lowConfidence = confidenceGlobal < 58 || confidenceDomain < 52;
+
+  const recommendedRoute: AppMode = handoff?.recommendedTransition === 'oracle'
+    ? 'oracle'
+    : lowConfidence
+      ? 'world'
+      : leverageEdge
+        ? 'oracle'
+        : 'world';
+
+  const confidencePrompt = lowConfidence
+    ? confidence.missingCriticalFields[0] ?? 'Нужен дополнительный check-in по ключевым полям.'
+    : 'Картина причин стабильна, можно перейти к выбору хода.';
+
+  const nodeRadius = (node: GraphNode) => {
+    const base = NODE_BASE[node.type].radius;
+    const role = roleMap.get(node.id);
+    if (role === 'pressure' || role === 'leverage') return base + 8;
+    if (role === 'blocker' || role === 'result') return base + 6;
+    if (role === 'primary') return base + 4;
+    return base;
+  };
 
   const handlePointerDown = (event: PointerEvent<SVGSVGElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = { x: event.clientX, y: event.clientY };
   };
-
   const handlePointerMove = (event: PointerEvent<SVGSVGElement>) => {
-    if (!dragRef.current) {
-      return;
-    }
-
-    const deltaX = event.clientX - dragRef.current.x;
-    const deltaY = event.clientY - dragRef.current.y;
+    if (!dragRef.current) return;
+    const dx = event.clientX - dragRef.current.x;
+    const dy = event.clientY - dragRef.current.y;
     dragRef.current = { x: event.clientX, y: event.clientY };
-
-    onLensChange({
-      panX: clamp(lens.panX + deltaX * 0.75, -340, 340),
-      panY: clamp(lens.panY + deltaY * 0.75, -220, 220),
-      zoom: lens.zoom,
-    });
+    onLensChange({ ...lens, panX: lens.panX + dx, panY: lens.panY + dy });
   };
-
   const handlePointerUp = (event: PointerEvent<SVGSVGElement>) => {
     event.currentTarget.releasePointerCapture(event.pointerId);
     dragRef.current = null;
   };
-
   const handleWheel = (event: WheelEvent<SVGSVGElement>) => {
     event.preventDefault();
-    const direction = event.deltaY > 0 ? -0.1 : 0.1;
-    onLensChange({
-      panX: lens.panX,
-      panY: lens.panY,
-      zoom: clamp(lens.zoom + direction, 0.62, 1.68),
-    });
+    const zoom = clamp(lens.zoom + (event.deltaY < 0 ? 0.06 : -0.06), 0.64, 1.8);
+    onLensChange({ ...lens, zoom });
   };
 
   return (
-    <div className="graph-mode" aria-label="Сцена причинного графа">
-      <div className="graph-header">
-        <p className="scene-mode-kicker">Аналитическая проекция</p>
-        <h2 className="scene-mode-title">Причинная карта того же живого мира.</h2>
-      </div>
+    <div className={`graph-mode ${lowConfidence ? 'confidence-low' : ''}`}>
+      <header className="graph-summary-bar">
+        <div>
+          <p className="graph-kicker">Graph 2.0 · causal drilldown</p>
+          <h3>{handoff?.activeDomain.label ?? 'Активный домен'} · линза «{LENS_LABEL[activeLens]}»</h3>
+          <p>Risk signal: {Math.round(handoff?.derivedMetrics.risk ?? 0)}% · Pressure: {Math.round(handoff?.derivedMetrics.pressure ?? 0)}%</p>
+        </div>
+        <div className="graph-summary-confidence">
+          <p>Confidence {Math.round(confidenceGlobal)}% / domain {Math.round(confidenceDomain)}%</p>
+          {lowConfidence ? <p className="graph-warning">Низкая уверенность: {confidencePrompt}</p> : <p className="graph-ok">Причинная картина достаточно устойчива.</p>}
+        </div>
+      </header>
 
-      <div className="graph-filter-bar" role="toolbar" aria-label="Слои графа">
-        {(['risks', 'actions', 'goals', 'delays'] as const).map((filter) => (
-          <button
-            key={filter}
-            type="button"
-            className={filters[filter] ? 'graph-filter active' : 'graph-filter'}
-            onClick={() => setFilters((current) => ({ ...current, [filter]: !current[filter] }))}
-          >
-            {FILTER_LABEL[filter]}
-          </button>
+      <div className="graph-reading-modes">
+        {(Object.keys(LENS_LABEL) as GraphReadingLens[]).map((entry) => (
+          <button key={entry} type="button" className={entry === activeLens ? 'active' : ''} onClick={() => setManualLens(entry)}>{LENS_LABEL[entry]}</button>
         ))}
       </div>
 
-      <svg
-        className="graph-scene"
-        viewBox="-560 -340 1120 680"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onWheel={handleWheel}
-      >
-        <defs>
-          <filter id="edgeGlow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="2.3" result="blurred" />
-            <feMerge>
-              <feMergeNode in="blurred" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <marker id="arrowhead" markerWidth="11" markerHeight="7" refX="10" refY="3.5" orient="auto">
-            <polygon points="0 0, 11 3.5, 0 7" fill="#cbe9ff" opacity="0.88" />
-          </marker>
-        </defs>
-
+      <svg className="graph-scene" style={{ opacity: settings.reduceTransparency ? 0.98 : 0.9 + settings.backgroundDensity / 1000 }} viewBox="-560 -340 1120 680" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onWheel={handleWheel}>
         <g transform={`translate(${lens.panX} ${lens.panY}) scale(${lens.zoom})`}>
-          {visibleEdges.map((edge) => {
+          {secondaryEdges.map((edge) => {
             const from = nodeMap.get(edge.source);
             const to = nodeMap.get(edge.target);
-            if (!from || !to) {
-              return null;
-            }
+            if (!from || !to) return null;
+            return <path key={edge.id} d={edgePath(from, to)} fill="none" stroke={EDGE_STYLE[edge.type].color} strokeWidth={1.6} opacity={0.35} strokeDasharray={EDGE_STYLE[edge.type].dash} />;
+          })}
 
-            const style = EDGE_STYLE[edge.type];
-            const isNeighbor = neighborhood.edgeIds.has(edge.id);
-            const isPressure = edge.type === 'drags' || edge.type === 'blocks' || edge.type === 'conflicts';
-            const isLaunchPressure = pressureEdgeIds.has(edge.id);
-            const isLaunchTarget = targetEdgeIds.has(edge.id);
+          {primaryChain.map((edge) => {
+            const from = nodeMap.get(edge.source);
+            const to = nodeMap.get(edge.target);
+            if (!from || !to) return null;
+            const typeClass = edge.type === 'boosts' || edge.type === 'delayed' ? 'link-support' : edge.type === 'blocks' ? 'link-blocker' : 'link-pressure';
+            return <path key={edge.id} d={edgePath(from, to)} className={`graph-primary-link ${typeClass}`} fill="none" stroke={EDGE_STYLE[edge.type].color} strokeWidth={3.4} strokeDasharray={EDGE_STYLE[edge.type].dash} />;
+          })}
 
+          {focusNodes.map((node) => {
+            const base = NODE_BASE[node.type];
+            const role = roleMap.get(node.id);
+            const selected = node.id === selectedNode.id;
+            const emphasis = selected ? 1 : role ? 0.95 : 0.6;
             return (
-              <g
-                key={edge.id}
-                opacity={isNeighbor ? 0.96 : isLaunchPressure || isLaunchTarget ? 0.48 : 0.18}
-                filter={settings.lowGlowMode ? undefined : 'url(#edgeGlow)'}
-                className={isNeighbor ? (isPressure ? 'graph-edge-pressure' : 'graph-edge-boost') : ''}
-              >
-                <path
-                  d={edgePath(from, to)}
-                  fill="none"
-                  stroke={style.color}
-                  strokeWidth={isNeighbor ? 3 : isLaunchPressure || isLaunchTarget ? 2.1 : 1.3}
-                  strokeDasharray={style.dash}
-                  markerEnd="url(#arrowhead)"
-                />
-                <text x={(from.position.x + to.position.x) / 2} y={(from.position.y + to.position.y) / 2 - 5} className="graph-edge-label" style={{ opacity: settings.labelDensity / 100 }}>
-                  {edge.label}
-                </text>
+              <g key={node.id} transform={`translate(${node.position.x} ${node.position.y})`} className="graph-node" opacity={emphasis} onClick={() => onSelectNode(node.id)}>
+                <circle r={nodeRadius(node) + 9} className="graph-node-halo" style={{ opacity: selected ? 0.35 : 0.12 }} />
+                <circle r={nodeRadius(node)} fill={base.fill} stroke={base.stroke} strokeWidth={selected ? 3 : 1.4} />
+                {role ? <text y={-nodeRadius(node) - 8} className="graph-node-role">{role}</text> : null}
+                <text y={nodeRadius(node) + 18} className="graph-node-label">{node.name}</text>
               </g>
             );
           })}
-
-          {[...visibleNodes]
-            .sort((left, right) => nodeLayerIndex(left.type) - nodeLayerIndex(right.type))
-            .map((node) => {
-              const style = NODE_STYLE[node.type];
-              const isSelected = node.id === selectedNode.id;
-              const inNeighborhood = neighborhood.nodeIds.has(node.id);
-              const emphasis = isSelected ? 1 : inNeighborhood ? 0.9 : 0.3;
-              const haloSize = style.radius + (isSelected ? 16 : 8);
-
-              return (
-                <g
-                  key={node.id}
-                  transform={`translate(${node.position.x} ${node.position.y})`}
-                  className="graph-node"
-                  opacity={emphasis}
-                  onClick={() => onSelectNode(node.id)}
-                >
-                  <circle r={haloSize} className="graph-node-halo" style={{ opacity: isSelected ? 0.46 : 0.14 }} />
-                  <circle r={style.radius + 7} fill={style.fill} opacity={0.12} />
-                  <circle r={style.radius} fill={style.fill} stroke={style.stroke} strokeWidth={isSelected ? 2.8 : 1.2} />
-                  <text y={style.radius + 20} className="graph-node-label" style={{ opacity: settings.labelDensity / 100 }}>
-                    {node.name}
-                  </text>
-                  <text y={style.radius + 35} className="graph-node-state">
-                    {toPercent(node.state)}
-                  </text>
-                </g>
-              );
-            })}
         </g>
       </svg>
 
-      <aside className="graph-inspector" aria-label="Параметры выбранного узла">
-        <p className="graph-context">Линза запуска: {pressure.label} · {launchContext.targetFocus.toLowerCase()}</p>
-        <p className="graph-inspector-kicker">
-          {NODE_TYPE_LABEL[selectedNode.type]} · {selectedNode.id}
-        </p>
-        <h3>{selectedNode.name}</h3>
-        <p className="graph-inspector-state">Состояние {toPercent(selectedNode.state)}</p>
-        <div className="graph-metrics">
-          <p>Инерция {toPercent(selectedNode.inertia * 100)}</p>
-          <p>Чувствительность {toPercent(selectedNode.sensitivity * 100)}</p>
-        </div>
-        <div className="graph-summary">
-          <p>Входящих связей {summary.inboundCount}</p>
-          <p>Исходящих связей {summary.outboundCount}</p>
-          <p>Входящее усиление {toPercent(summary.inboundBoost)}</p>
-          <p>Входящее давление {toPercent(summary.inboundDrag)}</p>
-          <p>Исходящее усиление {toPercent(summary.outboundBoost)}</p>
-          <p>Исходящее давление {toPercent(summary.outboundDrag)}</p>
-        </div>
-        <div className="graph-strategic-readout">
-          <p className="graph-strategic-title">Тактическая читаемость</p>
-          <p>
-            Давление пути ({pressure.label.toLowerCase()}):{' '}
-            <strong>
-              {strategicEdges.pressure[0]
-                ? `${nodeMap.get(strategicEdges.pressure[0].edge.source)?.name} → ${nodeMap.get(strategicEdges.pressure[0].edge.target)?.name}`
-                : 'не выделено'}
-            </strong>
-          </p>
-          <p>
-            Полезная ветка ({launchContext.targetFocus.toLowerCase()}):{' '}
-            <strong>
-              {strategicEdges.boost[0]
-                ? `${nodeMap.get(strategicEdges.boost[0].edge.source)?.name} → ${nodeMap.get(strategicEdges.boost[0].edge.target)?.name}`
-                : 'не выделено'}
-            </strong>
-          </p>
-        </div>
+      <aside className="graph-tactical-panel">
+        <h4>Тактическая интерпретация</h4>
+        <p><strong>Главный источник:</strong> {pressureEdge ? `${nodeMap.get(pressureEdge.source)?.name} → ${nodeMap.get(pressureEdge.target)?.name}` : 'н/д'}</p>
+        <p><strong>Ближайший блокер:</strong> {blockerEdge ? `${nodeMap.get(blockerEdge.source)?.name} → ${nodeMap.get(blockerEdge.target)?.name}` : 'н/д'}</p>
+        <p><strong>Лучший рычаг:</strong> {leverageEdge ? `${nodeMap.get(leverageEdge.source)?.name} → ${nodeMap.get(leverageEdge.target)?.name}` : 'н/д'}</p>
+        <p><strong>Focus/result:</strong> {handoff?.activeDomain.label ?? 'домен'} · readiness {Math.round(handoff?.derivedMetrics.readiness ?? 0)}%</p>
+        <p><strong>Confidence:</strong> {Math.round(confidenceGlobal)}% · {lowConfidence ? `не хватает: ${confidencePrompt}` : 'достаточно для тактического хода'}</p>
       </aside>
+
+      <div className="graph-cta-row">
+        <button type="button" className={recommendedRoute === 'world' ? '' : 'ghost'} onClick={() => onModeChange('world')}>Вернуться в Мир</button>
+        <button type="button" className={recommendedRoute === 'oracle' ? '' : 'ghost'} onClick={() => onModeChange('oracle')}>Перейти в Oracle</button>
+        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Подкрутить запуск в Start</button>
+      </div>
     </div>
   );
 };
