@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AppMode } from '../../entities/system/modes';
 import {
   ENTRY_MODES,
@@ -99,12 +99,6 @@ const DOMAIN_LABEL: Record<string, string> = {
   goal: 'Цель',
 };
 
-const PRIORITY_LABEL: Record<string, string> = {
-  critical: 'Критично',
-  recommended: 'Рекомендуется',
-  later: 'Позже',
-};
-
 const SECTION_LABEL: Record<'profile' | 'state' | 'factors', string> = {
   profile: 'Профиль',
   state: 'Состояние',
@@ -117,6 +111,72 @@ const SCALE_FIELDS: { key: keyof DailyCheckIn; label: string }[] = [
   { key: 'focus', label: 'Фокус' },
   { key: 'pressure', label: 'Давление' },
   { key: 'recovery', label: 'Восстановление' },
+];
+
+const WORKLOAD_LABEL: Record<WorkloadLevel, string> = {
+  low: 'Низкая',
+  medium: 'Средняя',
+  high: 'Высокая',
+};
+
+type PromptPackId = 'finance' | 'body' | 'work' | 'goal';
+type PromptPriority = 1 | 2 | 3 | 4;
+type FormSection = 'profile' | 'state' | 'factors';
+
+type PromptPack = {
+  id: PromptPackId;
+  title: string;
+  why: string;
+  improves: string;
+  fields: string[];
+  domain: keyof ConfidenceSnapshot['domainConfidence'];
+};
+
+type PromptCard = {
+  id: string;
+  title: string;
+  why: string;
+  missing: string[];
+  improves: string;
+  cta: string;
+  priority: PromptPriority;
+  section: FormSection;
+  fields: string[];
+};
+
+const PROMPT_PACKS: PromptPack[] = [
+  {
+    id: 'finance',
+    title: 'Усилим финансовую точность',
+    why: 'Не хватает опорных данных для расчёта денежного давления.',
+    improves: 'Поднимет finance confidence и точность verdict в Start.',
+    fields: ['monthlyIncome', 'monthlyFixedExpenses', 'reserveAmount'],
+    domain: 'finance',
+  },
+  {
+    id: 'body',
+    title: 'Усилим телесный контур',
+    why: 'Сон и восстановление пока неполные, прогноз ресурса шумный.',
+    improves: 'Точнее покажет риск перегруза и устойчивость на день.',
+    fields: ['sleepTargetHours', 'sleepHours', 'energy', 'recovery'],
+    domain: 'body',
+  },
+  {
+    id: 'work',
+    title: 'Закроем рабочий мини-пакет',
+    why: 'Не хватает baseline нагрузки для оценки рабочей ёмкости.',
+    improves: 'Уточнит work confidence и рекомендацию первого хода.',
+    fields: ['workCapacityBaseline', 'workloadLevel', 'focus', 'pressure'],
+    domain: 'work',
+  },
+  {
+    id: 'goal',
+    title: 'Уточним контур цели',
+    why: 'Для прогноза по цели не хватает ключевых параметров.',
+    improves: 'Сделает прогноз по цели и цене ошибки заметно точнее.',
+    fields: ['activeGoalTitle', 'activeGoalDeadline', 'activeGoalFailureCost'],
+    domain: 'goal',
+  },
 ];
 
 export const StartMode = ({
@@ -140,9 +200,13 @@ export const StartMode = ({
   const [showWhy, setShowWhy] = useState(false);
   const [openHint, setOpenHint] = useState<keyof typeof MODULE_DETAILS | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [activeDrawerSection, setActiveDrawerSection] = useState<FormSection>('profile');
+  const [highlightedFields, setHighlightedFields] = useState<string[]>([]);
+  const [dismissedPromptIds, setDismissedPromptIds] = useState<string[]>([]);
   const [profileForm, setProfileForm] = useState<Profile>(dataSpine.profile);
   const [checkInForm, setCheckInForm] = useState<DailyCheckIn>(dataSpine.dailyCheckIn);
   const [factorsForm, setFactorsForm] = useState<DailyFactors>(dataSpine.dailyFactors);
+  const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const selectedPressure = useMemo(
     () => PRESSURE_OPTIONS.find((option) => option.id === pressureId) ?? PRESSURE_OPTIONS[0],
@@ -190,12 +254,123 @@ export const StartMode = ({
   const readinessState = readinessValue >= 70 ? 'Готов к запуску' : readinessValue >= 45 ? 'Нужен точный первый ход' : 'Сначала стабилизация';
   const confidenceState = confidence.globalConfidence >= 70 ? 'доверие устойчивое' : confidence.globalConfidence >= 45 ? 'доверие среднее' : 'доверие низкое';
 
+  const confidenceFieldByKey = useMemo(
+    () => Object.fromEntries(CONFIDENCE_FIELDS.map((field) => [field.key, field])),
+    [],
+  );
+  const confidenceFieldByLabel = useMemo(
+    () => Object.fromEntries(CONFIDENCE_FIELDS.map((field) => [field.label, field])),
+    [],
+  );
+
+  const fieldValues = useMemo(
+    () => ({ ...profileForm, ...checkInForm, ...factorsForm } as Record<string, unknown>),
+    [profileForm, checkInForm, factorsForm],
+  );
+
+  const isFieldFilled = useCallback((key: string) => {
+    if (key === 'checkinRegularity') return confidence.streakDays >= 2 || confidence.historyDepthDays >= 3;
+    if (key === 'heightWeight') return false;
+    const value = fieldValues[key];
+    if (typeof value === 'number') return Number.isFinite(value) && value > 0;
+    if (typeof value === 'string') return value.trim().length > 0;
+    if (typeof value === 'boolean') return true;
+    return false;
+  }, [fieldValues, confidence.streakDays, confidence.historyDepthDays]);
+
+  const weakDomain = useMemo(
+    () => (Object.entries(confidence.domainConfidence) as [keyof ConfidenceSnapshot['domainConfidence'], number][])
+      .sort((a, b) => a[1] - b[1])[0]?.[0] ?? 'finance',
+    [confidence.domainConfidence],
+  );
+
+  const missingCriticalKeys = useMemo(
+    () => CONFIDENCE_FIELDS.filter((field) => field.priority === 'critical' && !isFieldFilled(field.key)).map((field) => field.key),
+    [isFieldFilled],
+  );
+
+  const missingRecommendedKeys = useMemo(
+    () => CONFIDENCE_FIELDS.filter((field) => field.priority === 'recommended' && !isFieldFilled(field.key)).map((field) => field.key),
+    [isFieldFilled],
+  );
+
+  const nextUnlockKeys = useMemo(
+    () => (confidence.nextUnlock?.missingForUnlock ?? []).map((label) => confidenceFieldByLabel[label]?.key).filter(Boolean) as string[],
+    [confidence.nextUnlock, confidenceFieldByLabel],
+  );
+
+  const promptCards = useMemo<PromptCard[]>(() => {
+    const cards: PromptCard[] = [];
+    PROMPT_PACKS.forEach((pack) => {
+      const missing = pack.fields.filter((key) => !isFieldFilled(key)).slice(0, 3);
+      if (!missing.length) return;
+      const hasCritical = missing.some((key) => missingCriticalKeys.includes(key));
+      const hasUnlock = missing.some((key) => nextUnlockKeys.includes(key));
+      const hasRecommended = missing.some((key) => missingRecommendedKeys.includes(key));
+      const priority: PromptPriority =
+        hasCritical && pack.domain === weakDomain ? 1 :
+        hasUnlock ? 2 :
+        hasCritical ? 3 :
+        hasRecommended ? 4 : 4;
+      const section = confidenceFieldByKey[missing[0]]?.section ?? 'profile';
+      cards.push({
+        id: `pack-${pack.id}`,
+        title: pack.title,
+        why: pack.why,
+        missing: missing.map((key) => confidenceFieldByKey[key]?.label ?? key),
+        improves: pack.improves,
+        cta: 'Добавить сейчас',
+        priority,
+        section,
+        fields: missing,
+      });
+    });
+    if (confidence.nextUnlock?.daysLeft) {
+      cards.push({
+        id: 'next-unlock-checkins',
+        title: 'Откроем следующий слой истории',
+        why: `До ${confidence.nextUnlock.title.toLowerCase()} не хватает ${confidence.nextUnlock.daysLeft} дн. check-in.`,
+        missing: ['Регулярность check-in'],
+        improves: 'Усилит уверенность по тренду и откроет следующий unlock.',
+        cta: 'Добавить сейчас',
+        priority: 2,
+        section: 'state',
+        fields: [],
+      });
+    }
+    return cards.sort((a, b) => a.priority - b.priority);
+  }, [isFieldFilled, weakDomain, missingCriticalKeys, missingRecommendedKeys, nextUnlockKeys, confidenceFieldByKey, confidence.nextUnlock]);
+
+  const visiblePromptCards = promptCards.filter((card) => !dismissedPromptIds.includes(card.id)).slice(0, 2);
+
+  const registerFieldRef = (key: string) => (node: HTMLElement | null) => {
+    fieldRefs.current[key] = node;
+  };
+
+  const openDrawerForPack = (card: PromptCard) => {
+    setDrawerOpen(true);
+    setActiveDrawerSection(card.section);
+    setHighlightedFields(card.fields);
+  };
+
+  useEffect(() => {
+    if (!drawerOpen || !highlightedFields.length) return;
+    const focusTarget = fieldRefs.current[highlightedFields[0]];
+    if (focusTarget && 'focus' in focusTarget) {
+      window.setTimeout(() => {
+        (focusTarget as HTMLElement).focus();
+      }, 60);
+    }
+  }, [drawerOpen, highlightedFields]);
+
   const updateScale = (key: keyof DailyCheckIn, value: number) => {
     setCheckInForm((current) => ({ ...current, [key]: value }));
   };
 
   const submitData = () => {
     onDataSpineChange({ profile: profileForm, dailyCheckIn: checkInForm, dailyFactors: factorsForm });
+    setHighlightedFields([]);
+    setDismissedPromptIds([]);
     setDrawerOpen(false);
   };
 
@@ -324,7 +499,7 @@ export const StartMode = ({
           <p><span>Цель</span><strong>{selectedEntryMode.label}</strong></p>
           <p><span>Горизонт</span><strong>{selectedHorizon.label}</strong></p>
           <p><span>Приоритет</span><strong>{targetFocus}</strong></p>
-          <button type="button" className="start-update-data" onClick={() => setDrawerOpen(true)}>Обновить входные данные</button>
+          <button type="button" className="start-update-data" onClick={() => { setDrawerOpen(true); setActiveDrawerSection('profile'); setHighlightedFields([]); }}>Обновить входные данные</button>
         </article>
 
         <article className="start-main-dial" aria-label="Главный прибор состояния">
@@ -385,6 +560,22 @@ export const StartMode = ({
           <p className="start-confidence-next">
             <span>Следующее открытие:</span> {nextUnlockText}
           </p>
+          {visiblePromptCards.length ? (
+            <div className="start-prompt-list" aria-label="Адаптивные дозапросы">
+              {visiblePromptCards.map((card) => (
+                <article key={card.id} className="start-micro-prompt-card">
+                  <h4>{card.title}</h4>
+                  <p>{card.why}</p>
+                  <p><span>Не хватает:</span> {card.missing.join(', ')}</p>
+                  <small>{card.improves}</small>
+                  <div className="start-micro-prompt-actions">
+                    <button type="button" onClick={() => openDrawerForPack(card)}>{card.cta}</button>
+                    <button type="button" className="ghost" onClick={() => setDismissedPromptIds((current) => [...current, card.id])}>Позже</button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : null}
         </article>
 
         <article className="start-mini-scene" aria-label="Проблема ядро ход">
@@ -442,70 +633,115 @@ export const StartMode = ({
         {drawerOpen ? (
           <aside className="start-data-drawer" aria-label="Обновить входные данные">
             <div className="start-drawer-head">
-              <h3>Обновить входные данные</h3>
+              <div>
+                <h3>Обновить входные данные</h3>
+                <p>
+                  Заполнено {CONFIDENCE_FIELDS.filter((field) => field.priority !== 'later' && isFieldFilled(field.key)).length}/
+                  {CONFIDENCE_FIELDS.filter((field) => field.priority !== 'later').length} полей · критично: {missingCriticalKeys.length}
+                </p>
+              </div>
               <button type="button" onClick={() => setDrawerOpen(false)}>✕</button>
+            </div>
+
+            <div className="start-drawer-summary">
+              <p><span>Сильнее улучшит точность:</span><strong>{promptCards[0]?.missing[0] ?? 'Критичные поля закрыты'}</strong></p>
+              <p><span>До unlock:</span><strong>{nextUnlockText}</strong></p>
+            </div>
+
+            <div className="start-drawer-sections" role="tablist" aria-label="Секции drawer">
+              {(['profile', 'state', 'factors'] as const).map((section) => (
+                <button
+                  key={section}
+                  type="button"
+                  className={activeDrawerSection === section ? 'active' : ''}
+                  onClick={() => setActiveDrawerSection(section)}
+                >
+                  {SECTION_LABEL[section]}
+                </button>
+              ))}
             </div>
 
             <div className="start-drawer-block start-drawer-completeness">
               <p className="start-drawer-title">Статус заполненности по разделам</p>
               {(['profile', 'state', 'factors'] as const).map((section) => {
                 const sectionFields = CONFIDENCE_FIELDS.filter((field) => field.section === section);
-                const filled = sectionFields.filter((field) => {
-                  if (field.key === 'checkinRegularity') return confidence.streakDays >= 2 || confidence.historyDepthDays >= 3;
-                  if (field.key === 'heightWeight') return false;
-                  const profile = profileForm as Record<string, unknown>;
-                  const checkin = checkInForm as Record<string, unknown>;
-                  const factors = factorsForm as Record<string, unknown>;
-                  const value = field.key in profile ? profile[field.key] : field.key in checkin ? checkin[field.key] : factors[field.key];
-                  return typeof value === 'number' ? value > 0 : typeof value === 'string' ? value.trim().length > 0 : typeof value === 'boolean';
-                }).length;
+                const filled = sectionFields.filter((field) => isFieldFilled(field.key)).length;
                 return <p key={section}><span>{SECTION_LABEL[section]}</span><strong>{filled}/{sectionFields.length}</strong></p>;
               })}
-              <div className="start-field-hints">
-                {CONFIDENCE_FIELDS.map((field) => (
-                  <div key={field.key} className="start-field-hint">
-                    <p><strong>{field.label}</strong><em>{PRIORITY_LABEL[field.priority]}</em></p>
-                    <small>{field.reason}</small>
+            </div>
+
+            {activeDrawerSection === 'profile' ? (
+              <div className="start-drawer-block">
+                <p className="start-drawer-title">Профиль</p>
+                <label className={highlightedFields.includes('monthlyIncome') ? 'field-highlight' : ''}>Доход в месяц
+                  <input ref={registerFieldRef('monthlyIncome')} type="number" value={profileForm.monthlyIncome} onChange={(e) => setProfileForm((c) => ({ ...c, monthlyIncome: Number(e.target.value) }))} />
+                  <small className="start-impact-hint">Улучшает finance confidence</small>
+                </label>
+                <label className={highlightedFields.includes('monthlyFixedExpenses') ? 'field-highlight' : ''}>Фикс. расходы
+                  <input ref={registerFieldRef('monthlyFixedExpenses')} type="number" value={profileForm.monthlyFixedExpenses} onChange={(e) => setProfileForm((c) => ({ ...c, monthlyFixedExpenses: Number(e.target.value) }))} />
+                  <small className="start-impact-hint">Уточняет денежное давление</small>
+                </label>
+                <label className={highlightedFields.includes('reserveAmount') ? 'field-highlight' : ''}>Резерв
+                  <input ref={registerFieldRef('reserveAmount')} type="number" value={profileForm.reserveAmount} onChange={(e) => setProfileForm((c) => ({ ...c, reserveAmount: Number(e.target.value) }))} />
+                  <small className="start-impact-hint">Снижает неопределённость риска</small>
+                </label>
+                <label className={highlightedFields.includes('sleepTargetHours') ? 'field-highlight' : ''}>Норма сна (часы)
+                  <input ref={registerFieldRef('sleepTargetHours')} type="number" step="0.5" value={profileForm.sleepTargetHours} onChange={(e) => setProfileForm((c) => ({ ...c, sleepTargetHours: Number(e.target.value) }))} />
+                  <small className="start-impact-hint">Усиливает телесный контур</small>
+                </label>
+                <label className={highlightedFields.includes('workCapacityBaseline') ? 'field-highlight' : ''}>База рабочей ёмкости (1-10)
+                  <input ref={registerFieldRef('workCapacityBaseline')} type="number" min={1} max={10} value={profileForm.workCapacityBaseline} onChange={(e) => setProfileForm((c) => ({ ...c, workCapacityBaseline: Number(e.target.value) }))} />
+                  <small className="start-impact-hint">Калибрует рабочую нагрузку</small>
+                </label>
+                <label className={highlightedFields.includes('activeGoalTitle') ? 'field-highlight' : ''}>Активная цель
+                  <input ref={registerFieldRef('activeGoalTitle')} type="text" value={profileForm.activeGoalTitle} onChange={(e) => setProfileForm((c) => ({ ...c, activeGoalTitle: e.target.value }))} />
+                  <small className="start-impact-hint">Уточняет направление оптимизации</small>
+                </label>
+                <label className={highlightedFields.includes('activeGoalDeadline') ? 'field-highlight' : ''}>Дедлайн цели
+                  <input ref={registerFieldRef('activeGoalDeadline')} type="date" value={profileForm.activeGoalDeadline} onChange={(e) => setProfileForm((c) => ({ ...c, activeGoalDeadline: e.target.value }))} />
+                  <small className="start-impact-hint">Даёт горизонт прогноза</small>
+                </label>
+                <label className={highlightedFields.includes('activeGoalFailureCost') ? 'field-highlight' : ''}>Цена провала цели
+                  <input ref={registerFieldRef('activeGoalFailureCost')} type="number" value={profileForm.activeGoalFailureCost} onChange={(e) => setProfileForm((c) => ({ ...c, activeGoalFailureCost: Number(e.target.value) }))} />
+                  <small className="start-impact-hint">Уточняет verdict и цену ошибки</small>
+                </label>
+              </div>
+            ) : null}
+
+            {activeDrawerSection === 'state' ? (
+              <div className="start-drawer-block">
+                <p className="start-drawer-title">Состояние</p>
+                {SCALE_FIELDS.map((field) => (
+                  <div key={field.key} className={`scale-control ${highlightedFields.includes(field.key) ? 'field-highlight' : ''}`}>
+                    <p>{field.label}<strong>{checkInForm[field.key]}</strong></p>
+                    <input ref={registerFieldRef(field.key)} type="range" min={1} max={10} value={checkInForm[field.key]} onChange={(e) => updateScale(field.key, Number(e.target.value))} />
+                    <small className="start-impact-hint">Повышает точность дневного контура</small>
                   </div>
                 ))}
               </div>
-            </div>
+            ) : null}
 
-            <div className="start-drawer-block">
-              <p className="start-drawer-title">A. Профиль</p>
-              <label>Доход в месяц<input type="number" value={profileForm.monthlyIncome} onChange={(e) => setProfileForm((c) => ({ ...c, monthlyIncome: Number(e.target.value) }))} /></label>
-              <label>Фикс. расходы<input type="number" value={profileForm.monthlyFixedExpenses} onChange={(e) => setProfileForm((c) => ({ ...c, monthlyFixedExpenses: Number(e.target.value) }))} /></label>
-              <label>Резерв<input type="number" value={profileForm.reserveAmount} onChange={(e) => setProfileForm((c) => ({ ...c, reserveAmount: Number(e.target.value) }))} /></label>
-              <label>Норма сна (часы)<input type="number" step="0.5" value={profileForm.sleepTargetHours} onChange={(e) => setProfileForm((c) => ({ ...c, sleepTargetHours: Number(e.target.value) }))} /></label>
-              <label>База рабочей ёмкости (1-10)<input type="number" min={1} max={10} value={profileForm.workCapacityBaseline} onChange={(e) => setProfileForm((c) => ({ ...c, workCapacityBaseline: Number(e.target.value) }))} /></label>
-              <label>Активная цель<input type="text" value={profileForm.activeGoalTitle} onChange={(e) => setProfileForm((c) => ({ ...c, activeGoalTitle: e.target.value }))} /></label>
-              <label>Дедлайн цели<input type="date" value={profileForm.activeGoalDeadline} onChange={(e) => setProfileForm((c) => ({ ...c, activeGoalDeadline: e.target.value }))} /></label>
-              <label>Цена провала цели<input type="number" value={profileForm.activeGoalFailureCost} onChange={(e) => setProfileForm((c) => ({ ...c, activeGoalFailureCost: Number(e.target.value) }))} /></label>
-            </div>
-
-            <div className="start-drawer-block">
-              <p className="start-drawer-title">B. Состояние</p>
-              {SCALE_FIELDS.map((field) => (
-                <div key={field.key} className="scale-control">
-                  <p>{field.label}<strong>{checkInForm[field.key]}</strong></p>
-                  <input type="range" min={1} max={10} value={checkInForm[field.key]} onChange={(e) => updateScale(field.key, Number(e.target.value))} />
+            {activeDrawerSection === 'factors' ? (
+              <div className="start-drawer-block">
+                <p className="start-drawer-title">Факторы</p>
+                <label className={highlightedFields.includes('sleepHours') ? 'field-highlight' : ''}>Сон (часы)
+                  <input ref={registerFieldRef('sleepHours')} type="number" step="0.5" value={factorsForm.sleepHours} onChange={(e) => setFactorsForm((c) => ({ ...c, sleepHours: Number(e.target.value) }))} />
+                  <small className="start-impact-hint">Уточняет восстановление</small>
+                </label>
+                <label className={highlightedFields.includes('unplannedSpend') ? 'field-highlight' : ''}>Неплановые траты
+                  <input ref={registerFieldRef('unplannedSpend')} type="number" value={factorsForm.unplannedSpend} onChange={(e) => setFactorsForm((c) => ({ ...c, unplannedSpend: Number(e.target.value) }))} />
+                  <small className="start-impact-hint">Уточняет краткосрочный финансовый риск</small>
+                </label>
+                <div className={`workload-segment ${highlightedFields.includes('workloadLevel') ? 'field-highlight' : ''}`} role="tablist" aria-label="Уровень нагрузки">
+                  {(['low', 'medium', 'high'] as WorkloadLevel[]).map((level) => (
+                    <button key={level} ref={level === 'low' ? registerFieldRef('workloadLevel') : undefined} type="button" className={factorsForm.workloadLevel === level ? 'active' : ''} onClick={() => setFactorsForm((c) => ({ ...c, workloadLevel: level }))}>{WORKLOAD_LABEL[level]}</button>
+                  ))}
                 </div>
-              ))}
-            </div>
-
-            <div className="start-drawer-block">
-              <p className="start-drawer-title">C. Факторы</p>
-              <label>Сон (часы)<input type="number" step="0.5" value={factorsForm.sleepHours} onChange={(e) => setFactorsForm((c) => ({ ...c, sleepHours: Number(e.target.value) }))} /></label>
-              <label>Неплановые траты<input type="number" value={factorsForm.unplannedSpend} onChange={(e) => setFactorsForm((c) => ({ ...c, unplannedSpend: Number(e.target.value) }))} /></label>
-              <div className="workload-segment" role="tablist" aria-label="Уровень нагрузки">
-                {(['low', 'medium', 'high'] as WorkloadLevel[]).map((level) => (
-                  <button key={level} type="button" className={factorsForm.workloadLevel === level ? 'active' : ''} onClick={() => setFactorsForm((c) => ({ ...c, workloadLevel: level }))}>{level}</button>
-                ))}
+                <label className="toggle-row"><input type="checkbox" checked={factorsForm.hadConflict} onChange={(e) => setFactorsForm((c) => ({ ...c, hadConflict: e.target.checked }))} /> Был конфликт</label>
+                <label className="toggle-row"><input type="checkbox" checked={factorsForm.hadWorkout} onChange={(e) => setFactorsForm((c) => ({ ...c, hadWorkout: e.target.checked }))} /> Была тренировка</label>
+                <label className="toggle-row"><input type="checkbox" checked={factorsForm.lateCaffeine} onChange={(e) => setFactorsForm((c) => ({ ...c, lateCaffeine: e.target.checked }))} /> Кофеин поздно</label>
               </div>
-              <label className="toggle-row"><input type="checkbox" checked={factorsForm.hadConflict} onChange={(e) => setFactorsForm((c) => ({ ...c, hadConflict: e.target.checked }))} /> Был конфликт</label>
-              <label className="toggle-row"><input type="checkbox" checked={factorsForm.hadWorkout} onChange={(e) => setFactorsForm((c) => ({ ...c, hadWorkout: e.target.checked }))} /> Была тренировка</label>
-              <label className="toggle-row"><input type="checkbox" checked={factorsForm.lateCaffeine} onChange={(e) => setFactorsForm((c) => ({ ...c, lateCaffeine: e.target.checked }))} /> Кофеин поздно</label>
-            </div>
+            ) : null}
 
             <button type="button" className="start-drawer-save" onClick={submitData}>Применить и пересчитать</button>
           </aside>
