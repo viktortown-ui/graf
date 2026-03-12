@@ -13,6 +13,7 @@ import type { useSceneState } from '../state/useSceneState';
 import type { useSettingsState } from '../state/useSettingsState';
 import { MODE_SIGNAL } from '../../engine/sceneSignals';
 import { MODES } from '../../entities/system/modes';
+import { ChainRouteMemory } from '../../shared/ui/ChainRouteMemory';
 
 type SceneViewportProps = {
   mode: AppMode;
@@ -72,14 +73,13 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
       <div className="scene-canvas">
         <div className="scene-grid" aria-hidden="true" />
         <div className="scene-core-glow" aria-hidden="true" />
-        <div className="scene-safe-area">
-          {showServiceHud ? (
-            <div className="scene-safe-top">
-              <header className="scene-hud">
-                <p className="scene-hud-label">{signal.title}</p>
-                {mode !== 'start' ? <p className="scene-hud-metric">Нагрузка интерфейса {Math.round(signal.pulse * 100)}%</p> : null}
-              </header>
-              <div className="scene-anchor-memory" aria-live="polite">
+        {showServiceHud ? (
+          <>
+            <header className="scene-hud">
+              <p className="scene-hud-label">{signal.title}</p>
+              {mode !== 'start' ? <p className="scene-hud-metric">Нагрузка интерфейса {Math.round(signal.pulse * 100)}%</p> : null}
+            </header>
+            <div className="scene-anchor-memory" aria-live="polite">
               {mode === 'start' ? <p>Запуск цикла: <strong>подтвердите вход и выберите первый шаг</strong>.</p> : null}
               {mode === 'world' ? (
                 <>
@@ -100,10 +100,15 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
                 </>
               ) : null}
               {mode === 'datalab' ? <p>Давление запуска: <strong>{PRESSURE_OPTIONS.find((entry) => entry.id === sceneState.launchContext.pressureId)?.label ?? 'Не задано'}</strong></p> : null}
-              </div>
             </div>
-          ) : null}
-          <div className={`scene-mode-content ${mode}`}>
+            {mode === 'start' || mode === 'world' || mode === 'graph' || mode === 'oracle' ? (
+              <div className="scene-route-memory-wrap">
+                <ChainRouteMemory chainContext={sceneState.chainContext} />
+              </div>
+            ) : null}
+          </>
+        ) : null}
+        <div className={`scene-mode-content ${mode}`}>
           {mode === 'overview' && <OverviewMode onModeChange={onModeChange} />}
           {mode === 'start' && (
             <StartMode
@@ -146,7 +151,6 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               settings={settingsState.settings}
               confidence={sceneState.confidence}
               handoff={sceneState.graphHandoff}
-              chainContext={sceneState.chainContext}
               onModeChange={onModeChange}
               onOracleHandoff={sceneState.applyGraphOracleHandoff}
             />
@@ -201,7 +205,6 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               onResetVisualCache={() => sceneState.resetView()}
             />
           )}
-          </div>
         </div>
       </div>
     </section>

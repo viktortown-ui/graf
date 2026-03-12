@@ -132,22 +132,22 @@ export const SettingsMode = ({
           <label aria-label="Прозрачность панелей">
             Прозрачность панелей: <strong>{settings.hudOpacity}% ({levelLabel(settings.hudOpacity)})</strong>
             <input type="range" min={35} max={100} value={settings.hudOpacity} onChange={(e) => onSettingChange('hudOpacity', Number(e.target.value))} />
-            <small>Ниже — мягче фон, выше — плотнее панели. Рекомендуется 65–85%.</small>
+            <small>Минимум 35% · максимум 100%. Ниже — мягче фон, выше — плотнее панели.</small>
           </label>
           <label aria-label="Плотность фона">
             Плотность фона: <strong>{settings.backgroundDensity}% ({levelLabel(settings.backgroundDensity)})</strong>
             <input type="range" min={0} max={100} value={settings.backgroundDensity} onChange={(e) => onSettingChange('backgroundDensity', Number(e.target.value))} />
-            <small>Влияет на насыщенность сетки и свечения сцены.</small>
+            <small>Минимум 0% · максимум 100%. Низко — спокойный фон, высоко — выразительная сцена.</small>
           </label>
           <label aria-label="Плотность подписей">
             Плотность подписей: <strong>{settings.labelDensity}% ({levelLabel(settings.labelDensity)})</strong>
             <input type="range" min={30} max={100} value={settings.labelDensity} onChange={(e) => onSettingChange('labelDensity', Number(e.target.value))} />
-            <small>Низко — тише подписи, высоко — более выраженные подписи.</small>
+            <small>Минимум 30% · максимум 100%. Низко — подписи спокойнее, высоко — подписи заметнее.</small>
           </label>
           <label aria-label="Размер интерфейсного текста">
             Размер интерфейсного текста: <strong>{settings.uiTextScale}% ({textScaleLabel(settings.uiTextScale)})</strong>
             <input type="range" min={90} max={125} value={settings.uiTextScale} onChange={(e) => onSettingChange('uiTextScale', Number(e.target.value))} />
-            <small>Режимы: меньше · стандарт · крупнее. Настройка применяется глобально.</small>
+            <small>Минимум 90% · максимум 125%. Режимы: меньше · стандарт · крупнее для всех основных экранов.</small>
           </label>
         </article>
 
@@ -161,7 +161,7 @@ export const SettingsMode = ({
             <button type="button" className={settings.lowGlowMode ? 'active' : ''} onClick={() => onSettingChange('lowGlowMode', !settings.lowGlowMode)} aria-label="Ограничить свечение">Меньше свечения</button>
             <button type="button" className={settings.autoFocusNode ? 'active' : ''} onClick={() => onSettingChange('autoFocusNode', !settings.autoFocusNode)} aria-label="Автофокус на выбранном узле">Автофокус узла</button>
           </div>
-          <p className="settings-note">Режим движения: <strong>{motionScale}</strong>.</p>
+          <p className="settings-note">Движение интерфейса: <strong>{motionScale}</strong>.</p>
         </article>
 
         <article className="settings-panel">

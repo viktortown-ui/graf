@@ -2,8 +2,7 @@ import { useMemo, useRef, useState, type PointerEvent, type WheelEvent } from 'r
 import type { AppMode } from '../../entities/system/modes';
 import type { ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
 import type { AppSettings } from '../../app/state/settingsModel';
-import type { ChainContext, GraphReadingLens, OracleExecutionHandoff, WorldGraphHandoff } from '../../app/state/useSceneState';
-import { ChainRouteMemory } from '../../shared/ui/ChainRouteMemory';
+import type { GraphReadingLens, OracleExecutionHandoff, WorldGraphHandoff } from '../../app/state/useSceneState';
 import { DEMO_GRAPH, type GraphEdge, type GraphEdgeType, type GraphNode } from './model';
 
 type GraphModeProps = {
@@ -11,7 +10,6 @@ type GraphModeProps = {
   confidence: ConfidenceSnapshot;
   selectedNodeId: string;
   handoff: WorldGraphHandoff | null;
-  chainContext: ChainContext;
   onSelectNode: (nodeId: string) => void;
   onModeChange: (mode: AppMode) => void;
   onOracleHandoff: (handoff: OracleExecutionHandoff) => void;
@@ -88,7 +86,7 @@ const scoreEdge = (edge: GraphEdge, nodeMap: Map<string, GraphNode>, lens: Graph
   return impact * (0.7 + targetPressure * 0.55);
 };
 
-export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, settings, handoff, confidence, chainContext, onModeChange, onOracleHandoff }: GraphModeProps) => {
+export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, settings, handoff, confidence, onModeChange, onOracleHandoff }: GraphModeProps) => {
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const [manualLens, setManualLens] = useState<GraphReadingLens | null>(null);
 
@@ -221,7 +219,6 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
 
   return (
     <div className={`graph-mode ${lowConfidence ? 'confidence-low' : ''}`}>
-      <ChainRouteMemory chainContext={chainContext} />
       <header className="graph-summary-bar">
         <div>
           <p className="graph-kicker">Граф · причинный фокус</p>

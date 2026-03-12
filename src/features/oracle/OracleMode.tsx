@@ -5,7 +5,6 @@ import { HORIZONS, PRESSURE_OPTIONS, type LaunchContext } from '../../app/state/
 import type { AppSettings } from '../../app/state/settingsModel';
 import type { AcceptedScenario, ChainContext, OracleExecutionHandoff } from '../../app/state/useSceneState';
 import { propagateGraphScenario } from '../graph/engine';
-import { ChainRouteMemory } from '../../shared/ui/ChainRouteMemory';
 import { AcceptedScenarioCard } from '../../shared/ui/AcceptedScenarioCard';
 
 type Horizon = 3 | 7 | 14;
@@ -154,7 +153,6 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
 
   return (
     <div className={`oracle-mode oracle-execution ${lowConfidence ? 'is-caution' : ''}`} aria-label="Оракул: выбор сценария">
-      <ChainRouteMemory chainContext={chainContext} />
       <header className="oracle-summary-compact">
         <p className="scene-mode-kicker">Оракул · выбор сценария</p>
         <h3>{oracleContext.activeDomain} · линза «{oracleContext.selectedLens}»</h3>
