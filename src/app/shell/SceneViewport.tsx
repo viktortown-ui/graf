@@ -102,15 +102,9 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
                   <p>Причинный фокус: <strong>{sceneState.chainContext.lastBlocker ?? sceneState.selectedGraphNode.name}</strong></p>
                 </>
               ) : null}
-              {mode === 'oracle' ? (
-                <>
-                  <p>Узкое место: <strong>{sceneState.chainContext.lastBlocker ?? 'уточняется'}</strong> · Рычаг: <strong>{sceneState.chainContext.lastLeverage ?? 'уточняется'}</strong></p>
-                  <p>Режим: <strong>выбор сценария</strong></p>
-                </>
-              ) : null}
               {mode === 'datalab' ? <p>Давление запуска: <strong>{PRESSURE_OPTIONS.find((entry) => entry.id === sceneState.launchContext.pressureId)?.label ?? 'Не задано'}</strong></p> : null}
             </div>
-            {mode === 'start' || mode === 'world' || mode === 'graph' || mode === 'oracle' ? (
+            {mode === 'start' || mode === 'world' || mode === 'graph' ? (
               <div className="scene-route-memory-wrap">
                 <ChainRouteMemory chainContext={sceneState.chainContext} />
               </div>
