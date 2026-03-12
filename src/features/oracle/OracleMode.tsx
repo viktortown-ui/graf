@@ -33,8 +33,7 @@ type ScenarioCard = {
   effect: string;
   risk: string;
   errorCost: string;
-  movePotential: string;
-  confidenceFit: string;
+  
   why: string;
   recommended: boolean;
 };
@@ -91,8 +90,7 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
         effect: `Снижение давления (${scoreToLabel(c.metrics.pressure)}) и возврат контролируемого ритма.`,
         risk: 'Медленный прогресс по цели, но меньше вероятность срыва.',
         errorCost: 'Низкая: потеряете темп, но не сломаете контур.',
-        movePotential: 'Надёжный, если система уже перегружена.',
-        confidenceFit: lowConfidence ? 'Хорошо подходит при низкой уверенности.' : 'Подходит, если нужна мягкая стабилизация.',
+        
         why: `Обходит blocker: ${c.blocker}. Работает через мягкий leverage: ${c.leverageNode}.`,
         recommended: cautiousRecommended && !collectRecommended,
       },
@@ -103,8 +101,7 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
         effect: `Баланс между снижением риска (${scoreToLabel(c.metrics.risk)}) и движением к результату.`,
         risk: 'Средний: нужна дисциплина выполнения в текущем цикле.',
         errorCost: 'Средняя: можно потерять часть окна прогресса.',
-        movePotential: 'Лучший компромисс для большинства ситуаций.',
-        confidenceFit: lowConfidence ? 'Можно делать только в облегчённой версии.' : 'Оптимальный при текущей уверенности.',
+        
         why: `Бьёт в узкое место ${c.blocker}, усиливает ${c.leverageNode} и ведёт к ${c.resultNode}.`,
         recommended: baseRecommended,
       },
@@ -123,13 +120,12 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
       {
         id: 'collect-data',
         title: 'Уточнить данные · не форсировать сейчас',
-        move: 'Сделать короткий check-in по недостающим сигналам и обновить causal картину перед сильным ходом.',
+        move: 'Сделать короткую сверку по недостающим сигналам и обновить причинную картину перед сильным ходом.',
         effect: 'Повышает точность выбора, снижает шанс дорогой ошибки.',
         risk: 'Потеря части скорости в обмен на качество решения.',
         errorCost: 'Низкая: максимум небольшой сдвиг по сроку.',
-        movePotential: 'Открывает путь к более сильному сценарию на следующем шаге.',
-        confidenceFit: lowConfidence ? 'Лучшее соответствие при низком confidence.' : 'Опционально, если есть сомнения в данных.',
-        why: `При confidence ${Math.round(c.confidenceGlobal)}% риск переоценить leverage выше нормы.`,
+        
+        why: `При уверенности ${Math.round(c.confidenceGlobal)}% риск переоценить рычаг выше нормы.`,
         recommended: collectRecommended,
       },
     ];
@@ -150,15 +146,15 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
   };
 
   return (
-    <div className={`oracle-mode oracle-execution ${lowConfidence ? 'is-caution' : ''}`} aria-label="Oracle 2.0 выбор сценария">
+    <div className={`oracle-mode oracle-execution ${lowConfidence ? 'is-caution' : ''}`} aria-label="Оракул: выбор сценария">
       <ChainRouteMemory chainContext={chainContext} />
       <header className="oracle-summary-compact">
-        <p className="scene-mode-kicker">Oracle · выбор сценария</p>
+        <p className="scene-mode-kicker">Оракул · выбор сценария</p>
         <h3>{oracleContext.activeDomain} · линза «{oracleContext.selectedLens}»</h3>
-        <p>Blocker: <strong>{oracleContext.blocker}</strong> · Leverage: <strong>{oracleContext.leverageNode}</strong></p>
+        <p>Блокер: <strong>{oracleContext.blocker}</strong> · Рычаг: <strong>{oracleContext.leverageNode}</strong></p>
         <p>
-          Confidence: <strong>{Math.round(oracleContext.confidenceGlobal)}%</strong> / domain <strong>{Math.round(oracleContext.confidenceDomain)}%</strong>
-          {lowConfidence ? <span className="oracle-caution-pill">Caution mode: сначала уточнить данные</span> : null}
+          Уверенность модели: <strong>{Math.round(oracleContext.confidenceGlobal)}%</strong> / домен <strong>{Math.round(oracleContext.confidenceDomain)}%</strong>
+          {lowConfidence ? <span className="oracle-caution-pill">Режим осторожности: сначала уточнить данные</span> : null}
         </p>
       </header>
 
@@ -168,11 +164,10 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
             <p className="oracle-card-title">{scenario.title}</p>
             <p>{scenario.move}</p>
             <ul>
-              <li><strong>Effect:</strong> {scenario.effect}</li>
-              <li><strong>Risk:</strong> {scenario.risk}</li>
-              <li><strong>Error cost:</strong> {scenario.errorCost}</li>
-              <li><strong>Move potential:</strong> {scenario.movePotential}</li>
-              <li><strong>Confidence fit:</strong> {scenario.confidenceFit}</li>
+              <li><strong>Эффект:</strong> {scenario.effect}</li>
+              <li><strong>Риск:</strong> {scenario.risk}</li>
+              <li><strong>Цена ошибки:</strong> {scenario.errorCost}</li>
+              
             </ul>
             <p className="oracle-card-why">Почему: {scenario.why}</p>
             {scenario.recommended ? <span className="oracle-recommended-mark">Рекомендовано сейчас</span> : null}
@@ -180,11 +175,11 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
         ))}
       </section>
 
-      <aside className="oracle-tactical-reasoning" aria-label="Tactical reasoning panel">
-        <h4>Tactical reasoning panel</h4>
+      <aside className="oracle-tactical-reasoning" aria-label="Тактическая панель">
+        <h4>Тактическая панель</h4>
         <p><strong>Почему выбран:</strong> {recommendedScenario.title}</p>
-        <p><strong>Какой blocker обходит:</strong> {oracleContext.blocker}</p>
-        <p><strong>Какой leverage использует:</strong> {oracleContext.leverageNode}</p>
+        <p><strong>Какой блокер обходит:</strong> {oracleContext.blocker}</p>
+        <p><strong>Какой рычаг использует:</strong> {oracleContext.leverageNode}</p>
         <p><strong>Главный риск:</strong> {oracleContext.pressureSource}</p>
         <p><strong>Что при ошибке:</strong> {recommendedScenario.errorCost}</p>
         <p><strong>Если ничего не делать:</strong> давление «{pressure.label.toLowerCase()}» закрепится и риск в узле результата вырастет.</p>
@@ -192,15 +187,15 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
 
       <div className="oracle-cta-path">
         <button type="button" onClick={() => applyScenario(recommendedScenario)}>Принять сценарий</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('graph')}>Вернуться в Graph</button>
+        <button type="button" className="ghost" onClick={() => onModeChange('graph')}>Вернуться в Граф</button>
         <button type="button" className="ghost" onClick={() => onModeChange('world')}>Вернуться в Мир</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Start</button>
+        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Старт</button>
       </div>
 
       {chainContext.lastAcceptedScenario ? <AcceptedScenarioCard scenario={chainContext.lastAcceptedScenario} tone="oracle" /> : null}
       {postApplyNextMode ? (
         <div className="oracle-post-apply">
-          <p>Сценарий сохранён. Следующий лучший шаг — <strong>{postApplyNextMode === 'world' ? 'вернуться в Мир' : postApplyNextMode === 'graph' ? 'вернуться в Graph' : 'вернуться в Start'}</strong>.</p>
+          <p>Сценарий сохранён. Следующий лучший шаг — <strong>{postApplyNextMode === 'world' ? 'вернуться в Мир' : postApplyNextMode === 'graph' ? 'вернуться в Граф' : 'вернуться в Старт'}</strong>.</p>
           <button type="button" onClick={() => onModeChange(postApplyNextMode)}>Продолжить</button>
         </div>
       ) : null}

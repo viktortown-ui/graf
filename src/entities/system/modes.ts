@@ -34,8 +34,8 @@ export const MODES: ModeDefinition[] = [
   },
   {
     id: 'datalab',
-    label: 'Data Lab',
-    summary: 'Скрытая инженерная подстанция данных: registry, prompts, confidence и sandbox.',
+    label: 'Подстанция данных',
+    summary: 'Скрытая инженерная подстанция: реестр, подсказки, уверенность и песочница.',
   },
   {
     id: 'settings',

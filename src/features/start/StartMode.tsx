@@ -69,7 +69,7 @@ const PATH_LABEL: Record<AppMode, string> = {
   graph: 'Граф причин: разбор источника давления',
   oracle: 'Прогноз: проверка сценариев',
   settings: 'Настройки',
-  datalab: 'Data Lab (dev)',
+  datalab: 'Подстанция данных (dev)',
 };
 
 const FIRST_STEP_BY_MODE: Record<AppMode, string> = {
@@ -79,7 +79,7 @@ const FIRST_STEP_BY_MODE: Record<AppMode, string> = {
   graph: 'Откройте граф причин и выделите ветку с наибольшим эффектом.',
   oracle: 'Откройте прогноз и сравните базовый и усиленный сценарий.',
   settings: 'Настройте интерфейс под комфорт чтения.',
-  datalab: 'Откройте Data Lab для инженерной диагностики данных.',
+  datalab: 'Откройте Подстанцию данных для инженерной диагностики.',
 };
 
 const MODE_SHORT_LABEL: Record<AppMode, string> = {
@@ -89,7 +89,7 @@ const MODE_SHORT_LABEL: Record<AppMode, string> = {
   graph: 'Граф',
   oracle: 'Прогноз',
   settings: 'Настройки',
-  datalab: 'Data Lab (dev)',
+  datalab: 'Подстанция данных (dev)',
 };
 
 const clamp = (value: number, min = 0, max = 100) => Math.min(max, Math.max(min, value));
@@ -156,7 +156,7 @@ const PROMPT_PACKS: PromptPack[] = [
     id: 'finance',
     title: 'Усилим финансовую точность',
     why: 'Не хватает опорных данных для расчёта денежного давления.',
-    improves: 'Поднимет finance confidence и точность verdict в Start.',
+    improves: 'Поднимет уверенность по финансам и точность вердикта в Старте.',
     fields: ['monthlyIncome', 'monthlyFixedExpenses', 'reserveAmount'],
     domain: 'finance',
   },
@@ -260,7 +260,7 @@ export const StartMode = ({
     ? `${confidence.nextUnlock.title} через ${confidence.nextUnlock.daysLeft} дн.`
     : 'все уровни истории уже открыты';
   const readinessState = readinessValue >= 70 ? 'Готов к запуску' : readinessValue >= 45 ? 'Нужен точный первый ход' : 'Сначала стабилизация';
-  const confidenceState = confidence.globalConfidence >= 70 ? 'доверие устойчивое' : confidence.globalConfidence >= 45 ? 'доверие среднее' : 'доверие низкое';
+  const confidenceState = confidence.globalConfidence >= 70 ? 'уверенность устойчива' : confidence.globalConfidence >= 45 ? 'уверенность средняя' : 'уверенность низкая';
 
   const confidenceFieldByKey = useMemo(
     () => Object.fromEntries(CONFIDENCE_FIELDS.map((field) => [field.key, field])),
@@ -339,7 +339,7 @@ export const StartMode = ({
         title: 'Откроем следующий слой истории',
         why: `До ${confidence.nextUnlock.title.toLowerCase()} не хватает ${confidence.nextUnlock.daysLeft} дн. check-in.`,
         missing: ['Регулярность check-in'],
-        improves: 'Усилит уверенность по тренду и откроет следующий unlock.',
+        improves: 'Усилит уверенность по тренду и откроет следующее открытие.',
         cta: 'Добавить сейчас',
         priority: 2,
         section: 'state',
@@ -516,7 +516,7 @@ export const StartMode = ({
             <div className="dial-ring" style={{ ['--dial-progress' as string]: `${readinessValue}` }} />
             <div className="dial-needle" style={{ transform: `translateX(-50%) rotate(${dialAngle}deg)` }} />
           <div className="dial-core">
-              <p>Readiness</p>
+              <p>Готовность хода</p>
               <strong>{formatPercent0(readinessValue)}</strong>
               <small>{readinessState}</small>
             </div>
@@ -655,7 +655,7 @@ export const StartMode = ({
 
             <div className="start-drawer-summary">
               <p><span>Сильнее улучшит точность:</span><strong>{promptCards[0]?.missing[0] ?? 'Критичные поля закрыты'}</strong></p>
-              <p><span>До unlock:</span><strong>{nextUnlockText}</strong></p>
+              <p><span>До открытия:</span><strong>{nextUnlockText}</strong></p>
             </div>
 
             <div className="start-drawer-sections" role="tablist" aria-label="Секции drawer">

@@ -60,7 +60,7 @@ export const OverviewMode = ({ onModeChange }: OverviewModeProps) => (
     <section className="overview-final" aria-label="Финальный вход">
       <p className="scene-mode-kicker">Вход в контур</p>
       <h3>Запустите старт и перейдите от картины к действию.</h3>
-      <button type="button" onClick={() => onModeChange('start')}>Открыть Start</button>
+      <button type="button" onClick={() => onModeChange('start')}>Открыть Старт</button>
     </section>
   </div>
 );

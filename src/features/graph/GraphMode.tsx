@@ -40,6 +40,16 @@ const LENS_LABEL: Record<GraphReadingLens, string> = {
   causes: 'Причины',
 };
 
+
+const ROLE_LABEL: Record<CausalRole, string> = {
+  primary: 'Главная цепочка',
+  secondary: 'Вторичная связь',
+  pressure: 'Источник давления',
+  blocker: 'Блокер',
+  leverage: 'Рычаг',
+  result: 'Узел результата',
+};
+
 const NODE_BASE: Record<GraphNode['type'], { fill: string; stroke: string; radius: number }> = {
   domain: { fill: '#74c9ff', stroke: '#cae9ff', radius: 22 },
   factor: { fill: '#9eb5ff', stroke: '#dbe3ff', radius: 14 },
@@ -147,7 +157,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
         : 'world';
 
   const confidencePrompt = lowConfidence
-    ? confidence.missingCriticalFields[0] ?? 'Нужен дополнительный check-in по ключевым полям.'
+    ? confidence.missingCriticalFields[0] ?? 'Нужно дополнительное заполнение по ключевым полям.'
     : 'Картина причин стабильна, можно перейти к выбору хода.';
 
   const pressureSource = pressureEdge ? `${nodeMap.get(pressureEdge.source)?.name ?? 'н/д'} → ${nodeMap.get(pressureEdge.target)?.name ?? 'н/д'}` : 'н/д';
@@ -214,9 +224,9 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
       <ChainRouteMemory chainContext={chainContext} />
       <header className="graph-summary-bar">
         <div>
-          <p className="graph-kicker">Graph · причинный фокус</p>
+          <p className="graph-kicker">Граф · причинный фокус</p>
           <h3>{handoff?.activeDomain.label ?? 'Активный домен'} · линза «{LENS_LABEL[activeLens]}»</h3>
-          <p>Сейчас главное: blocker «{blocker}» и рычаг «{leverageNode}».</p>
+          <p>Сейчас главное: блокер «{blocker}» и рычаг «{leverageNode}».</p>
         </div>
         <div className="graph-summary-confidence">
           <p>Уверенность {Math.round(confidenceGlobal)}% / домен {Math.round(confidenceDomain)}%</p>
@@ -256,7 +266,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
               <g key={node.id} transform={`translate(${node.position.x} ${node.position.y})`} className="graph-node" opacity={emphasis} onClick={() => onSelectNode(node.id)}>
                 <circle r={nodeRadius(node) + 9} className="graph-node-halo" style={{ opacity: selected ? 0.35 : 0.12 }} />
                 <circle r={nodeRadius(node)} fill={base.fill} stroke={base.stroke} strokeWidth={selected ? 3 : 1.4} />
-                {role ? <text y={-nodeRadius(node) - 8} className="graph-node-role">{role}</text> : null}
+                {role ? <text y={-nodeRadius(node) - 8} className="graph-node-role">{ROLE_LABEL[role]}</text> : null}
                 <text y={nodeRadius(node) + 18} className="graph-node-label">{node.name}</text>
               </g>
             );
@@ -265,18 +275,18 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
       </svg>
 
       <aside className="graph-tactical-panel">
-        <h4>Тактическая интерпретация</h4>
+        <h4>Тактическая сводка</h4>
         <p><strong>Главный источник:</strong> {pressureSource}</p>
-        <p><strong>Ближайший блокер:</strong> {blocker}</p>
+        <p><strong>Узкое место:</strong> {blocker}</p>
         <p><strong>Лучший рычаг:</strong> {leverageNode}</p>
-        <p><strong>Focus/result:</strong> {handoff?.activeDomain.label ?? 'домен'} · readiness {Math.round(handoff?.derivedMetrics.readiness ?? 0)}%</p>
-        <p><strong>Confidence:</strong> {Math.round(confidenceGlobal)}% · {lowConfidence ? `не хватает: ${confidencePrompt}` : 'достаточно для тактического хода'}</p>
+        <p><strong>Фокус/результат:</strong> {handoff?.activeDomain.label ?? 'домен'} · готовность {Math.round(handoff?.derivedMetrics.readiness ?? 0)}%</p>
+        <p><strong>Уверенность модели:</strong> {Math.round(confidenceGlobal)}% · {lowConfidence ? `не хватает: ${confidencePrompt}` : 'достаточно для тактического хода'}</p>
       </aside>
 
       <div className="graph-cta-row">
-        <button type="button" className={recommendedRoute === 'oracle' ? '' : 'ghost'} onClick={() => { onOracleHandoff(oracleHandoff); onModeChange('oracle'); }}>Продолжить в Oracle</button>
+        <button type="button" className={recommendedRoute === 'oracle' ? '' : 'ghost'} onClick={() => { onOracleHandoff(oracleHandoff); onModeChange('oracle'); }}>Продолжить в Оракул</button>
         <button type="button" className={recommendedRoute === 'world' ? '' : 'ghost'} onClick={() => onModeChange('world')}>Вернуться в Мир</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Start</button>
+        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Старт</button>
       </div>
     </div>
   );

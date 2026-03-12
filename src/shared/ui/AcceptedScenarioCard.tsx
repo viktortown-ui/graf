@@ -1,10 +1,10 @@
 import type { AcceptedScenario } from '../../app/state/useSceneState';
 
 const MODE_LABEL: Record<AcceptedScenario['nextMode'], string> = {
-  start: 'Вернуться в Start и запустить новый цикл',
+  start: 'Вернуться в Старт и запустить новый цикл',
   world: 'Вернуться в Мир и закрепить эффект',
-  graph: 'Вернуться в Graph и уточнить причинный фокус',
-  oracle: 'Остаться в Oracle и сверить сценарии',
+  graph: 'Вернуться в Граф и уточнить причинный фокус',
+  oracle: 'Остаться в Оракуле и сверить сценарии',
 };
 
 type AcceptedScenarioCardProps = {
