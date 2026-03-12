@@ -580,25 +580,32 @@ export const WorldMode = ({
         <p>Потенциал хода: {movePotential}% · Цена ошибки: {errorCost}%</p>
       </div>
 
-      <div className="world-layer-switch">
-        {(Object.keys(LAYER_LABEL) as WorldLayer[]).map((entry) => (
-          <button
-            key={entry}
-            type="button"
-            className={layer === entry ? 'active' : ''}
-            onClick={() => setManualLayer({ layer: entry, launchKey })}
-          >
-            {LAYER_LABEL[entry]}
-          </button>
-        ))}
-      </div>
-
-      <div className="world-handoff">
-        <button type="button" aria-label="Перейти из Мира в Граф" className={ctaMode === 'graph' ? '' : 'ghost'} onClick={() => { onGraphHandoff(handoff); onModeChange('graph'); }}>Продолжить в Граф</button>
-        <button type="button" aria-label="Перейти из Мира в Оракул" onClick={() => onModeChange('oracle')} className={ctaMode === 'oracle' ? '' : 'ghost'}>Продолжить в Оракул</button>
-        <button type="button" aria-label="Вернуться в Старт" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Старт</button>
-      </div>
       </aside>
+
+      <div className="world-bottom-layout" aria-label="Нижняя зона режима Мир">
+        <div className="world-bottom-left" aria-label="Линзы">
+          <div className="world-layer-switch">
+            {(Object.keys(LAYER_LABEL) as WorldLayer[]).map((entry) => (
+              <button
+                key={entry}
+                type="button"
+                className={layer === entry ? 'active' : ''}
+                onClick={() => setManualLayer({ layer: entry, launchKey })}
+              >
+                {LAYER_LABEL[entry]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="world-bottom-right" aria-label="Переходы">
+          <div className="world-handoff">
+            <button type="button" aria-label="Перейти из Мира в Граф" className={ctaMode === 'graph' ? '' : 'ghost'} onClick={() => { onGraphHandoff(handoff); onModeChange('graph'); }}>Продолжить в Граф</button>
+            <button type="button" aria-label="Перейти из Мира в Оракул" onClick={() => onModeChange('oracle')} className={ctaMode === 'oracle' ? '' : 'ghost'}>Продолжить в Оракул</button>
+            <button type="button" aria-label="Вернуться в Старт" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Старт</button>
+          </div>
+        </div>
+      </div>
 
       {chainContext.lastAcceptedScenario ? <AcceptedScenarioCard scenario={chainContext.lastAcceptedScenario} /> : null}
 
