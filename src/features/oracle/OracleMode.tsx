@@ -6,6 +6,7 @@ import type { AppSettings } from '../../app/state/settingsModel';
 import type { AcceptedScenario, ChainContext, OracleExecutionHandoff } from '../../app/state/useSceneState';
 import { propagateGraphScenario } from '../graph/engine';
 import { AcceptedScenarioCard } from '../../shared/ui/AcceptedScenarioCard';
+import { ChainRouteMemory } from '../../shared/ui/ChainRouteMemory';
 
 type Horizon = 3 | 7 | 14;
 type ScenarioTone = 'cautious' | 'base' | 'strong' | 'collect-data';
@@ -153,57 +154,65 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
 
   return (
     <div className={`oracle-mode oracle-execution ${lowConfidence ? 'is-caution' : ''}`} aria-label="Оракул: выбор сценария">
-      <header className="oracle-summary-compact">
-        <p className="scene-mode-kicker">Оракул · выбор сценария</p>
-        <h3>{oracleContext.activeDomain} · линза «{oracleContext.selectedLens}»</h3>
-        <p>Блокер: <strong>{oracleContext.blocker}</strong> · Рычаг: <strong>{oracleContext.leverageNode}</strong></p>
-        <p>
-          Уверенность модели: <strong>{Math.round(oracleContext.confidenceGlobal)}%</strong> / домен <strong>{Math.round(oracleContext.confidenceDomain)}%</strong>
-          {lowConfidence ? <span className="oracle-caution-pill">Режим осторожности: сначала уточнить данные</span> : null}
-        </p>
-      </header>
+      <div className="oracle-main-column">
+        <header className="oracle-summary-compact">
+          <p className="scene-mode-kicker">Оракул · выбор сценария</p>
+          <h3>{oracleContext.activeDomain} · линза «{oracleContext.selectedLens}»</h3>
+          <p>Блокер: <strong>{oracleContext.blocker}</strong> · Рычаг: <strong>{oracleContext.leverageNode}</strong></p>
+          <p>
+            Уверенность модели: <strong>{Math.round(oracleContext.confidenceGlobal)}%</strong> / домен <strong>{Math.round(oracleContext.confidenceDomain)}%</strong>
+            {lowConfidence ? <span className="oracle-caution-pill">Режим осторожности: сначала уточнить данные</span> : null}
+          </p>
+        </header>
 
-      <section className="oracle-scenario-board" aria-label="Сценарии действий">
-        {scenarios.map((scenario) => (
-          <article key={scenario.id} className={`oracle-scenario-card ${scenario.recommended ? 'recommended' : ''}`}>
-            <p className="oracle-card-title">{scenario.title}</p>
-            <p>{scenario.move}</p>
-            <ul>
-              <li><strong>Эффект:</strong> {scenario.effect}</li>
-              <li><strong>Риск:</strong> {scenario.risk}</li>
-              <li><strong>Цена ошибки:</strong> {scenario.errorCost}</li>
-              
-            </ul>
-            <p className="oracle-card-why">Почему: {scenario.why}</p>
-            {scenario.recommended ? <span className="oracle-recommended-mark">Рекомендовано сейчас</span> : null}
-          </article>
-        ))}
-      </section>
+        <section className="oracle-scenario-board" aria-label="Сценарии действий">
+          {scenarios.map((scenario) => (
+            <article key={scenario.id} className={`oracle-scenario-card ${scenario.recommended ? 'recommended' : ''}`}>
+              <p className="oracle-card-title">{scenario.title}</p>
+              <p>{scenario.move}</p>
+              <ul>
+                <li><strong>Эффект:</strong> {scenario.effect}</li>
+                <li><strong>Риск:</strong> {scenario.risk}</li>
+                <li><strong>Цена ошибки:</strong> {scenario.errorCost}</li>
+                
+              </ul>
+              <p className="oracle-card-why">Почему: {scenario.why}</p>
+              {scenario.recommended ? <span className="oracle-recommended-mark">Рекомендовано сейчас</span> : null}
+            </article>
+          ))}
+        </section>
 
-      <aside className="oracle-tactical-reasoning" aria-label="Пояснение выбора">
-        <h4>Почему выбран этот сценарий</h4>
-        <p><strong>Почему выбран:</strong> {recommendedScenario.title}</p>
-        <p><strong>Какое узкое место обходит:</strong> {oracleContext.blocker}</p>
-        <p><strong>Какой рычаг использует:</strong> {oracleContext.leverageNode}</p>
-        <p><strong>Главный риск:</strong> {oracleContext.pressureSource}</p>
-        <p><strong>Что при ошибке:</strong> {recommendedScenario.errorCost}</p>
-        <p><strong>Если ничего не делать:</strong> давление «{pressure.label.toLowerCase()}» закрепится и риск в узле результата вырастет.</p>
-      </aside>
-
-      <div className="oracle-cta-path">
-        <button type="button" onClick={() => applyScenario(recommendedScenario)}>Принять сценарий</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('graph')}>Вернуться в Граф</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('world')}>Вернуться в Мир</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Старт</button>
+        {chainContext.lastAcceptedScenario ? <AcceptedScenarioCard scenario={chainContext.lastAcceptedScenario} tone="oracle" /> : null}
+        {postApplyNextMode ? (
+          <div className="oracle-post-apply">
+            <p>Сценарий сохранён. Следующий лучший шаг — <strong>{postApplyNextMode === 'world' ? 'вернуться в Мир' : postApplyNextMode === 'graph' ? 'вернуться в Граф' : 'вернуться в Старт'}</strong>.</p>
+            <button type="button" onClick={() => onModeChange(postApplyNextMode)}>Продолжить</button>
+          </div>
+        ) : null}
       </div>
 
-      {chainContext.lastAcceptedScenario ? <AcceptedScenarioCard scenario={chainContext.lastAcceptedScenario} tone="oracle" /> : null}
-      {postApplyNextMode ? (
-        <div className="oracle-post-apply">
-          <p>Сценарий сохранён. Следующий лучший шаг — <strong>{postApplyNextMode === 'world' ? 'вернуться в Мир' : postApplyNextMode === 'graph' ? 'вернуться в Граф' : 'вернуться в Старт'}</strong>.</p>
-          <button type="button" onClick={() => onModeChange(postApplyNextMode)}>Продолжить</button>
+      <aside className="oracle-right-rail" aria-label="Правая панель Оракула">
+        <div className="oracle-route-memory" aria-label="Маршрут цепочки">
+          <ChainRouteMemory chainContext={chainContext} />
         </div>
-      ) : null}
+
+        <aside className="oracle-tactical-reasoning" aria-label="Пояснение выбора">
+          <h4>Почему выбран этот сценарий</h4>
+          <p><strong>Почему выбран:</strong> {recommendedScenario.title}</p>
+          <p><strong>Какое узкое место обходит:</strong> {oracleContext.blocker}</p>
+          <p><strong>Какой рычаг использует:</strong> {oracleContext.leverageNode}</p>
+          <p><strong>Главный риск:</strong> {oracleContext.pressureSource}</p>
+          <p><strong>Что при ошибке:</strong> {recommendedScenario.errorCost}</p>
+          <p><strong>Если ничего не делать:</strong> давление «{pressure.label.toLowerCase()}» закрепится и риск в узле результата вырастет.</p>
+        </aside>
+
+        <div className="oracle-cta-path">
+          <button type="button" onClick={() => applyScenario(recommendedScenario)}>Принять сценарий</button>
+          <button type="button" className="ghost" onClick={() => onModeChange('graph')}>Вернуться в Граф</button>
+          <button type="button" className="ghost" onClick={() => onModeChange('world')}>Вернуться в Мир</button>
+          <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Старт</button>
+        </div>
+      </aside>
     </div>
   );
 };

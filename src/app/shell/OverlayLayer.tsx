@@ -7,7 +7,7 @@ type OverlayLayerProps = {
 };
 
 export const OverlayLayer = ({ mode, sceneState }: OverlayLayerProps) => {
-  if (mode.id === 'overview' || mode.id === 'start' || mode.id === 'world' || mode.id === 'graph' || mode.id === 'settings') {
+  if (mode.id === 'overview' || mode.id === 'start' || mode.id === 'world' || mode.id === 'graph' || mode.id === 'oracle' || mode.id === 'settings') {
     return null;
   }
 

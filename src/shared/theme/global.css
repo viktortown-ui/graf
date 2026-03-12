@@ -2749,42 +2749,56 @@ button {
 .oracle-mode {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 20rem;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
-  gap: 0.6rem 0.8rem;
+  gap: 0.9rem;
   height: 100%;
   min-height: 0;
   padding: 0.1rem;
+  align-items: stretch;
 }
 
-.oracle-summary-compact,
-.oracle-scenario-board,
-.accepted-scenario-card.oracle,
-.oracle-post-apply {
-  grid-column: 1;
+.oracle-main-column {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  gap: 0.75rem;
+  align-content: start;
 }
 
 .oracle-summary-compact {
   margin: 0;
-  max-height: 8rem;
-  overflow: auto;
 }
 
 .oracle-scenario-board {
   align-content: start;
-  overflow: auto;
+  overflow: visible;
 }
 
-.oracle-tactical-reasoning {
-  grid-column: 2;
-  grid-row: 1 / span 2;
+.oracle-right-rail {
   min-width: 20rem;
   max-width: 20rem;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.6rem;
+}
+
+.oracle-route-memory {
+  display: flex;
+}
+
+.oracle-route-memory .chain-route-memory {
+  width: 100%;
+  justify-content: flex-start;
+  overflow-x: auto;
+}
+
+
+.oracle-tactical-reasoning {
+  min-height: 0;
   overflow: auto;
 }
 
 .oracle-cta-path {
-  grid-column: 2;
-  grid-row: 3;
   display: grid;
   gap: 0.45rem;
   align-content: end;
