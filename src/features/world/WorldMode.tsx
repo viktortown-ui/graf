@@ -548,7 +548,7 @@ export const WorldMode = ({
         <p className="world-launch-lens">{lensBehavior.summaryTitle}</p>
       </div>
 
-      <div className="world-operational-summary" aria-live="polite">
+      <aside className="world-context-dock" aria-label="Контекст режима Мир"><div className="world-operational-summary" aria-live="polite">
         <p className="world-operational-title">Короткая сводка</p>
         <p>Контур: <strong>{activeDomain.label}</strong> · {lensBehavior.summarySignal}</p>
         <p>Сейчас главное: <strong>{layer === 'resources' ? `устойчивость ${round(activeDomain.stability)}%` : `${round(activeDomain.pressure)}% давления · ${round(activeDomain.risk)}% риска`}</strong></p>
@@ -604,10 +604,11 @@ export const WorldMode = ({
       </div>
 
       <div className="world-handoff">
-        <button type="button" className={ctaMode === 'graph' ? '' : 'ghost'} onClick={() => { onGraphHandoff(handoff); onModeChange('graph'); }}>Продолжить в Граф</button>
-        <button type="button" onClick={() => onModeChange('oracle')} className={ctaMode === 'oracle' ? '' : 'ghost'}>Продолжить в Оракул</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Старт</button>
+        <button type="button" aria-label="Перейти из Мира в Граф" className={ctaMode === 'graph' ? '' : 'ghost'} onClick={() => { onGraphHandoff(handoff); onModeChange('graph'); }}>Продолжить в Граф</button>
+        <button type="button" aria-label="Перейти из Мира в Оракул" onClick={() => onModeChange('oracle')} className={ctaMode === 'oracle' ? '' : 'ghost'}>Продолжить в Оракул</button>
+        <button type="button" aria-label="Вернуться в Старт" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Старт</button>
       </div>
+      </aside>
 
       {chainContext.lastAcceptedScenario ? <AcceptedScenarioCard scenario={chainContext.lastAcceptedScenario} /> : null}
 
