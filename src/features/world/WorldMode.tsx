@@ -86,35 +86,30 @@ const LENS_BEHAVIOR: Record<WorldLayer, {
   primaryMetric: keyof Pick<DomainOperational, 'pressure' | 'risk' | 'stability' | 'leverage'>;
   secondaryMetric: keyof Pick<DomainOperational, 'pressure' | 'risk' | 'stability' | 'leverage'>;
   summaryTitle: string;
-  summarySignal: string;
   ctaHint: string;
 }> = {
   risks: {
     primaryMetric: 'risk',
     secondaryMetric: 'pressure',
     summaryTitle: 'Режим: контроль рисков',
-    summarySignal: 'Приоритет — ранние сигналы срыва и уязвимые связи.',
     ctaHint: 'Ведём в Граф: разобрать источник риска и точку блокировки.',
   },
   resources: {
     primaryMetric: 'stability',
     secondaryMetric: 'leverage',
     summaryTitle: 'Режим: восстановление ресурса',
-    summarySignal: 'Приоритет — устойчивость, опоры и рычаги восстановления.',
     ctaHint: 'Ведём в Оракул: выбрать ход с лучшим восстановлением.',
   },
   goals: {
     primaryMetric: 'leverage',
     secondaryMetric: 'pressure',
     summaryTitle: 'Режим: продвижение цели',
-    summarySignal: 'Приоритет — прогресс цели, конфликты и дедлайн-напряжение.',
     ctaHint: 'Ведём в Оракул: выбрать путь, который двигает активную цель.',
   },
   pressure: {
     primaryMetric: 'pressure',
     secondaryMetric: 'risk',
     summaryTitle: 'Режим: управление давлением',
-    summarySignal: 'Приоритет — источники перегруза и точки вероятного срыва.',
     ctaHint: 'Ведём в Граф: разложить каскад давления по причинам.',
   },
 };
@@ -373,7 +368,6 @@ export const WorldMode = ({
     onSelectPlanet(lensMainDomain.primaryPlanetId);
   }, [isPinnedSelection, lensMainDomain.id, lensMainDomain.primaryPlanetId, onSelectPlanet, selectedDomainId]);
 
-  const weakestConfidenceDomain = domainCards.slice().sort((a, b) => a.confidence - b.confidence)[0] ?? domainCards[0];
   const ctaMode = layer === 'resources' || layer === 'goals' ? 'oracle' : getRecommendedMode(activeDomain);
 
   const worldLayerToGraphLens: Record<WorldLayer, GraphReadingLens> = {
@@ -541,17 +535,15 @@ export const WorldMode = ({
   return (
     <div className="world-mode" aria-label="Сцена системного мира">
       <div className="world-overlay">
-        <p className="world-kicker">Мир 2.0 · Операционная карта</p>
-        <p className="world-selected">Активный контур: {activeDomain.label} · {round(activeDomain.pressure)}% давления</p>
-        <p className="world-launch-lens">{lensBehavior.summaryTitle}</p>
+        <p className="world-kicker">Маршрут: Старт → Мир</p>
+        <p className="world-selected">Контур: {activeDomain.label} · Линза: {LAYER_LABEL[layer]}</p>
       </div>
 
       <aside className="world-context-dock" aria-label="Контекст режима Мир"><div className="world-operational-summary" aria-live="polite">
         <p className="world-operational-title">Короткая сводка</p>
-        <p>Контур: <strong>{activeDomain.label}</strong> · {lensBehavior.summarySignal}</p>
-        <p>Сейчас главное: <strong>{layer === 'resources' ? `устойчивость ${round(activeDomain.stability)}%` : `${round(activeDomain.pressure)}% давления · ${round(activeDomain.risk)}% риска`}</strong></p>
-        {weakestConfidenceDomain.confidence < 58 ? <p>Почему осторожно: <strong>{weakestConfidenceDomain.label}</strong> ({weakestConfidenceDomain.confidence}% уверенности).</p> : null}
-        <p>Дальше: <strong>{ctaMode === 'graph' ? `перейти в Граф` : `перейти в Оракул`}</strong>.</p>
+        <p><strong>Контур:</strong> {activeDomain.label} · {LAYER_LABEL[layer].toLowerCase()}</p>
+        <p><strong>Главный сигнал:</strong> {layer === 'resources' ? `устойчивость ${round(activeDomain.stability)}%` : `${round(activeDomain.pressure)}% давления · ${round(activeDomain.risk)}% риска`}</p>
+        <p><strong>Что дальше:</strong> {ctaMode === 'graph' ? `перейти в Граф` : `перейти в Оракул`}</p>
       </div>
 
       <div className="world-domain-grid">
