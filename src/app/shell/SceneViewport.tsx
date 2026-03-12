@@ -67,6 +67,13 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
   const activeModeLabel = activeModeDefinition?.label ?? 'Неизвестно';
   const activeModeSummary = activeModeDefinition?.summary ?? '';
   const showServiceHud = mode !== 'overview';
+  const worldLensLabelMap: Record<string, string> = {
+    pressure: 'Давление',
+    resources: 'Ресурсы',
+    goals: 'Цели',
+    causes: 'Причины',
+  };
+  const worldLensLabel = worldLensLabelMap[sceneState.chainContext.selectedLens] ?? 'Контур';
 
   return (
     <section className="scene-viewport" aria-label="Иммерсивная сцена" style={styleVars}>
@@ -75,16 +82,18 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
         <div className="scene-core-glow" aria-hidden="true" />
         {showServiceHud ? (
           <>
-            <header className="scene-hud">
-              <p className="scene-hud-label">{signal.title}</p>
-              {mode !== 'start' ? <p className="scene-hud-metric">Нагрузка интерфейса {Math.round(signal.pulse * 100)}%</p> : null}
-            </header>
+            {mode !== 'world' ? (
+              <header className="scene-hud">
+                <p className="scene-hud-label">{signal.title}</p>
+                {mode !== 'start' ? <p className="scene-hud-metric">Нагрузка интерфейса {Math.round(signal.pulse * 100)}%</p> : null}
+              </header>
+            ) : null}
             <div className="scene-anchor-memory" aria-live="polite">
               {mode === 'start' ? <p>Запуск цикла: <strong>подтвердите вход и выберите первый шаг</strong>.</p> : null}
               {mode === 'world' ? (
                 <>
                   <p>Активный контур: <strong>{sceneState.chainContext.activeDomain?.label ?? sceneState.selectedPlanetLabel}</strong></p>
-                  <p>Режим чтения: <strong>{sceneState.chainContext.selectedLens}</strong></p>
+                  <p>Линза: <strong>{worldLensLabel}</strong></p>
                 </>
               ) : null}
               {mode === 'graph' ? (
