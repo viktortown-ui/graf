@@ -220,22 +220,20 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
   return (
     <div className={`graph-mode ${lowConfidence ? 'confidence-low' : ''}`}>
       <header className="graph-summary-bar">
-        <div>
+        <div className="graph-summary-main">
+          <div className="graph-reading-modes" role="tablist" aria-label="Линзы чтения графа">
+            {(Object.keys(LENS_LABEL) as GraphReadingLens[]).map((entry) => (
+              <button key={entry} type="button" className={entry === activeLens ? 'active' : ''} onClick={() => setManualLens(entry)}>{LENS_LABEL[entry]}</button>
+            ))}
+          </div>
           <p className="graph-kicker">Граф · причинный фокус</p>
-          <h3>{handoff?.activeDomain.label ?? 'Активный домен'} · линза «{LENS_LABEL[activeLens]}»</h3>
-          <p>Сейчас главное: узкое место «{blocker}» и рычаг «{leverageNode}».</p>
+          <p className="graph-focus-line">Фокус: узкое место «{blocker}», рычаг «{leverageNode}».</p>
         </div>
         <div className="graph-summary-confidence">
-          <p>Уверенность {Math.round(confidenceGlobal)}% / домен {Math.round(confidenceDomain)}%</p>
-          {lowConfidence ? <p className="graph-warning">Низкая уверенность: {confidencePrompt}</p> : <p className="graph-ok">Причинная картина достаточно устойчива.</p>}
+          <p>Уверенность: {Math.round(confidenceGlobal)}%</p>
+          {lowConfidence ? <p className="graph-warning">Нужна осторожность</p> : <p className="graph-ok">Картина устойчива</p>}
         </div>
       </header>
-
-      <div className="graph-reading-modes">
-        {(Object.keys(LENS_LABEL) as GraphReadingLens[]).map((entry) => (
-          <button key={entry} type="button" className={entry === activeLens ? 'active' : ''} onClick={() => setManualLens(entry)}>{LENS_LABEL[entry]}</button>
-        ))}
-      </div>
 
       <svg className="graph-scene" style={{ opacity: settings.reduceTransparency ? 0.98 : 0.9 + settings.backgroundDensity / 1000 }} viewBox="-560 -340 1120 680" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onWheel={handleWheel}>
         <g transform={`translate(${lens.panX} ${lens.panY}) scale(${lens.zoom})`}>
