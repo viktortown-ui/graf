@@ -53,6 +53,7 @@ const CRITICALITY_LABEL: Record<'critical' | 'recommended' | 'later', string> = 
 const STATUS_LABEL: Record<string, string> = {
   filled: 'заполнено',
   inferred: 'вычислено',
+  stale: 'устарело',
   missing: 'пусто',
 };
 
@@ -67,6 +68,13 @@ const SURFACE_LABEL: Record<string, string> = {
   'start-inline': 'подсказка старта',
   'summary-banner': 'верхняя сводка',
   'dev-lab': 'инспектор',
+  'drawer + start': 'панель и старт',
+  'start + drawer': 'старт и панель',
+  start: 'старт',
+  'prompt card': 'карточка подсказки',
+  drawer: 'панель',
+  hidden: 'скрыто',
+  later: 'позже',
 };
 
 const formatValue = (value: unknown) => {
@@ -96,6 +104,10 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
   });
 
   const active = registry.find((item) => item.id === selectedField) ?? registry[0];
+
+  const fieldLabelById = useMemo(() => new Map(registry.map((item) => [item.id, item.label])), [registry]);
+  const getFieldLabel = (id: string) => fieldLabelById.get(id) ?? id;
+  const listFieldLabels = (ids: string[]) => ids.map(getFieldLabel).join(', ');
 
   const updateSandboxValue = (key: string, raw: string) => {
     setSandbox((current) => {
@@ -150,7 +162,7 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
                 {items.map((item) => (
                   <button key={item.id} className={`registry-row ${selectedField === item.id ? 'active' : ''}`} onClick={() => setSelectedField(item.id)}>
                     <span>{item.label}</span>
-                    <small>{item.id} · {STATUS_LABEL[item.status] ?? item.status} · {formatValue(item.value)}</small>
+                    <small>{STATUS_LABEL[item.status] ?? item.status} · {formatValue(item.value)}</small>
                   </button>
                 ))}
               </article>
@@ -181,10 +193,10 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
         <article>
           <h3>Коротко о связях</h3>
           <ul>
-            {active.affectsMetrics.map((metric) => <li key={metric}>{active.id} → {metric}</li>)}
-            {active.affectsConfidence.map((domain) => <li key={domain}>{active.id} → уверенность домена {domain}</li>)}
-            {active.promptPack.map((pack) => <li key={pack}>{active.id} → пакет подсказки «{pack}»</li>)}
-            {active.affectsUnlock ? <li>{active.id} → зависимость открытия</li> : null}
+            {active.affectsMetrics.map((metric) => <li key={metric}>{active.label} → {metric}</li>)}
+            {active.affectsConfidence.map((domain) => <li key={domain}>{active.label} → уверенность домена {domain}</li>)}
+            {active.promptPack.map((pack) => <li key={pack}>{active.label} → пакет подсказки «{pack}»</li>)}
+            {active.affectsUnlock ? <li>{active.label} → зависимость открытия</li> : null}
           </ul>
         </article>
       </section>
@@ -197,10 +209,10 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
             return (
               <div key={pack.id} className="pack-card">
                 <p><strong>{pack.title.replace('Пакет', 'Пакет подсказки')}</strong> · приоритет {PRIORITY_LABEL[pack.priority] ?? pack.priority}</p>
-                <p>Нужно: {pack.required.join(', ')}</p>
-                <p>Не хватает: {missing.join(', ') || 'нет'}</p>
+                <p>Нужно: {listFieldLabels([...pack.required])}</p>
+                <p>Не хватает: {missing.length ? listFieldLabels(missing) : 'нет'}</p>
                 <p>Где показывается: {SURFACE_LABEL[pack.surface] ?? pack.surface}</p>
-                <p>Сформированная подсказка: {missing.length ? `Добавь ${missing.slice(0, 2).join(' и ')}, чтобы усилить ${pack.title}.` : 'Пакет заполнен.'}</p>
+                <p>Сформированная подсказка: {missing.length ? `Добавь ${missing.slice(0, 2).map(getFieldLabel).join(' и ')}, чтобы усилить ${pack.title}.` : 'Пакет заполнен.'}</p>
               </div>
             );
           })}
@@ -235,9 +247,9 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
           <p>Полнота: {sandboxConfidence.completenessScore}% · Актуальность: {sandboxConfidence.freshnessScore}% · Согласованность: {sandboxConfidence.consistencyScore}% · Глубина истории: {sandboxConfidence.historyDepthScore}%</p>
           <p>Домены: финансы {sandboxConfidence.domainConfidence.finance} · тело {sandboxConfidence.domainConfidence.body} · работа {sandboxConfidence.domainConfidence.work} · цель {sandboxConfidence.domainConfidence.goal}</p>
           <p>Пороги истории: 3 / 7 / 14 / 30 / 60 дней · факт: {sandboxConfidence.historyDepthDays} дней, серия {sandboxConfidence.streakDays}</p>
-          <p>Не хватает для открытия: {sandboxConfidence.nextUnlock?.missingForUnlock.join(', ') || '—'}</p>
-          <p>Не хватает критичных: {sandboxConfidence.missingCriticalFields.join(', ') || '—'}</p>
-          <p>Не хватает рекомендуемых: {sandboxConfidence.missingRecommendedFields.join(', ') || '—'}</p>
+          <p>Не хватает для открытия: {sandboxConfidence.nextUnlock?.missingForUnlock.length ? listFieldLabels(sandboxConfidence.nextUnlock.missingForUnlock) : '—'}</p>
+          <p>Не хватает критичных: {sandboxConfidence.missingCriticalFields.length ? listFieldLabels(sandboxConfidence.missingCriticalFields) : '—'}</p>
+          <p>Не хватает рекомендуемых: {sandboxConfidence.missingRecommendedFields.length ? listFieldLabels(sandboxConfidence.missingRecommendedFields) : '—'}</p>
         </article>
       </section>
 
