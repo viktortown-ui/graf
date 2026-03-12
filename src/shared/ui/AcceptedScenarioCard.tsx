@@ -7,6 +7,13 @@ const MODE_LABEL: Record<AcceptedScenario['nextMode'], string> = {
   oracle: 'Остаться в Оракуле и сверить сценарии',
 };
 
+const SCENARIO_LABEL: Record<AcceptedScenario['id'], string> = {
+  cautious: 'Осторожный ход',
+  base: 'Базовый ход',
+  strong: 'Сильный ход',
+  'collect-data': 'Уточнить данные',
+};
+
 type AcceptedScenarioCardProps = {
   scenario: AcceptedScenario;
   tone?: 'oracle' | 'system';
@@ -15,7 +22,7 @@ type AcceptedScenarioCardProps = {
 export const AcceptedScenarioCard = ({ scenario, tone = 'system' }: AcceptedScenarioCardProps) => (
   <aside className={`accepted-scenario-card ${tone}`} aria-label="Принятый сценарий">
     <p className="accepted-scenario-title">Принят сценарий: <strong>{scenario.title}</strong></p>
-    <p>Тип хода: <strong>{scenario.id}</strong></p>
+    <p>Тип хода: <strong>{SCENARIO_LABEL[scenario.id]}</strong></p>
     <p>Следующий шаг: <strong>{MODE_LABEL[scenario.nextMode]}</strong></p>
   </aside>
 );

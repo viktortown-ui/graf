@@ -16,7 +16,7 @@ type ChainRouteMemoryProps = {
 
 export const ChainRouteMemory = ({ chainContext }: ChainRouteMemoryProps) => {
   return (
-    <div className="chain-route-memory" aria-label="Маршрут GRAF">
+    <div className="chain-route-memory" aria-label="Маршрут шагов GRAF">
       {CHAIN_STEPS.map((step) => {
         const isCurrent = chainContext.currentStep === step;
         const isVisited = chainContext.routeMemory.includes(step);

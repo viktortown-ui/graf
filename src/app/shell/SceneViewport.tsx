@@ -72,13 +72,14 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
       <div className="scene-canvas">
         <div className="scene-grid" aria-hidden="true" />
         <div className="scene-core-glow" aria-hidden="true" />
-        {showServiceHud ? (
-          <>
-            <header className="scene-hud">
-              <p className="scene-hud-label">{signal.title}</p>
-              {mode !== 'start' ? <p className="scene-hud-metric">Пульс {Math.round(signal.pulse * 100)}%</p> : null}
-            </header>
-            <div className="scene-anchor-memory" aria-live="polite">
+        <div className="scene-safe-area">
+          {showServiceHud ? (
+            <div className="scene-safe-top">
+              <header className="scene-hud">
+                <p className="scene-hud-label">{signal.title}</p>
+                {mode !== 'start' ? <p className="scene-hud-metric">Нагрузка интерфейса {Math.round(signal.pulse * 100)}%</p> : null}
+              </header>
+              <div className="scene-anchor-memory" aria-live="polite">
               {mode === 'start' ? <p>Запуск цикла: <strong>подтвердите вход и выберите первый шаг</strong>.</p> : null}
               {mode === 'world' ? (
                 <>
@@ -94,15 +95,15 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               ) : null}
               {mode === 'oracle' ? (
                 <>
-                  <p>Блокер: <strong>{sceneState.chainContext.lastBlocker ?? 'уточняется'}</strong> · Рычаг: <strong>{sceneState.chainContext.lastLeverage ?? 'уточняется'}</strong></p>
+                  <p>Узкое место: <strong>{sceneState.chainContext.lastBlocker ?? 'уточняется'}</strong> · Рычаг: <strong>{sceneState.chainContext.lastLeverage ?? 'уточняется'}</strong></p>
                   <p>Режим: <strong>выбор сценария</strong></p>
                 </>
               ) : null}
               {mode === 'datalab' ? <p>Давление запуска: <strong>{PRESSURE_OPTIONS.find((entry) => entry.id === sceneState.launchContext.pressureId)?.label ?? 'Не задано'}</strong></p> : null}
+              </div>
             </div>
-          </>
-        ) : null}
-        <div className={`scene-mode-content ${mode}`}>
+          ) : null}
+          <div className={`scene-mode-content ${mode}`}>
           {mode === 'overview' && <OverviewMode onModeChange={onModeChange} />}
           {mode === 'start' && (
             <StartMode
@@ -200,6 +201,7 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               onResetVisualCache={() => sceneState.resetView()}
             />
           )}
+          </div>
         </div>
       </div>
     </section>

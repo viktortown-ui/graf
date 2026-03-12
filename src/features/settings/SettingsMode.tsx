@@ -19,6 +19,18 @@ type SettingsModeProps = {
   onResetVisualCache: () => void;
 };
 
+const levelLabel = (value: number) => {
+  if (value < 40) return 'низко';
+  if (value < 70) return 'средне';
+  return 'высоко';
+};
+
+const textScaleLabel = (value: number) => {
+  if (value <= 92) return 'меньше';
+  if (value >= 110) return 'крупнее';
+  return 'стандарт';
+};
+
 export const SettingsMode = ({
   settings,
   activeModeLabel,
@@ -40,22 +52,18 @@ export const SettingsMode = ({
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const motionScale = useMemo(() => {
-    if (settings.reduceMotion || settings.animationIntensity === 'minimum') return 'Минимум';
-    if (settings.animationIntensity === 'cinema') return 'Кино';
-    return 'Нормально';
+    if (settings.reduceMotion || settings.animationIntensity === 'minimum') return 'бережно';
+    if (settings.animationIntensity === 'cinema') return 'выразительно';
+    return 'нормальная';
   }, [settings.animationIntensity, settings.reduceMotion]);
 
   const confirmReset = (text: string, action: () => void) => {
-    if (window.confirm(text)) {
-      action();
-    }
+    if (window.confirm(text)) action();
   };
 
   const strongConfirm = () => {
     const token = window.prompt('Введите ПОЛНЫЙ СБРОС, чтобы подтвердить необратимое действие.');
-    if (token === 'ПОЛНЫЙ СБРОС') {
-      onResetSystem();
-    }
+    if (token === 'ПОЛНЫЙ СБРОС') onResetSystem();
   };
 
   const downloadExport = () => {
@@ -71,21 +79,22 @@ export const SettingsMode = ({
   return (
     <div className="settings-mode" aria-label="Центр управления настройками">
       <section className="settings-header">
-        <p className="scene-mode-kicker">Системный центр · Настройки</p>
-        <h2 className="scene-mode-title">Управляйте атмосферой, поведением и безопасностью сцены как единым инструментом.</h2>
+        <p className="scene-mode-kicker">Настройки интерфейса</p>
+        <h2 className="scene-mode-title">Компактная настройка внешнего вида, читаемости и поведения сцены.</h2>
         <p className="scene-mode-copy">Текущий режим: <strong>{activeModeLabel}</strong> · Сохранение: <strong>{saveStatus || 'в процессе'}</strong>.</p>
       </section>
 
       <section className="settings-grid">
         <article className="settings-panel">
-          <p className="settings-panel-title">Идентичность сцены</p>
-          <div className="settings-segmented">
+          <p className="settings-panel-title">Тема</p>
+          <div className="settings-segmented" role="tablist" aria-label="Выбор темы">
             {(Object.keys(THEME_PRESETS) as (keyof typeof THEME_PRESETS)[]).map((themeId) => (
               <button
                 key={themeId}
                 type="button"
                 className={settings.theme === themeId ? 'active' : ''}
                 onClick={() => onSettingChange('theme', themeId)}
+                aria-label={`Тема ${THEME_PRESETS[themeId].label}`}
               >
                 <strong>{THEME_PRESETS[themeId].label}</strong>
                 <span>{THEME_PRESETS[themeId].description}</span>
@@ -95,62 +104,81 @@ export const SettingsMode = ({
         </article>
 
         <article className="settings-panel">
-          <p className="settings-panel-title">Поведение сцены</p>
-          <div className="settings-chip-row">
+          <p className="settings-panel-title">Динамика</p>
+          <div className="settings-chip-row" aria-label="Интенсивность анимации">
             {(['minimum', 'normal', 'cinema'] as const).map((value) => (
               <button key={value} type="button" className={settings.animationIntensity === value ? 'active' : ''} onClick={() => onSettingChange('animationIntensity', value)}>
-                {value === 'minimum' ? 'Минимум' : value === 'normal' ? 'Нормально' : 'Кино'}
+                {value === 'minimum' ? 'Минимум' : value === 'normal' ? 'Нормально' : 'Выразительно'}
               </button>
             ))}
           </div>
-          <div className="settings-chip-row">
+          <div className="settings-chip-row" aria-label="Скорость интерфейса">
             {(['slow', 'standard', 'fast'] as const).map((value) => (
               <button key={value} type="button" className={settings.sceneSpeed === value ? 'active' : ''} onClick={() => onSettingChange('sceneSpeed', value)}>
-                {value === 'slow' ? 'Медленно' : value === 'standard' ? 'Стандарт' : 'Быстро'}
+                {value === 'slow' ? 'Медленнее' : value === 'standard' ? 'Нормальная' : 'Быстрее'}
               </button>
             ))}
           </div>
-          <label>Яркость свечения<input type="range" min={0} max={100} value={settings.glowBrightness} onChange={(e) => onSettingChange('glowBrightness', Number(e.target.value))} /></label>
-          <label>Прозрачность HUD<input type="range" min={35} max={100} value={settings.hudOpacity} onChange={(e) => onSettingChange('hudOpacity', Number(e.target.value))} /></label>
-          <label>Плотность фона<input type="range" min={0} max={100} value={settings.backgroundDensity} onChange={(e) => onSettingChange('backgroundDensity', Number(e.target.value))} /></label>
-          <label>Плотность подписей<input type="range" min={30} max={100} value={settings.labelDensity} onChange={(e) => onSettingChange('labelDensity', Number(e.target.value))} /></label>
-          <div className="settings-toggle-grid">
-            <button type="button" className={settings.showSecondaryLinks ? 'active' : ''} onClick={() => onSettingChange('showSecondaryLinks', !settings.showSecondaryLinks)}>Показывать вторичные связи</button>
-            <button type="button" className={settings.showDelays ? 'active' : ''} onClick={() => onSettingChange('showDelays', !settings.showDelays)}>Показывать задержки</button>
-            <button type="button" className={settings.autoFocusNode ? 'active' : ''} onClick={() => onSettingChange('autoFocusNode', !settings.autoFocusNode)}>Автофокус на выбранном узле</button>
-            <button type="button" className={settings.persistCameraBetweenModes ? 'active' : ''} onClick={() => onSettingChange('persistCameraBetweenModes', !settings.persistCameraBetweenModes)}>Сохранять положение камеры между режимами</button>
-          </div>
+          <p className="settings-note">Скорость интерфейса: <strong>{settings.sceneSpeed === 'slow' ? 'медленнее' : settings.sceneSpeed === 'fast' ? 'быстрее' : 'нормальная'}</strong>.</p>
         </article>
 
         <article className="settings-panel">
-          <p className="settings-panel-title">Доступность и контроль</p>
-          <div className="settings-toggle-grid">
-            <button type="button" className={settings.reduceMotion ? 'active' : ''} onClick={() => onSettingChange('reduceMotion', !settings.reduceMotion)}>Уменьшить анимацию</button>
-            <button type="button" className={settings.reduceTransparency ? 'active' : ''} onClick={() => onSettingChange('reduceTransparency', !settings.reduceTransparency)}>Уменьшить прозрачность</button>
-            <button type="button" className={settings.highContrast ? 'active' : ''} onClick={() => onSettingChange('highContrast', !settings.highContrast)}>Повысить контраст</button>
-            <button type="button" className={settings.enhancedFocus ? 'active' : ''} onClick={() => onSettingChange('enhancedFocus', !settings.enhancedFocus)}>Усилить фокус элементов</button>
-            <button type="button" className={settings.lowGlowMode ? 'active' : ''} onClick={() => onSettingChange('lowGlowMode', !settings.lowGlowMode)}>Режим без лишнего свечения</button>
-          </div>
-          <label>Размер интерфейсного текста<input type="range" min={90} max={125} value={settings.uiTextScale} onChange={(e) => onSettingChange('uiTextScale', Number(e.target.value))} /></label>
-          <p className="settings-note">Текущий профиль движения: <strong>{motionScale}</strong>.</p>
+          <p className="settings-panel-title">Слайдеры читаемости</p>
+          <label aria-label="Яркость свечения">
+            Яркость свечения: <strong>{settings.glowBrightness}% ({levelLabel(settings.glowBrightness)})</strong>
+            <input type="range" min={0} max={100} value={settings.glowBrightness} onChange={(e) => onSettingChange('glowBrightness', Number(e.target.value))} />
+            <small>Крайние значения: минимум 0% · максимум 100%. Рекомендуемый диапазон: 35–65%.</small>
+          </label>
+          <label aria-label="Прозрачность панелей">
+            Прозрачность панелей: <strong>{settings.hudOpacity}% ({levelLabel(settings.hudOpacity)})</strong>
+            <input type="range" min={35} max={100} value={settings.hudOpacity} onChange={(e) => onSettingChange('hudOpacity', Number(e.target.value))} />
+            <small>Ниже — мягче фон, выше — плотнее панели. Рекомендуется 65–85%.</small>
+          </label>
+          <label aria-label="Плотность фона">
+            Плотность фона: <strong>{settings.backgroundDensity}% ({levelLabel(settings.backgroundDensity)})</strong>
+            <input type="range" min={0} max={100} value={settings.backgroundDensity} onChange={(e) => onSettingChange('backgroundDensity', Number(e.target.value))} />
+            <small>Влияет на насыщенность сетки и свечения сцены.</small>
+          </label>
+          <label aria-label="Плотность подписей">
+            Плотность подписей: <strong>{settings.labelDensity}% ({levelLabel(settings.labelDensity)})</strong>
+            <input type="range" min={30} max={100} value={settings.labelDensity} onChange={(e) => onSettingChange('labelDensity', Number(e.target.value))} />
+            <small>Низко — тише подписи, высоко — более выраженные подписи.</small>
+          </label>
+          <label aria-label="Размер интерфейсного текста">
+            Размер интерфейсного текста: <strong>{settings.uiTextScale}% ({textScaleLabel(settings.uiTextScale)})</strong>
+            <input type="range" min={90} max={125} value={settings.uiTextScale} onChange={(e) => onSettingChange('uiTextScale', Number(e.target.value))} />
+            <small>Режимы: меньше · стандарт · крупнее. Настройка применяется глобально.</small>
+          </label>
         </article>
 
         <article className="settings-panel">
-          <p className="settings-panel-title">Данные и сброс</p>
-          <p className="settings-note">Каждый уровень сброса влияет на разный слой данных.</p>
+          <p className="settings-panel-title">Доступность и подсказки</p>
+          <div className="settings-toggle-grid">
+            <button type="button" className={settings.reduceMotion ? 'active' : ''} onClick={() => onSettingChange('reduceMotion', !settings.reduceMotion)} aria-label="Уменьшить анимацию">Уменьшить анимацию</button>
+            <button type="button" className={settings.reduceTransparency ? 'active' : ''} onClick={() => onSettingChange('reduceTransparency', !settings.reduceTransparency)} aria-label="Сделать панели менее прозрачными">Снизить прозрачность</button>
+            <button type="button" className={settings.highContrast ? 'active' : ''} onClick={() => onSettingChange('highContrast', !settings.highContrast)} aria-label="Повысить контраст текста">Повысить контраст</button>
+            <button type="button" className={settings.enhancedFocus ? 'active' : ''} onClick={() => onSettingChange('enhancedFocus', !settings.enhancedFocus)} aria-label="Усилить фокус элементов">Усилить фокус</button>
+            <button type="button" className={settings.lowGlowMode ? 'active' : ''} onClick={() => onSettingChange('lowGlowMode', !settings.lowGlowMode)} aria-label="Ограничить свечение">Меньше свечения</button>
+            <button type="button" className={settings.autoFocusNode ? 'active' : ''} onClick={() => onSettingChange('autoFocusNode', !settings.autoFocusNode)} aria-label="Автофокус на выбранном узле">Автофокус узла</button>
+          </div>
+          <p className="settings-note">Режим движения: <strong>{motionScale}</strong>.</p>
+        </article>
+
+        <article className="settings-panel">
+          <p className="settings-panel-title">Сброс и данные</p>
           <div className="settings-reset-list">
-            <button type="button" onClick={onResetView}>Сбросить вид <span>камера и масштаб графа</span></button>
-            <button type="button" onClick={onResetScene}>Сбросить сцену <span>выделения, линзы и локальные панели</span></button>
-            <button type="button" onClick={onResetLaunch}>Сбросить стартовый запуск <span>давление, горизонт и цель запуска</span></button>
+            <button type="button" onClick={onResetView}>Сбросить вид <span>камера и масштаб</span></button>
+            <button type="button" onClick={onResetScene}>Сбросить сцену <span>выделения и панели</span></button>
+            <button type="button" onClick={onResetLaunch}>Сбросить старт <span>давление, горизонт, цель</span></button>
             <button type="button" onClick={() => confirmReset('Сбросить все пользовательские настройки и локальные данные?', onResetUserData)}>Сбросить пользовательские данные <span>темы, поведение, доступность</span></button>
-            <button type="button" className="danger" onClick={strongConfirm}>Полный сброс системы <span>полная очистка localStorage + возврат по умолчанию</span></button>
+            <button type="button" className="danger" onClick={strongConfirm}>Полный сброс системы <span>очистка localStorage + значения по умолчанию</span></button>
           </div>
           <div className="settings-actions-row">
-            <button type="button" onClick={downloadExport}>Экспорт настроек</button>
-            <button type="button" onClick={() => fileRef.current?.click()}>Импорт настроек</button>
-            <button type="button" className="ghost" onClick={onResetRecommended}>Вернуть рекомендуемые настройки</button>
+            <button type="button" onClick={downloadExport}>Экспорт</button>
+            <button type="button" onClick={() => fileRef.current?.click()}>Импорт</button>
+            <button type="button" className="ghost" onClick={onResetRecommended}>Рекомендованные значения</button>
           </div>
-          <textarea value={importValue} onChange={(e) => setImportValue(e.target.value)} placeholder="Вставьте JSON настроек для импорта" />
+          <textarea value={importValue} onChange={(e) => setImportValue(e.target.value)} placeholder="Вставьте JSON настроек для импорта" aria-label="Поле импорта JSON" />
           <div className="settings-actions-row">
             <button type="button" onClick={() => onImport(importValue)}>Применить JSON</button>
           </div>
@@ -170,11 +198,10 @@ export const SettingsMode = ({
 
         <article className="settings-panel compact">
           <p className="settings-panel-title">Система и диагностика</p>
-          <p>версия приложения: <strong>{appVersion}</strong></p>
-          <p>активная тема: <strong>{THEME_PRESETS[settings.theme].label}</strong></p>
-          <p>объём локальных данных: <strong>{storageSizeKb} КБ</strong></p>
-          <p>статус сохранения настроек: <strong>{saveStatus || 'ожидание'}</strong></p>
-          <p>производительность: <strong>{settings.reduceMotion ? 'бережный рендер' : 'полный рендер'}</strong></p>
+          <p>Версия: <strong>{appVersion}</strong></p>
+          <p>Тема: <strong>{THEME_PRESETS[settings.theme].label}</strong></p>
+          <p>Локальные данные: <strong>{storageSizeKb} КБ</strong></p>
+          <p>Сохранение: <strong>{saveStatus || 'ожидание'}</strong></p>
           <div className="settings-actions-row">
             <button type="button" onClick={onResetVisualCache}>Сбросить визуальный кэш</button>
             <button type="button" className="ghost" onClick={() => onSettingChange('theme', DEFAULT_SETTINGS.theme)}>Тема по умолчанию</button>

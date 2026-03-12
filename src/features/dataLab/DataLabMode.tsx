@@ -19,13 +19,33 @@ const DOMAIN_GROUPS: { id: RegistryDomain; label: string }[] = [
   { id: 'goal', label: 'Цель' },
   { id: 'state', label: 'Состояние' },
   { id: 'factors', label: 'Факторы' },
-  { id: 'confidence', label: 'Уверенность / Производные' },
-  { id: 'later', label: 'Позже / Будущее' },
+  { id: 'confidence', label: 'Уверенность и расчёты' },
+  { id: 'later', label: 'Позже' },
 ];
+
+
+const INPUT_TYPE_LABEL: Record<string, string> = {
+  numeric: 'число',
+  scale: 'шкала',
+  segmented: 'сегменты',
+  boolean: 'да/нет',
+  date: 'дата',
+  text: 'текст',
+};
+
+const CONTROL_TYPE_LABEL: Record<string, string> = {
+  input: 'поле ввода',
+  slider: 'слайдер',
+  segmented: 'сегментный переключатель',
+  toggle: 'переключатель',
+  'date-picker': 'календарь',
+  textarea: 'текстовое поле',
+  'metric-chip': 'метка метрики',
+};
 
 const formatValue = (value: unknown) => {
   if (typeof value === 'number') return Number.isInteger(value) ? value.toString() : value.toFixed(1);
-  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'boolean') return value ? 'да' : 'нет';
   if (value === null || value === undefined || value === '') return '—';
   return String(value);
 };
@@ -70,11 +90,11 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
   return (
     <div className="data-lab-mode">
       <section className="data-lab-section">
-        <p className="scene-mode-kicker">Только для разработки · Подстанция данных</p>
-        <h2 className="scene-mode-title">Инженерная подстанция данных: реестр, зависимости, подсказки, уверенность модели и песочница.</h2>
+        <p className="scene-mode-kicker">Подстанция данных</p>
+        <h2 className="scene-mode-title">Реестр полей, понятные зависимости и проверка влияния данных.</h2>
         <div className="data-lab-summary-grid">
           <article><span>Всего полей</span><strong>{registry.length}</strong></article>
-          <article><span>Критичные / Рекомендуемые / Позже</span><strong>{registry.filter((f) => f.criticality === 'critical').length} / {registry.filter((f) => f.criticality === 'recommended').length} / {registry.filter((f) => f.criticality === 'later').length}</strong></article>
+          <article><span>Критично / Желательно / Позже</span><strong>{registry.filter((f) => f.criticality === 'critical').length} / {registry.filter((f) => f.criticality === 'recommended').length} / {registry.filter((f) => f.criticality === 'later').length}</strong></article>
           <article><span>Заполнено</span><strong>{registry.filter((f) => f.status === 'filled' || f.status === 'inferred').length}</strong></article>
           <article><span>Слабый домен</span><strong>{weakDomain?.[0]} ({weakDomain?.[1]}%)</strong></article>
           <article><span>Глобальная уверенность модели</span><strong>{sandboxConfidence.globalConfidence}%</strong></article>
@@ -83,11 +103,11 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
       </section>
 
       <section className="data-lab-section">
-        <h3>Реестр полей и метрик</h3>
+        <h3>Реестр полей</h3>
         <div className="data-lab-filters">
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по ключу или подписи" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по названию поля" />
           <select value={criticality} onChange={(e) => setCriticality(e.target.value as typeof criticality)}>
-            <option value="all">Все уровни критичности</option><option value="critical">Критичные</option><option value="recommended">Рекомендуемые</option><option value="later">Позже</option>
+            <option value="all">Все уровни важности</option><option value="critical">Критично</option><option value="recommended">Желательно</option><option value="later">Позже</option>
           </select>
           <select value={domainFilter} onChange={(e) => setDomainFilter(e.target.value as typeof domainFilter)}>
             <option value="all">Все домены</option>
@@ -116,24 +136,24 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
       <section className="data-lab-section inspector-grid">
         <article>
           <h3>Инспектор</h3>
-          <p><strong>{active.label}</strong> · {active.id}</p>
-          <p>Тип: {active.inputType} / {active.controlType}</p>
-          <p>Описание: {active.description}</p>
-          <p>Зачем: {active.whyItMatters}</p>
-          <p>Критичность: {active.criticality}</p>
+          <p><strong>{active.label}</strong></p><p className="settings-note">Технический ключ: {active.id}</p>
+          <p>Тип ввода: {INPUT_TYPE_LABEL[active.inputType] ?? active.inputType} · Контрол: {CONTROL_TYPE_LABEL[active.controlType] ?? active.controlType}</p>
+          <p><strong>Что это:</strong> {active.description}</p>
+          <p><strong>Зачем нужно:</strong> {active.whyItMatters}</p>
+          <p><strong>Важность:</strong> {active.criticality === 'critical' ? 'критично' : active.criticality === 'recommended' ? 'желательно' : 'позже'}</p>
           <p>По умолчанию: {active.defaultValue}</p>
           <p>Проверка: {active.validation}</p>
           <p>Формат: {active.formatter}</p>
           <p>Используется в: {active.usedIn.join(', ')}</p>
-          <p>Влияет на метрики: {active.affectsMetrics.join(', ') || '—'}</p>
-          <p>Влияет на уверенность: {active.affectsConfidence.join(', ') || '—'}</p>
+          <p><strong>На что влияет:</strong> {active.affectsMetrics.join(', ') || '—'}</p>
+          <p><strong>Влияет на уверенность:</strong> {active.affectsConfidence.join(', ') || '—'}</p>
           <p>Открытие: {active.affectsUnlock ? 'да' : 'нет'}</p>
           <p>Пакет подсказок: {active.promptPack.join(', ')}</p>
           <p>Текст микроподсказки: {active.suggestedPrompt}</p>
           <p>Зона интерфейса: {active.uiSurface}</p>
         </article>
         <article>
-          <h3>Связи и влияние</h3>
+          <h3>Коротко о связях</h3>
           <ul>
             {active.affectsMetrics.map((metric) => <li key={metric}>{active.id} → {metric}</li>)}
             {active.affectsConfidence.map((domain) => <li key={domain}>{active.id} → уверенность домена {domain}</li>)}
@@ -145,12 +165,12 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
 
       <section className="data-lab-section inspector-grid">
         <article>
-          <h3>Пакеты подсказок / адаптивный предпросмотр</h3>
+          <h3>Пакеты подсказок</h3>
           {PROMPT_PACKS.map((pack) => {
             const missing = pack.fields.filter((field) => !(registry.find((item) => item.id === field)?.status === 'filled' || registry.find((item) => item.id === field)?.status === 'inferred'));
             return (
               <div key={pack.id} className="pack-card">
-                <p><strong>{pack.title}</strong> · {pack.priority}</p>
+                <p><strong>{pack.title.replace('Пакет', 'Пакет подсказки')}</strong> · приоритет {pack.priority}</p>
                 <p>Нужно: {pack.required.join(', ')}</p>
                 <p>Не хватает: {missing.join(', ') || 'нет'}</p>
                 <p>Где показывается: {pack.surface}</p>
@@ -160,7 +180,7 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
           })}
         </article>
         <article>
-          <h3>Предпросмотр контролов и состояний</h3>
+          <h3>Предпросмотр контролов</h3>
           {CONTROL_PREVIEW.map((control) => (
             <div key={control.id} className="control-preview">
               <p>{control.label}</p>
@@ -172,8 +192,8 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
 
       <section className="data-lab-section inspector-grid">
         <article>
-          <h3>Песочница / симуляция</h3>
-          <p>Редактируй значения и смотри влияние мгновенно.</p>
+          <h3>Песочница</h3>
+          <p>Измените значения и сразу увидьте, как меняется картина.</p>
           <div className="sandbox-list">
             {registry.filter((field) => field.source === 'manual' && field.criticality !== 'later').slice(0, 12).map((field) => (
               <label key={field.id}>{field.label}
@@ -181,10 +201,10 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
               </label>
             ))}
           </div>
-          <button type="button" onClick={() => onApplySandbox({ profile: sandbox.profile, dailyCheckIn: sandbox.dailyCheckIn, dailyFactors: sandbox.dailyFactors })}>Применить песочницу в систему</button>
+          <button type="button" aria-label="Применить данные из песочницы" onClick={() => onApplySandbox({ profile: sandbox.profile, dailyCheckIn: sandbox.dailyCheckIn, dailyFactors: sandbox.dailyFactors })}>Применить изменения</button>
         </article>
         <article>
-          <h3>Обзор уверенности и открытий</h3>
+          <h3>Уверенность и открытия</h3>
           <p>Глобальная уверенность модели: <strong>{sandboxConfidence.globalConfidence}%</strong></p>
           <p>Полнота: {sandboxConfidence.completenessScore}% · Актуальность: {sandboxConfidence.freshnessScore}% · Согласованность: {sandboxConfidence.consistencyScore}% · Глубина истории: {sandboxConfidence.historyDepthScore}%</p>
           <p>Домены: финансы {sandboxConfidence.domainConfidence.finance} · тело {sandboxConfidence.domainConfidence.body} · работа {sandboxConfidence.domainConfidence.work} · цель {sandboxConfidence.domainConfidence.goal}</p>

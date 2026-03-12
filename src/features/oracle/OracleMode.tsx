@@ -40,6 +40,13 @@ type ScenarioCard = {
 
 const scoreToLabel = (value: number) => (value >= 66 ? 'высокий' : value >= 45 ? 'средний' : 'низкий');
 
+const LENS_LABEL: Record<string, string> = {
+  pressure: 'давление',
+  resources: 'ресурсы',
+  goals: 'цели',
+  causes: 'причины',
+};
+
 export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContext, onApplyScenario, onModeChange }: OracleModeProps) => {
   const [postApplyNextMode, setPostApplyNextMode] = useState<AppMode | null>(null);
   const pressure = PRESSURE_OPTIONS.find((option) => option.id === launchContext.pressureId) ?? PRESSURE_OPTIONS[0];
@@ -55,7 +62,7 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
 
     return {
       activeDomain: handoff?.activeDomain.label ?? 'Работа',
-      selectedLens: handoff?.selectedLens ?? 'pressure',
+      selectedLens: LENS_LABEL[handoff?.selectedLens ?? 'pressure'] ?? 'давление',
       pressureSource: handoff?.pressureSource ?? `${pressure.label} → ${fallbackRisk.name}`,
       blocker: handoff?.blocker ?? `${fallbackRisk.name} блокирует ${selectedNode.name}`,
       leverageNode: handoff?.leverageNode ?? fallbackAction.name,
@@ -91,13 +98,13 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
         risk: 'Медленный прогресс по цели, но меньше вероятность срыва.',
         errorCost: 'Низкая: потеряете темп, но не сломаете контур.',
         
-        why: `Обходит blocker: ${c.blocker}. Работает через мягкий leverage: ${c.leverageNode}.`,
+        why: `Обходит узкое место: ${c.blocker}. Работает через мягкий рычаг: ${c.leverageNode}.`,
         recommended: cautiousRecommended && !collectRecommended,
       },
       {
         id: 'base',
-        title: 'Базовый ход · убрать blocker + запустить рычаг',
-        move: 'Снять главный blocker и выполнить 1 сфокусированный спринт до перезапуска цикла.',
+        title: 'Базовый ход · убрать узкое место и запустить рычаг',
+        move: 'Снять главное узкое место и выполнить 1 сфокусированный спринт до перезапуска цикла.',
         effect: `Баланс между снижением риска (${scoreToLabel(c.metrics.risk)}) и движением к результату.`,
         risk: 'Средний: нужна дисциплина выполнения в текущем цикле.',
         errorCost: 'Средняя: можно потерять часть окна прогресса.',
@@ -109,12 +116,12 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
         id: 'strong',
         title: 'Сильный ход · форсировать результат',
         move: 'Сделать усиленный фокус-блок + дополнительный цикл давления на ключевую цель до конца горизонта.',
-        effect: `Максимальный апсайд по результату (${scoreToLabel(c.metrics.readiness)} readiness).`,
+        effect: `Максимальный потенциал результата (${scoreToLabel(c.metrics.readiness)} готовность).`,
         risk: 'Высокий: при ошибке возрастает нагрузка и возможен откат.',
         errorCost: 'Высокая: цена промаха заметно выше базового хода.',
         movePotential: 'Сильный прирост, если контур уже стабилен.',
         confidenceFit: lowConfidence ? 'Не рекомендуется при слабой уверенности.' : 'Подходит, когда данные устойчивы.',
-        why: `Агрессивно использует leverage ${c.leverageNode}, но требует контроля риска ${c.pressureSource}.`,
+        why: `Агрессивно использует рычаг ${c.leverageNode}, но требует контроля риска ${c.pressureSource}.`,
         recommended: strongRecommended,
       },
       {
@@ -175,10 +182,10 @@ export const OracleMode = ({ launchContext, selectedNodeId, handoff, chainContex
         ))}
       </section>
 
-      <aside className="oracle-tactical-reasoning" aria-label="Тактическая панель">
-        <h4>Тактическая панель</h4>
+      <aside className="oracle-tactical-reasoning" aria-label="Пояснение выбора">
+        <h4>Почему выбран этот сценарий</h4>
         <p><strong>Почему выбран:</strong> {recommendedScenario.title}</p>
-        <p><strong>Какой блокер обходит:</strong> {oracleContext.blocker}</p>
+        <p><strong>Какое узкое место обходит:</strong> {oracleContext.blocker}</p>
         <p><strong>Какой рычаг использует:</strong> {oracleContext.leverageNode}</p>
         <p><strong>Главный риск:</strong> {oracleContext.pressureSource}</p>
         <p><strong>Что при ошибке:</strong> {recommendedScenario.errorCost}</p>

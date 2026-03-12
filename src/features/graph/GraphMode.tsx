@@ -45,7 +45,7 @@ const ROLE_LABEL: Record<CausalRole, string> = {
   primary: 'Главная цепочка',
   secondary: 'Вторичная связь',
   pressure: 'Источник давления',
-  blocker: 'Блокер',
+  blocker: 'Узкое место',
   leverage: 'Рычаг',
   result: 'Узел результата',
 };
@@ -226,7 +226,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
         <div>
           <p className="graph-kicker">Граф · причинный фокус</p>
           <h3>{handoff?.activeDomain.label ?? 'Активный домен'} · линза «{LENS_LABEL[activeLens]}»</h3>
-          <p>Сейчас главное: блокер «{blocker}» и рычаг «{leverageNode}».</p>
+          <p>Сейчас главное: узкое место «{blocker}» и рычаг «{leverageNode}».</p>
         </div>
         <div className="graph-summary-confidence">
           <p>Уверенность {Math.round(confidenceGlobal)}% / домен {Math.round(confidenceDomain)}%</p>
@@ -275,7 +275,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
       </svg>
 
       <aside className="graph-tactical-panel">
-        <h4>Тактическая сводка</h4>
+        <h4>Понятная сводка</h4>
         <p><strong>Главный источник:</strong> {pressureSource}</p>
         <p><strong>Узкое место:</strong> {blocker}</p>
         <p><strong>Лучший рычаг:</strong> {leverageNode}</p>
@@ -284,9 +284,9 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
       </aside>
 
       <div className="graph-cta-row">
-        <button type="button" className={recommendedRoute === 'oracle' ? '' : 'ghost'} onClick={() => { onOracleHandoff(oracleHandoff); onModeChange('oracle'); }}>Продолжить в Оракул</button>
-        <button type="button" className={recommendedRoute === 'world' ? '' : 'ghost'} onClick={() => onModeChange('world')}>Вернуться в Мир</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Старт</button>
+        <button type="button" aria-label="Перейти в Оракул" className={recommendedRoute === 'oracle' ? '' : 'ghost'} onClick={() => { onOracleHandoff(oracleHandoff); onModeChange('oracle'); }}>Продолжить в Оракул</button>
+        <button type="button" aria-label="Вернуться в Мир" className={recommendedRoute === 'world' ? '' : 'ghost'} onClick={() => onModeChange('world')}>Вернуться в Мир</button>
+        <button type="button" aria-label="Вернуться в Старт" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Старт</button>
       </div>
     </div>
   );
