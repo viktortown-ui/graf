@@ -553,7 +553,7 @@ export const WorldMode = ({
         <p>Контур: <strong>{activeDomain.label}</strong> · {lensBehavior.summarySignal}</p>
         <p>Сейчас главное: <strong>{layer === 'resources' ? `устойчивость ${round(activeDomain.stability)}%` : `${round(activeDomain.pressure)}% давления · ${round(activeDomain.risk)}% риска`}</strong></p>
         {weakestConfidenceDomain.confidence < 58 ? <p>Почему осторожно: <strong>{weakestConfidenceDomain.label}</strong> ({weakestConfidenceDomain.confidence}% уверенности).</p> : null}
-        <p>Дальше: <strong>{ctaMode === 'graph' ? `перейти в Graph` : `перейти в Oracle`}</strong>.</p>
+        <p>Дальше: <strong>{ctaMode === 'graph' ? `перейти в Граф` : `перейти в Оракул`}</strong>.</p>
       </div>
 
       <div className="world-domain-grid">
@@ -604,9 +604,9 @@ export const WorldMode = ({
       </div>
 
       <div className="world-handoff">
-        <button type="button" className={ctaMode === 'graph' ? '' : 'ghost'} onClick={() => { onGraphHandoff(handoff); onModeChange('graph'); }}>Продолжить в Graph</button>
-        <button type="button" onClick={() => onModeChange('oracle')} className={ctaMode === 'oracle' ? '' : 'ghost'}>Продолжить в Oracle</button>
-        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Start</button>
+        <button type="button" className={ctaMode === 'graph' ? '' : 'ghost'} onClick={() => { onGraphHandoff(handoff); onModeChange('graph'); }}>Продолжить в Граф</button>
+        <button type="button" onClick={() => onModeChange('oracle')} className={ctaMode === 'oracle' ? '' : 'ghost'}>Продолжить в Оракул</button>
+        <button type="button" className="ghost" onClick={() => onModeChange('start')}>Вернуться в Старт</button>
       </div>
 
       {chainContext.lastAcceptedScenario ? <AcceptedScenarioCard scenario={chainContext.lastAcceptedScenario} /> : null}

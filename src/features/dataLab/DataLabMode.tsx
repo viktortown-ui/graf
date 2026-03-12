@@ -13,14 +13,14 @@ type DataLabModeProps = {
 };
 
 const DOMAIN_GROUPS: { id: RegistryDomain; label: string }[] = [
-  { id: 'finance', label: 'Finance' },
-  { id: 'body', label: 'Body' },
-  { id: 'work', label: 'Work' },
-  { id: 'goal', label: 'Goal' },
-  { id: 'state', label: 'State' },
-  { id: 'factors', label: 'Factors' },
-  { id: 'confidence', label: 'Confidence / Derived' },
-  { id: 'later', label: 'Later / Future' },
+  { id: 'finance', label: 'Финансы' },
+  { id: 'body', label: 'Тело' },
+  { id: 'work', label: 'Работа' },
+  { id: 'goal', label: 'Цель' },
+  { id: 'state', label: 'Состояние' },
+  { id: 'factors', label: 'Факторы' },
+  { id: 'confidence', label: 'Уверенность / Производные' },
+  { id: 'later', label: 'Позже / Будущее' },
 ];
 
 const formatValue = (value: unknown) => {
@@ -70,24 +70,24 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
   return (
     <div className="data-lab-mode">
       <section className="data-lab-section">
-        <p className="scene-mode-kicker">Dev-only · Data Lab / Подстанция данных</p>
-        <h2 className="scene-mode-title">Инженерная подстанция данных: registry, зависимости, prompts, confidence и sandbox.</h2>
+        <p className="scene-mode-kicker">Только для разработки · Подстанция данных</p>
+        <h2 className="scene-mode-title">Инженерная подстанция данных: реестр, зависимости, подсказки, уверенность модели и песочница.</h2>
         <div className="data-lab-summary-grid">
           <article><span>Всего полей</span><strong>{registry.length}</strong></article>
-          <article><span>Critical / Recommended / Later</span><strong>{registry.filter((f) => f.criticality === 'critical').length} / {registry.filter((f) => f.criticality === 'recommended').length} / {registry.filter((f) => f.criticality === 'later').length}</strong></article>
+          <article><span>Критичные / Рекомендуемые / Позже</span><strong>{registry.filter((f) => f.criticality === 'critical').length} / {registry.filter((f) => f.criticality === 'recommended').length} / {registry.filter((f) => f.criticality === 'later').length}</strong></article>
           <article><span>Заполнено</span><strong>{registry.filter((f) => f.status === 'filled' || f.status === 'inferred').length}</strong></article>
           <article><span>Слабый домен</span><strong>{weakDomain?.[0]} ({weakDomain?.[1]}%)</strong></article>
-          <article><span>Global confidence</span><strong>{sandboxConfidence.globalConfidence}%</strong></article>
-          <article><span>Next unlock</span><strong>{sandboxConfidence.nextUnlock ? `${sandboxConfidence.nextUnlock.title} · ${sandboxConfidence.nextUnlock.daysLeft} дн.` : 'unlock max'}</strong></article>
+          <article><span>Глобальная уверенность модели</span><strong>{sandboxConfidence.globalConfidence}%</strong></article>
+          <article><span>Следующее открытие</span><strong>{sandboxConfidence.nextUnlock ? `${sandboxConfidence.nextUnlock.title} · ${sandboxConfidence.nextUnlock.daysLeft} дн.` : 'максимум уже открыт'}</strong></article>
         </div>
       </section>
 
       <section className="data-lab-section">
         <h3>Реестр полей и метрик</h3>
         <div className="data-lab-filters">
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по key/label" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по ключу или подписи" />
           <select value={criticality} onChange={(e) => setCriticality(e.target.value as typeof criticality)}>
-            <option value="all">Все criticality</option><option value="critical">critical</option><option value="recommended">recommended</option><option value="later">later</option>
+            <option value="all">Все уровни критичности</option><option value="critical">Критичные</option><option value="recommended">Рекомендуемые</option><option value="later">Позже</option>
           </select>
           <select value={domainFilter} onChange={(e) => setDomainFilter(e.target.value as typeof domainFilter)}>
             <option value="all">Все домены</option>
@@ -115,52 +115,52 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
 
       <section className="data-lab-section inspector-grid">
         <article>
-          <h3>Inspector</h3>
+          <h3>Инспектор</h3>
           <p><strong>{active.label}</strong> · {active.id}</p>
           <p>Тип: {active.inputType} / {active.controlType}</p>
           <p>Описание: {active.description}</p>
           <p>Зачем: {active.whyItMatters}</p>
-          <p>Criticality: {active.criticality}</p>
-          <p>Default: {active.defaultValue}</p>
-          <p>Validation: {active.validation}</p>
-          <p>Formatter: {active.formatter}</p>
-          <p>Used in: {active.usedIn.join(', ')}</p>
-          <p>Affects metrics: {active.affectsMetrics.join(', ') || '—'}</p>
-          <p>Affects confidence: {active.affectsConfidence.join(', ') || '—'}</p>
-          <p>Unlock: {active.affectsUnlock ? 'yes' : 'no'}</p>
-          <p>Prompt pack: {active.promptPack.join(', ')}</p>
-          <p>Micro-prompt copy: {active.suggestedPrompt}</p>
-          <p>UI surface: {active.uiSurface}</p>
+          <p>Критичность: {active.criticality}</p>
+          <p>По умолчанию: {active.defaultValue}</p>
+          <p>Проверка: {active.validation}</p>
+          <p>Формат: {active.formatter}</p>
+          <p>Используется в: {active.usedIn.join(', ')}</p>
+          <p>Влияет на метрики: {active.affectsMetrics.join(', ') || '—'}</p>
+          <p>Влияет на уверенность: {active.affectsConfidence.join(', ') || '—'}</p>
+          <p>Открытие: {active.affectsUnlock ? 'да' : 'нет'}</p>
+          <p>Пакет подсказок: {active.promptPack.join(', ')}</p>
+          <p>Текст микроподсказки: {active.suggestedPrompt}</p>
+          <p>Зона интерфейса: {active.uiSurface}</p>
         </article>
         <article>
           <h3>Связи и влияние</h3>
           <ul>
             {active.affectsMetrics.map((metric) => <li key={metric}>{active.id} → {metric}</li>)}
-            {active.affectsConfidence.map((domain) => <li key={domain}>{active.id} → {domain} confidence</li>)}
+            {active.affectsConfidence.map((domain) => <li key={domain}>{active.id} → уверенность домена {domain}</li>)}
             {active.promptPack.map((pack) => <li key={pack}>{active.id} → {pack}</li>)}
-            {active.affectsUnlock ? <li>{active.id} → unlock dependency</li> : null}
+            {active.affectsUnlock ? <li>{active.id} → зависимость открытия</li> : null}
           </ul>
         </article>
       </section>
 
       <section className="data-lab-section inspector-grid">
         <article>
-          <h3>Prompt packs / adaptive preview</h3>
+          <h3>Пакеты подсказок / адаптивный предпросмотр</h3>
           {PROMPT_PACKS.map((pack) => {
             const missing = pack.fields.filter((field) => !(registry.find((item) => item.id === field)?.status === 'filled' || registry.find((item) => item.id === field)?.status === 'inferred'));
             return (
               <div key={pack.id} className="pack-card">
                 <p><strong>{pack.title}</strong> · {pack.priority}</p>
-                <p>Required: {pack.required.join(', ')}</p>
-                <p>Missing: {missing.join(', ') || 'none'}</p>
-                <p>Surface: {pack.surface}</p>
-                <p>Generated prompt: {missing.length ? `Добавь ${missing.slice(0, 2).join(' и ')}, чтобы усилить ${pack.title}.` : 'Pack complete.'}</p>
+                <p>Нужно: {pack.required.join(', ')}</p>
+                <p>Не хватает: {missing.join(', ') || 'нет'}</p>
+                <p>Где показывается: {pack.surface}</p>
+                <p>Сформированная подсказка: {missing.length ? `Добавь ${missing.slice(0, 2).join(' и ')}, чтобы усилить ${pack.title}.` : 'Пакет заполнен.'}</p>
               </div>
             );
           })}
         </article>
         <article>
-          <h3>Preview контролов и состояний</h3>
+          <h3>Предпросмотр контролов и состояний</h3>
           {CONTROL_PREVIEW.map((control) => (
             <div key={control.id} className="control-preview">
               <p>{control.label}</p>
@@ -172,7 +172,7 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
 
       <section className="data-lab-section inspector-grid">
         <article>
-          <h3>Sandbox / simulation</h3>
+          <h3>Песочница / симуляция</h3>
           <p>Редактируй значения и смотри влияние мгновенно.</p>
           <div className="sandbox-list">
             {registry.filter((field) => field.source === 'manual' && field.criticality !== 'later').slice(0, 12).map((field) => (
@@ -181,27 +181,27 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
               </label>
             ))}
           </div>
-          <button type="button" onClick={() => onApplySandbox({ profile: sandbox.profile, dailyCheckIn: sandbox.dailyCheckIn, dailyFactors: sandbox.dailyFactors })}>Применить sandbox в систему</button>
+          <button type="button" onClick={() => onApplySandbox({ profile: sandbox.profile, dailyCheckIn: sandbox.dailyCheckIn, dailyFactors: sandbox.dailyFactors })}>Применить песочницу в систему</button>
         </article>
         <article>
-          <h3>Confidence / unlock overview</h3>
-          <p>Global confidence: <strong>{sandboxConfidence.globalConfidence}%</strong></p>
-          <p>Completeness: {sandboxConfidence.completenessScore}% · Freshness: {sandboxConfidence.freshnessScore}% · Consistency: {sandboxConfidence.consistencyScore}% · History depth: {sandboxConfidence.historyDepthScore}%</p>
-          <p>Domains: finance {sandboxConfidence.domainConfidence.finance} · body {sandboxConfidence.domainConfidence.body} · work {sandboxConfidence.domainConfidence.work} · goal {sandboxConfidence.domainConfidence.goal}</p>
-          <p>History thresholds: 3 / 7 / 14 / 30 / 60 дней · факт: {sandboxConfidence.historyDepthDays} дней, streak {sandboxConfidence.streakDays}</p>
-          <p>Missing for unlock: {sandboxConfidence.nextUnlock?.missingForUnlock.join(', ') || '—'}</p>
-          <p>Missing critical: {sandboxConfidence.missingCriticalFields.join(', ') || '—'}</p>
-          <p>Missing recommended: {sandboxConfidence.missingRecommendedFields.join(', ') || '—'}</p>
+          <h3>Обзор уверенности и открытий</h3>
+          <p>Глобальная уверенность модели: <strong>{sandboxConfidence.globalConfidence}%</strong></p>
+          <p>Полнота: {sandboxConfidence.completenessScore}% · Актуальность: {sandboxConfidence.freshnessScore}% · Согласованность: {sandboxConfidence.consistencyScore}% · Глубина истории: {sandboxConfidence.historyDepthScore}%</p>
+          <p>Домены: финансы {sandboxConfidence.domainConfidence.finance} · тело {sandboxConfidence.domainConfidence.body} · работа {sandboxConfidence.domainConfidence.work} · цель {sandboxConfidence.domainConfidence.goal}</p>
+          <p>Пороги истории: 3 / 7 / 14 / 30 / 60 дней · факт: {sandboxConfidence.historyDepthDays} дней, серия {sandboxConfidence.streakDays}</p>
+          <p>Не хватает для открытия: {sandboxConfidence.nextUnlock?.missingForUnlock.join(', ') || '—'}</p>
+          <p>Не хватает критичных: {sandboxConfidence.missingCriticalFields.join(', ') || '—'}</p>
+          <p>Не хватает рекомендуемых: {sandboxConfidence.missingRecommendedFields.join(', ') || '—'}</p>
         </article>
       </section>
 
       <section className="data-lab-section">
-        <p className="settings-note">Access: добавь <code>?devlab=1</code> в URL или нажми <code>Ctrl+Shift+L</code> для internal toggle.</p>
-        <p className="settings-note">Текущая продукционная UX-цепочка (Start/drawer/micro-prompts) не изменена.</p>
+        <p className="settings-note">Доступ: добавьте <code>?devlab=1</code> в URL или нажмите <code>Ctrl+Shift+L</code> для внутреннего переключателя.</p>
+        <p className="settings-note">Текущая рабочая UX-цепочка (Старт/панель/микроподсказки) не изменена.</p>
       </section>
 
       <section className="data-lab-section">
-        <p>Production confidence now: {confidence.globalConfidence}% (reference, read-only).</p>
+        <p>Текущая продукционная уверенность: {confidence.globalConfidence}% (справочно, только чтение).</p>
       </section>
     </div>
   );

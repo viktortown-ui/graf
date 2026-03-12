@@ -4,10 +4,10 @@ const CHAIN_STEPS = ['start', 'world', 'graph', 'oracle'] as const;
 type ChainStep = (typeof CHAIN_STEPS)[number];
 
 const STEP_LABEL: Record<ChainStep, string> = {
-  start: 'Start',
+  start: 'Старт',
   world: 'Мир',
-  graph: 'Graph',
-  oracle: 'Oracle',
+  graph: 'Граф',
+  oracle: 'Оракул',
 };
 
 type ChainRouteMemoryProps = {

@@ -89,12 +89,12 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
               {mode === 'graph' ? (
                 <>
                   <p>Домен: <strong>{sceneState.chainContext.activeDomain?.label ?? 'не выбран'}</strong> · линза <strong>{sceneState.chainContext.selectedLens}</strong></p>
-                  <p>Causal focus: <strong>{sceneState.chainContext.lastBlocker ?? sceneState.selectedGraphNode.name}</strong></p>
+                  <p>Причинный фокус: <strong>{sceneState.chainContext.lastBlocker ?? sceneState.selectedGraphNode.name}</strong></p>
                 </>
               ) : null}
               {mode === 'oracle' ? (
                 <>
-                  <p>Blocker: <strong>{sceneState.chainContext.lastBlocker ?? 'уточняется'}</strong> · Leverage: <strong>{sceneState.chainContext.lastLeverage ?? 'уточняется'}</strong></p>
+                  <p>Блокер: <strong>{sceneState.chainContext.lastBlocker ?? 'уточняется'}</strong> · Рычаг: <strong>{sceneState.chainContext.lastLeverage ?? 'уточняется'}</strong></p>
                   <p>Режим: <strong>выбор сценария</strong></p>
                 </>
               ) : null}

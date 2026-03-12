@@ -1,7 +1,7 @@
 const visualId = 'overview-flow-glow';
 
 export const OverviewHeroVisual = () => (
-  <div className="overview-hero-media" role="img" aria-label="Причина в графе проходит через ядро решения и разворачивается в сценарии Oracle">
+  <div className="overview-hero-media" role="img" aria-label="Причина в графе проходит через ядро решения и разворачивается в сценарии Оракула">
     <svg viewBox="0 0 1200 980" aria-hidden="true" preserveAspectRatio="xMidYMid slice" className="overview-hero-svg">
       <defs>
         <radialGradient id="graph-zone" cx="32%" cy="14%" r="58%">
