@@ -7,7 +7,6 @@ import type { AppSettings } from '../../app/state/settingsModel';
 import type { ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
 import { DEMO_GRAPH, type GraphEdge, type GraphNode } from '../graph/model';
 import { STATE_COPY, WORLD_PLANETS } from './worldPlanets';
-import { ChainRouteMemory } from '../../shared/ui/ChainRouteMemory';
 import { AcceptedScenarioCard } from '../../shared/ui/AcceptedScenarioCard';
 
 export type CameraState = {
@@ -541,7 +540,6 @@ export const WorldMode = ({
 
   return (
     <div className="world-mode" aria-label="Сцена системного мира">
-      <ChainRouteMemory chainContext={chainContext} />
       <div className="world-overlay">
         <p className="world-kicker">Мир 2.0 · Операционная карта</p>
         <p className="world-selected">Активный контур: {activeDomain.label} · {round(activeDomain.pressure)}% давления</p>

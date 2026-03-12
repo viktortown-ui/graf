@@ -14,7 +14,6 @@ import {
 import type { ChainContext } from '../../app/state/useSceneState';
 import type { DailyCheckIn, DailyFactors, DataSpine, Profile, WorkloadLevel } from '../../app/state/dataSpine';
 import { CONFIDENCE_FIELDS, type ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
-import { ChainRouteMemory } from '../../shared/ui/ChainRouteMemory';
 import { AcceptedScenarioCard } from '../../shared/ui/AcceptedScenarioCard';
 
 
@@ -384,7 +383,6 @@ export const StartMode = ({
 
   return (
     <div className="start-mode">
-      <ChainRouteMemory chainContext={chainContext} />
       <section className="start-input-column" aria-label="Входные условия запуска">
         <article className="start-module start-module-pressure">
           <header>

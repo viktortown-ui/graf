@@ -43,6 +43,32 @@ const CONTROL_TYPE_LABEL: Record<string, string> = {
   'metric-chip': 'метка метрики',
 };
 
+
+const CRITICALITY_LABEL: Record<'critical' | 'recommended' | 'later', string> = {
+  critical: 'критично',
+  recommended: 'желательно',
+  later: 'позже',
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  filled: 'заполнено',
+  inferred: 'вычислено',
+  missing: 'пусто',
+};
+
+const PRIORITY_LABEL: Record<string, string> = {
+  critical: 'критично',
+  recommended: 'желательно',
+  later: 'позже',
+};
+
+const SURFACE_LABEL: Record<string, string> = {
+  'start-panel': 'панель старта',
+  'start-inline': 'подсказка старта',
+  'summary-banner': 'верхняя сводка',
+  'dev-lab': 'инспектор',
+};
+
 const formatValue = (value: unknown) => {
   if (typeof value === 'number') return Number.isInteger(value) ? value.toString() : value.toFixed(1);
   if (typeof value === 'boolean') return value ? 'да' : 'нет';
@@ -96,7 +122,7 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
           <article><span>Всего полей</span><strong>{registry.length}</strong></article>
           <article><span>Критично / Желательно / Позже</span><strong>{registry.filter((f) => f.criticality === 'critical').length} / {registry.filter((f) => f.criticality === 'recommended').length} / {registry.filter((f) => f.criticality === 'later').length}</strong></article>
           <article><span>Заполнено</span><strong>{registry.filter((f) => f.status === 'filled' || f.status === 'inferred').length}</strong></article>
-          <article><span>Слабый домен</span><strong>{weakDomain?.[0]} ({weakDomain?.[1]}%)</strong></article>
+          <article><span>Слабый домен</span><strong>{DOMAIN_GROUPS.find((domain) => domain.id === weakDomain?.[0])?.label ?? weakDomain?.[0]} ({weakDomain?.[1]}%)</strong></article>
           <article><span>Глобальная уверенность модели</span><strong>{sandboxConfidence.globalConfidence}%</strong></article>
           <article><span>Следующее открытие</span><strong>{sandboxConfidence.nextUnlock ? `${sandboxConfidence.nextUnlock.title} · ${sandboxConfidence.nextUnlock.daysLeft} дн.` : 'максимум уже открыт'}</strong></article>
         </div>
@@ -124,7 +150,7 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
                 {items.map((item) => (
                   <button key={item.id} className={`registry-row ${selectedField === item.id ? 'active' : ''}`} onClick={() => setSelectedField(item.id)}>
                     <span>{item.label}</span>
-                    <small>{item.id} · {item.status} · {formatValue(item.value)}</small>
+                    <small>{item.id} · {STATUS_LABEL[item.status] ?? item.status} · {formatValue(item.value)}</small>
                   </button>
                 ))}
               </article>
@@ -140,7 +166,7 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
           <p>Тип ввода: {INPUT_TYPE_LABEL[active.inputType] ?? active.inputType} · Контрол: {CONTROL_TYPE_LABEL[active.controlType] ?? active.controlType}</p>
           <p><strong>Что это:</strong> {active.description}</p>
           <p><strong>Зачем нужно:</strong> {active.whyItMatters}</p>
-          <p><strong>Важность:</strong> {active.criticality === 'critical' ? 'критично' : active.criticality === 'recommended' ? 'желательно' : 'позже'}</p>
+          <p><strong>Важность:</strong> {CRITICALITY_LABEL[active.criticality]}</p>
           <p>По умолчанию: {active.defaultValue}</p>
           <p>Проверка: {active.validation}</p>
           <p>Формат: {active.formatter}</p>
@@ -148,16 +174,16 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
           <p><strong>На что влияет:</strong> {active.affectsMetrics.join(', ') || '—'}</p>
           <p><strong>Влияет на уверенность:</strong> {active.affectsConfidence.join(', ') || '—'}</p>
           <p>Открытие: {active.affectsUnlock ? 'да' : 'нет'}</p>
-          <p>Пакет подсказок: {active.promptPack.join(', ')}</p>
+          <p>Пакет подсказки: {active.promptPack.join(', ')}</p>
           <p>Текст микроподсказки: {active.suggestedPrompt}</p>
-          <p>Зона интерфейса: {active.uiSurface}</p>
+          <p>Зона интерфейса: {SURFACE_LABEL[active.uiSurface] ?? active.uiSurface}</p>
         </article>
         <article>
           <h3>Коротко о связях</h3>
           <ul>
             {active.affectsMetrics.map((metric) => <li key={metric}>{active.id} → {metric}</li>)}
             {active.affectsConfidence.map((domain) => <li key={domain}>{active.id} → уверенность домена {domain}</li>)}
-            {active.promptPack.map((pack) => <li key={pack}>{active.id} → {pack}</li>)}
+            {active.promptPack.map((pack) => <li key={pack}>{active.id} → пакет подсказки «{pack}»</li>)}
             {active.affectsUnlock ? <li>{active.id} → зависимость открытия</li> : null}
           </ul>
         </article>
@@ -165,22 +191,22 @@ export const DataLabMode = ({ dataSpine, confidence, historyDates, onApplySandbo
 
       <section className="data-lab-section inspector-grid">
         <article>
-          <h3>Пакеты подсказок</h3>
+          <h3>Пакеты подсказки</h3>
           {PROMPT_PACKS.map((pack) => {
             const missing = pack.fields.filter((field) => !(registry.find((item) => item.id === field)?.status === 'filled' || registry.find((item) => item.id === field)?.status === 'inferred'));
             return (
               <div key={pack.id} className="pack-card">
-                <p><strong>{pack.title.replace('Пакет', 'Пакет подсказки')}</strong> · приоритет {pack.priority}</p>
+                <p><strong>{pack.title.replace('Пакет', 'Пакет подсказки')}</strong> · приоритет {PRIORITY_LABEL[pack.priority] ?? pack.priority}</p>
                 <p>Нужно: {pack.required.join(', ')}</p>
                 <p>Не хватает: {missing.join(', ') || 'нет'}</p>
-                <p>Где показывается: {pack.surface}</p>
+                <p>Где показывается: {SURFACE_LABEL[pack.surface] ?? pack.surface}</p>
                 <p>Сформированная подсказка: {missing.length ? `Добавь ${missing.slice(0, 2).join(' и ')}, чтобы усилить ${pack.title}.` : 'Пакет заполнен.'}</p>
               </div>
             );
           })}
         </article>
         <article>
-          <h3>Предпросмотр контролов</h3>
+          <h3>Предпросмотр</h3>
           {CONTROL_PREVIEW.map((control) => (
             <div key={control.id} className="control-preview">
               <p>{control.label}</p>

@@ -38,6 +38,14 @@ export const useSettingsState = () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);
 
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--app-font-scale', `${settings.uiTextScale / 100}`);
+    return () => {
+      document.documentElement.style.removeProperty('--app-font-scale');
+    };
+  }, [settings.uiTextScale]);
+
   const api = useMemo(
     () => ({
       settings,
