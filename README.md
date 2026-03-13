@@ -118,3 +118,8 @@ src/
 - Keep one living surface
 - Keep mode transitions as projections of the same system
 - Avoid introducing dashboard/card-grid/admin-panel UI patterns
+
+
+## User guide (RU)
+
+- Полная пошаговая инструкция для новичков: `USER_GUIDE_RU.md`
