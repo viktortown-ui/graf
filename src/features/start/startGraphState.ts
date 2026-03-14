@@ -3,11 +3,13 @@ import type { GraphStartDomain } from './graphStartModel';
 export type GraphNodeState = 'inactive' | 'available' | 'focused' | 'adjacent' | 'locked' | 'weak' | 'unlock-ready';
 
 export const domainIdList = [
-  'energy-state',
-  'stability-constraints',
-  'direction-commitments',
-  'execution-delivery',
-  'capability-craft',
+  'health-energy',
+  'work-income',
+  'finance-obligations',
+  'relationships-family',
+  'environment-home',
+  'focus-development',
+  'goals-meaning',
 ] as const satisfies readonly GraphStartDomain['id'][];
 
 export const DOMAIN_NODE_PREFIX = 'domain:';

@@ -103,7 +103,7 @@ export type SceneStateSnapshot = {
 
 const DEFAULT_SELECTION: SceneSelection = {
   worldPlanetId: 'energy',
-  graphNodeId: 'domain-focus',
+  graphNodeId: 'domain-focus-development',
 };
 
 const DEFAULT_GRAPH_LENS: SpatialLens = { panX: 0, panY: 0, zoom: 1 };
@@ -117,20 +117,20 @@ const DEFAULT_START_GRAPH: StartGraphPersistentState = {
 };
 
 const DOMAIN_TO_GRAPH_NODE: Record<WorldGraphHandoff['activeDomain']['id'], string> = {
-  finance: 'domain-money',
-  body: 'domain-energy',
-  work: 'domain-focus',
-  goal: 'goal-launch',
+  finance: 'domain-finance-obligations',
+  body: 'domain-health-energy',
+  work: 'domain-work-income',
+  goal: 'domain-goals-meaning',
 };
 
 const WORLD_TO_GRAPH_NODE: Record<string, string> = {
-  energy: 'domain-energy',
-  money: 'domain-money',
-  discipline: 'factor-routine',
-  focus: 'domain-focus',
-  stress: 'domain-stress',
-  social: 'goal-health',
-  goal: 'goal-launch',
+  energy: 'domain-health-energy',
+  money: 'domain-finance-obligations',
+  discipline: 'domain-environment-home',
+  focus: 'domain-focus-development',
+  stress: 'domain-relationships-family',
+  social: 'domain-relationships-family',
+  goal: 'domain-goals-meaning',
 };
 
 const GRAPH_TO_WORLD_PLANET = Object.fromEntries(Object.entries(WORLD_TO_GRAPH_NODE).map(([planet, node]) => [node, planet]));

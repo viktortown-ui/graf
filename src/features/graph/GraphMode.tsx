@@ -71,10 +71,10 @@ const edgePath = (from: GraphNode, to: GraphNode) => {
 };
 
 const focusNodeByDomain: Record<WorldGraphHandoff['activeDomain']['id'], string[]> = {
-  work: ['domain-focus', 'domain-stress', 'risk-distraction', 'action-sprint', 'goal-launch', 'factor-routine'],
-  finance: ['domain-money', 'domain-stress', 'factor-cashflow', 'action-review', 'goal-launch', 'risk-distraction'],
-  body: ['domain-energy', 'risk-burnout', 'factor-sleep', 'goal-health', 'domain-focus', 'domain-stress'],
-  goal: ['goal-launch', 'domain-focus', 'action-sprint', 'goal-health', 'domain-stress', 'risk-distraction'],
+  work: ['domain-work-income', 'domain-focus-development', 'risk-distraction', 'action-sprint', 'goal-launch', 'domain-goals-meaning'],
+  finance: ['domain-finance-obligations', 'domain-work-income', 'factor-cashflow', 'action-review', 'domain-health-energy', 'risk-distraction'],
+  body: ['domain-health-energy', 'risk-burnout', 'factor-sleep', 'domain-relationships-family', 'domain-focus-development', 'domain-finance-obligations'],
+  goal: ['domain-goals-meaning', 'goal-launch', 'domain-focus-development', 'action-sprint', 'domain-work-income', 'risk-distraction'],
 };
 
 const scoreEdge = (edge: GraphEdge, nodeMap: Map<string, GraphNode>, lens: GraphReadingLens) => {
@@ -128,7 +128,7 @@ export const GraphMode = ({ selectedNodeId, onSelectNode, lens, onLensChange, se
     .filter((edge) => !primaryChain.find((primary) => primary.id === edge.id))
     .slice(0, 3);
 
-  const selectedNode = nodeMap.get(selectedNodeId) ?? nodeMap.get(handoff?.activeDomain.nodeId ?? 'domain-focus') ?? DEMO_GRAPH.nodes[0];
+  const selectedNode = nodeMap.get(selectedNodeId) ?? nodeMap.get(handoff?.activeDomain.nodeId ?? 'domain-focus-development') ?? DEMO_GRAPH.nodes[0];
 
   const roleMap = useMemo(() => {
     const map = new Map<string, CausalRole>();
