@@ -19,38 +19,38 @@ export const PRESSURE_OPTIONS: LaunchPreset[] = [
   {
     id: 'load',
     label: 'Перегрузка',
-    anchorNodeId: 'domain-stress',
-    worldPlanetId: 'stress',
+    anchorNodeId: 'domain-finance-obligations',
+    worldPlanetId: 'money',
     risk: 'Перегрузка начнёт ломать базовые решения',
     recommendedMode: 'world',
-    pressureEdgeIds: ['e-sprint-stress', 'e-stress-focus', 'e-money-stress'],
+    pressureEdgeIds: ['e-finance-health', 'e-distraction-focus'],
   },
   {
     id: 'energy-drop',
     label: 'Не хватает сил',
-    anchorNodeId: 'domain-energy',
+    anchorNodeId: 'domain-health-energy',
     worldPlanetId: 'energy',
     risk: 'Даже важные задачи уйдут в просадку',
     recommendedMode: 'world',
-    pressureEdgeIds: ['e-burnout-energy', 'e-energy-focus'],
+    pressureEdgeIds: ['e-burnout-health', 'e-sleep-health'],
   },
   {
     id: 'attention-drift',
     label: 'Теряю фокус',
-    anchorNodeId: 'risk-distraction',
+    anchorNodeId: 'domain-focus-development',
     worldPlanetId: 'focus',
     risk: 'Ошибки и незавершённые дела начнут накапливаться',
     recommendedMode: 'graph',
-    pressureEdgeIds: ['e-distraction-focus', 'e-stress-focus'],
+    pressureEdgeIds: ['e-distraction-focus', 'e-environment-focus'],
   },
   {
     id: 'money',
     label: 'Давят деньги',
-    anchorNodeId: 'domain-money',
+    anchorNodeId: 'domain-finance-obligations',
     worldPlanetId: 'money',
     risk: 'Финансовое напряжение заблокирует манёвры',
     recommendedMode: 'graph',
-    pressureEdgeIds: ['e-money-stress', 'e-cash-money'],
+    pressureEdgeIds: ['e-cash-finance', 'e-finance-health'],
   },
   {
     id: 'goal-slip',
@@ -59,7 +59,7 @@ export const PRESSURE_OPTIONS: LaunchPreset[] = [
     worldPlanetId: 'goal',
     risk: 'Срок и результат могут выйти из-под контроля',
     recommendedMode: 'oracle',
-    pressureEdgeIds: ['e-focus-launch', 'e-sprint-launch'],
+    pressureEdgeIds: ['e-focus-goal', 'e-sprint-goal'],
   },
 ];
 
@@ -92,8 +92,8 @@ export const DEFAULT_LAUNCH_CONTEXT: LaunchContext = {
 };
 
 export const TARGET_EDGE_HINT: Record<TargetFocusId, string[]> = {
-  'Удержать систему': ['e-health-burnout', 'e-review-risk'],
-  'Снизить риск': ['e-health-burnout', 'e-review-risk', 'e-burnout-energy'],
-  'Усилить цель': ['e-focus-launch', 'e-sprint-launch'],
-  'Восстановить ресурс': ['e-sleep-energy', 'e-cash-money'],
+  'Удержать систему': ['e-review-risk', 'e-finance-health'],
+  'Снизить риск': ['e-review-risk', 'e-burnout-health', 'e-finance-health'],
+  'Усилить цель': ['e-focus-goal', 'e-sprint-goal'],
+  'Восстановить ресурс': ['e-sleep-health', 'e-relations-health'],
 };

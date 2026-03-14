@@ -3,22 +3,24 @@ import { CORE_NODE_ID, toDomainNodeId } from './startGraphState';
 import { V1_DOMAIN_EDGES, V1_MAJOR_DOMAINS, type GraphStartDomain } from './graphStartModel';
 
 const domainPositions: Record<GraphStartDomain['id'], { x: number; y: number }> = {
-  'energy-state': { x: 500, y: 90 },
-  'stability-constraints': { x: 200, y: 240 },
-  'direction-commitments': { x: 280, y: 470 },
-  'execution-delivery': { x: 720, y: 470 },
-  'capability-craft': { x: 800, y: 240 },
+  'health-energy': { x: 500, y: 64 },
+  'work-income': { x: 690, y: 150 },
+  'finance-obligations': { x: 742, y: 336 },
+  'relationships-family': { x: 606, y: 492 },
+  'environment-home': { x: 394, y: 492 },
+  'focus-development': { x: 258, y: 336 },
+  'goals-meaning': { x: 310, y: 150 },
 };
 
 export const getStartGraphElements = (positionOverrides: Partial<Record<GraphStartDomain['id'], { x: number; y: number }>> = {}): ElementDefinition[] => {
   const core: ElementDefinition = {
     data: {
       id: CORE_NODE_ID,
-      label: 'Ядро GRAF',
+      label: 'Я / Моя система',
       kind: 'core',
       state: 'available',
     },
-    position: { x: 500, y: 290 },
+    position: { x: 500, y: 280 },
     grabbable: false,
     selectable: false,
   };

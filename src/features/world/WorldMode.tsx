@@ -118,13 +118,13 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 const round = (value: number) => Math.round(value * 10) / 10;
 
 const PLANET_TO_DOMAIN_NODE: Record<string, string> = {
-  energy: 'domain-energy',
-  money: 'domain-money',
-  discipline: 'factor-routine',
-  focus: 'domain-focus',
-  stress: 'domain-stress',
-  social: 'goal-health',
-  goal: 'goal-launch',
+  energy: 'domain-health-energy',
+  money: 'domain-finance-obligations',
+  discipline: 'domain-environment-home',
+  focus: 'domain-focus-development',
+  stress: 'domain-work-income',
+  social: 'domain-relationships-family',
+  goal: 'domain-goals-meaning',
 };
 
 const TARGET_LAYER: Record<LaunchContext['targetFocus'], WorldLayer> = {
