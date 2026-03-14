@@ -89,10 +89,10 @@ export const startGraphStyles = [
   {
     selector: 'edge',
     style: {
-      width: 2,
-      opacity: 0.34,
-      'line-color': '#6b7280',
-      'target-arrow-color': '#6b7280',
+      width: 'mapData(effectiveWeight, 1, 3, 1.5, 5.5)',
+      opacity: 0.45,
+      'line-color': '#64748b',
+      'target-arrow-color': '#64748b',
       'target-arrow-shape': 'triangle',
       'curve-style': 'bezier',
       label: 'data(label)',
@@ -102,37 +102,97 @@ export const startGraphStyles = [
       'text-background-opacity': 0.8,
       'text-background-padding': '2px',
       'text-rotation': 'autorotate',
-      'transition-property': 'line-color width opacity',
+      'line-style': 'solid',
+      'line-dash-pattern': [8, 4],
+      'transition-property': 'line-color width opacity target-arrow-color line-style',
       'transition-duration': '220ms',
       'z-index': 3,
     },
   },
   {
+    selector: 'edge[relationType = "opens"], edge[relationType = "strengthens"]',
+    style: {
+      'line-color': '#22c55e',
+      'target-arrow-color': '#22c55e',
+    },
+  },
+  {
+    selector: 'edge[relationType = "stabilizes"]',
+    style: {
+      'line-color': '#14b8a6',
+      'target-arrow-color': '#14b8a6',
+    },
+  },
+  {
+    selector: 'edge[relationType = "drains"], edge[relationType = "destabilizes"], edge[relationType = "slows"]',
+    style: {
+      'line-color': '#f97316',
+      'target-arrow-color': '#f97316',
+    },
+  },
+  {
+    selector: 'edge[relationType = "depends-on"]',
+    style: {
+      'line-color': '#a78bfa',
+      'target-arrow-color': '#a78bfa',
+    },
+  },
+  {
+    selector: 'edge[relationType = "masks"]',
+    style: {
+      'line-color': '#eab308',
+      'target-arrow-color': '#eab308',
+    },
+  },
+  {
+    selector: 'edge[effectiveState = "muted"]',
+    style: {
+      opacity: 0.18,
+      'line-style': 'dotted',
+    },
+  },
+  {
+    selector: 'edge[effectiveState = "disabled"]',
+    style: {
+      opacity: 0.08,
+      'line-style': 'dashed',
+      'target-arrow-shape': 'none',
+    },
+  },
+  {
+    selector: 'edge[effectiveState = "hypothesis"]',
+    style: {
+      opacity: 0.32,
+      'line-style': 'dashed',
+    },
+  },
+  {
+    selector: 'edge[confidence = "hypothesis"]',
+    style: {
+      color: '#fda4af',
+      'text-background-color': '#2a0d15',
+    },
+  },
+  {
     selector: 'edge[state = "focused"]',
     style: {
-      width: 4,
+      width: 'mapData(effectiveWeight, 1, 3, 2.6, 7)',
       opacity: 1,
-      'line-color': '#22d3ee',
-      'target-arrow-color': '#22d3ee',
-      color: '#a5f3fc',
+      color: '#e2e8f0',
+      'shadow-blur': 10,
+      'shadow-opacity': 0.4,
     },
   },
   {
     selector: 'edge[state = "adjacent"]',
     style: {
-      width: 3,
-      opacity: 0.9,
-      'line-color': '#60a5fa',
-      'target-arrow-color': '#60a5fa',
+      opacity: 0.75,
     },
   },
   {
     selector: 'edge[state = "weak"]',
     style: {
-      width: 1.4,
-      opacity: 0.2,
-      'line-color': '#475569',
-      'target-arrow-color': '#475569',
+      opacity: 0.14,
     },
   },
   {

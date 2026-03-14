@@ -3,10 +3,12 @@ import cytoscape, { type Core } from 'cytoscape';
 import { startGraphStyles } from './startGraphStyles';
 import { getStartGraphElements } from './startGraphElements';
 import { CORE_NODE_ID, toDomainNodeId } from './startGraphState';
-import type { GraphStartDomain } from './graphStartModel';
+import type { GraphStartDomain, UserRelationModifier } from './graphStartModel';
 
 type StartGraphSceneProps = {
   focusedDomainId: GraphStartDomain['id'] | null;
+  selectedEdgeId: string | null;
+  relationModifiers: Record<string, UserRelationModifier>;
   nodePositions: Partial<Record<GraphStartDomain['id'], { x: number; y: number }>>;
   onDomainFocus: (domainId: GraphStartDomain['id']) => void;
   onEdgeSelect: (edgeId: string | null) => void;
@@ -16,6 +18,8 @@ type StartGraphSceneProps = {
 
 export const StartGraphScene = ({
   focusedDomainId,
+  selectedEdgeId,
+  relationModifiers,
   nodePositions,
   onDomainFocus,
   onEdgeSelect,
@@ -30,7 +34,7 @@ export const StartGraphScene = ({
 
     const cy = cytoscape({
       container: containerRef.current,
-      elements: getStartGraphElements(nodePositions),
+      elements: getStartGraphElements(nodePositions, relationModifiers),
       style: startGraphStyles as cytoscape.StylesheetJson,
       layout: { name: 'preset', fit: true, padding: 44 },
       minZoom: 0.55,
@@ -72,7 +76,7 @@ export const StartGraphScene = ({
       cy.destroy();
       cyRef.current = null;
     };
-  }, [nodePositions, onDomainFocus, onEdgeSelect, onNodePosition]);
+  }, [nodePositions, onDomainFocus, onEdgeSelect, onNodePosition, relationModifiers]);
 
   useEffect(() => {
     const cy = cyRef.current;
@@ -82,13 +86,28 @@ export const StartGraphScene = ({
     const focusedNodeId = focusedDomainId ? toDomainNodeId(focusedDomainId) : null;
     const adjacentNodeIds = new Set<string>();
 
+    const selectedEdgeNodeIds = new Set<string>();
+
     cy.edges().forEach((edge) => {
-      edge.data('state', focusedNodeId ? 'weak' : 'inactive');
-      if (!focusedNodeId) return;
-      if (edge.source().id() === focusedNodeId || edge.target().id() === focusedNodeId) {
+      edge.data('state', focusedNodeId || selectedEdgeId ? 'weak' : 'inactive');
+
+      const edgeId = edge.id();
+      const isSelectedEdge = selectedEdgeId === edgeId;
+      const isFocusedAdjacent = Boolean(focusedNodeId && (edge.source().id() === focusedNodeId || edge.target().id() === focusedNodeId));
+      if (isSelectedEdge) {
         edge.data('state', 'focused');
+        selectedEdgeNodeIds.add(edge.source().id());
+        selectedEdgeNodeIds.add(edge.target().id());
+        return;
+      }
+      if (isFocusedAdjacent) {
+        edge.data('state', 'adjacent');
         if (edge.source().id() !== focusedNodeId) adjacentNodeIds.add(edge.source().id());
         if (edge.target().id() !== focusedNodeId) adjacentNodeIds.add(edge.target().id());
+        return;
+      }
+      if (focusedNodeId || selectedEdgeId) {
+        edge.data('state', 'weak');
       }
     });
 
@@ -97,8 +116,11 @@ export const StartGraphScene = ({
       let state = 'available';
       if (focusedNodeId) {
         if (nodeId === focusedNodeId) state = 'focused';
+        else if (selectedEdgeNodeIds.has(nodeId)) state = 'adjacent';
         else if (adjacentNodeIds.has(nodeId)) state = 'adjacent';
         else state = 'weak';
+      } else if (selectedEdgeNodeIds.size > 0) {
+        state = selectedEdgeNodeIds.has(nodeId) ? 'adjacent' : 'weak';
       }
       node.data('state', state);
     });
@@ -113,7 +135,7 @@ export const StartGraphScene = ({
     } else {
       onRenderedAnchorPosition(null);
     }
-  }, [focusedDomainId, onRenderedAnchorPosition]);
+  }, [focusedDomainId, onRenderedAnchorPosition, selectedEdgeId]);
 
   useEffect(() => {
     const cy = cyRef.current;

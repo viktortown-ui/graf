@@ -1,6 +1,18 @@
 import type { ElementDefinition } from 'cytoscape';
 import { CORE_NODE_ID, toDomainNodeId } from './startGraphState';
-import { V1_DOMAIN_EDGES, V1_MAJOR_DOMAINS, type GraphStartDomain } from './graphStartModel';
+import {
+  DEFAULT_RELATION_USER_MODIFIER,
+  RELATION_CONFIDENCE_LABEL,
+  RELATION_STATE_LABEL,
+  RELATION_STRENGTH_LABEL,
+  RELATION_TYPE_LABEL,
+  V1_MAJOR_DOMAINS,
+  V1_NATIVE_RELATION_MATRIX,
+  getEffectiveStrength,
+  resolveEffectiveRelationState,
+  type GraphStartDomain,
+  type UserRelationModifier,
+} from './graphStartModel';
 
 const domainPositions: Record<GraphStartDomain['id'], { x: number; y: number }> = {
   'health-energy': { x: 500, y: 64 },
@@ -12,7 +24,16 @@ const domainPositions: Record<GraphStartDomain['id'], { x: number; y: number }> 
   'goals-meaning': { x: 310, y: 150 },
 };
 
-export const getStartGraphElements = (positionOverrides: Partial<Record<GraphStartDomain['id'], { x: number; y: number }>> = {}): ElementDefinition[] => {
+const strengthToWeight: Record<'low' | 'med' | 'high', number> = {
+  low: 1,
+  med: 2,
+  high: 3,
+};
+
+export const getStartGraphElements = (
+  positionOverrides: Partial<Record<GraphStartDomain['id'], { x: number; y: number }>> = {},
+  relationModifiers: Record<string, UserRelationModifier> = {},
+): ElementDefinition[] => {
   const core: ElementDefinition = {
     data: {
       id: CORE_NODE_ID,
@@ -53,19 +74,36 @@ export const getStartGraphElements = (positionOverrides: Partial<Record<GraphSta
     selectable: true,
   }));
 
-  const domainEdges: ElementDefinition[] = V1_DOMAIN_EDGES.map((edge) => ({
-    data: {
-      id: `edge:${edge.id}`,
-      source: toDomainNodeId(edge.from),
-      target: toDomainNodeId(edge.to),
-      label: edge.relation,
-      relation: edge.relation,
-      confidence: edge.confidence,
-      weight: edge.strength,
-      state: 'inactive',
-    },
-    selectable: true,
-  }));
+  const domainEdges: ElementDefinition[] = V1_NATIVE_RELATION_MATRIX.map((relation) => {
+    const modifier = relationModifiers[relation.id] ?? DEFAULT_RELATION_USER_MODIFIER;
+    const effectiveStrength = getEffectiveStrength(relation.defaultStrength, modifier.strengthDelta);
+    const effectiveState = resolveEffectiveRelationState(relation, modifier);
+    return {
+      data: {
+        id: `edge:${relation.id}`,
+        relationId: relation.id,
+        source: toDomainNodeId(relation.source),
+        target: toDomainNodeId(relation.target),
+        label: RELATION_TYPE_LABEL[relation.relationType],
+        relationType: relation.relationType,
+        relationTypeLabel: RELATION_TYPE_LABEL[relation.relationType],
+        directionality: relation.directionality,
+        confidence: relation.defaultConfidence,
+        confidenceLabel: RELATION_CONFIDENCE_LABEL[relation.defaultConfidence],
+        defaultStrength: relation.defaultStrength,
+        defaultStrengthLabel: RELATION_STRENGTH_LABEL[relation.defaultStrength],
+        effectiveStrength,
+        effectiveStrengthLabel: RELATION_STRENGTH_LABEL[effectiveStrength],
+        effectiveWeight: strengthToWeight[effectiveStrength],
+        activationMode: relation.activationMode,
+        modifierStrengthDelta: modifier.strengthDelta,
+        state: 'inactive',
+        effectiveState,
+        effectiveStateLabel: RELATION_STATE_LABEL[effectiveState],
+      },
+      selectable: true,
+    };
+  });
 
   return [core, ...domains, ...coreEdges, ...domainEdges];
 };

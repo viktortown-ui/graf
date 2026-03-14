@@ -3249,6 +3249,74 @@ button {
   gap: 0.65rem;
 }
 
+.start-graph-relation-inspector {
+  position: absolute;
+  z-index: 13;
+  width: min(24rem, calc(100% - 1.2rem));
+  border-radius: 0.95rem;
+  border: 1px solid rgba(167, 139, 250, 0.6);
+  background: linear-gradient(165deg, rgba(24, 16, 46, 0.94), rgba(13, 10, 30, 0.95));
+  box-shadow: 0 24px 58px rgba(0, 0, 0, 0.45);
+  padding: 0.72rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.start-graph-relation-inspector h4,
+.start-graph-relation-inspector p,
+.start-graph-relation-inspector dt,
+.start-graph-relation-inspector dd {
+  margin: 0;
+}
+
+.start-graph-relation-inspector__kicker {
+  font-size: 0.73rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(205, 187, 255, 0.82);
+}
+
+.start-graph-relation-inspector dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.start-graph-relation-inspector dt {
+  font-size: 0.7rem;
+  color: rgba(190, 177, 234, 0.9);
+}
+
+.start-graph-relation-inspector dd {
+  font-size: 0.85rem;
+}
+
+.start-graph-relation-inspector__controls {
+  border-top: 1px solid rgba(174, 149, 240, 0.45);
+  padding-top: 0.5rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.start-graph-relation-inspector__controls > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.start-graph-relation-inspector__controls button {
+  border-radius: 999px;
+  border: 1px solid rgba(196, 181, 253, 0.75);
+  background: rgba(109, 40, 217, 0.35);
+  color: inherit;
+  padding: 0.28rem 0.7rem;
+}
+
+.start-graph-relation-inspector__controls button:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+}
+
 .start-inner-universe h3,
 .start-inner-universe p,
 .start-inner-universe small {

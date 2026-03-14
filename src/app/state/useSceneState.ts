@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { DEMO_GRAPH } from '../../features/graph/model';
 import { WORLD_PLANETS } from '../../features/world/worldPlanets';
 import type { GraphStartDomain } from '../../features/start/graphStartModel';
+import type { UserRelationModifier } from '../../features/start/graphStartModel';
 import type { DailyCheckIn, DailyFactors, Profile } from './dataSpine';
 import { createDataSpine } from './dataSpine';
 import { evaluateConfidence } from '../../entities/confidence/confidenceEngine';
@@ -86,6 +87,7 @@ export type StartGraphPersistentState = {
   activatedToolId: string | null;
   pinnedDomainIds: GraphStartDomain['id'][];
   nodePositions: Record<string, { x: number; y: number }>;
+  relationModifiers: Record<string, UserRelationModifier>;
 };
 
 export type SceneStateSnapshot = {
@@ -114,6 +116,7 @@ const DEFAULT_START_GRAPH: StartGraphPersistentState = {
   activatedToolId: null,
   pinnedDomainIds: [],
   nodePositions: {},
+  relationModifiers: {},
 };
 
 const DOMAIN_TO_GRAPH_NODE: Record<WorldGraphHandoff['activeDomain']['id'], string> = {
