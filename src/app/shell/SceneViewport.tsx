@@ -65,7 +65,6 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
   const styleVars = getThemeVars(settingsState.settings);
   const activeModeDefinition = MODES.find((entry) => entry.id === mode);
   const activeModeLabel = activeModeDefinition?.label ?? 'Неизвестно';
-  const activeModeSummary = activeModeDefinition?.summary ?? '';
   const showServiceHud = mode !== 'overview';
   const worldLensLabelMap: Record<string, string> = {
     pressure: 'Давление',
@@ -115,14 +114,8 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
           {mode === 'overview' && <OverviewMode onModeChange={onModeChange} />}
           {mode === 'start' && (
             <StartMode
-              selectedNodeId={sceneState.selection.graphNodeId}
               selectedNodeName={sceneState.selectedGraphNode.name}
-              selectedPlanetLabel={sceneState.selectedPlanetLabel}
-              contextModeLabel={activeModeLabel}
-              contextModeSummary={activeModeSummary}
-              dataSpine={sceneState.dataSpine}
               confidence={sceneState.confidence}
-              onDataSpineChange={sceneState.updateDataSpine}
               onAnchorChange={(id) => sceneState.selectGraphNode(id, settingsState.settings.autoFocusNode)}
               launchContext={sceneState.launchContext}
               chainContext={sceneState.chainContext}
