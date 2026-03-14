@@ -21,6 +21,105 @@ export type GraphStartEdge = {
   confidence: 'hypothesis' | 'medium' | 'verified';
 };
 
+export type RelationType =
+  | 'strengthens'
+  | 'drains'
+  | 'stabilizes'
+  | 'destabilizes'
+  | 'opens'
+  | 'slows'
+  | 'depends-on'
+  | 'masks';
+
+export type RelationDirectionality = 'directed' | 'bidirectional';
+export type RelationStrength = 'low' | 'med' | 'high';
+export type RelationConfidence = 'hypothesis' | 'medium' | 'verified';
+export type RelationActivationMode = 'always_on' | 'user_toggleable' | 'context_conditional';
+export type RelationState = 'active' | 'muted' | 'disabled' | 'weak' | 'hypothesis';
+
+export type GraphRelationMatrixEntry = {
+  id: string;
+  source: GraphStartDomain['id'];
+  target: GraphStartDomain['id'];
+  relationType: RelationType;
+  directionality: RelationDirectionality;
+  defaultStrength: RelationStrength;
+  defaultConfidence: RelationConfidence;
+  activationMode: RelationActivationMode;
+  defaultState: RelationState;
+};
+
+export type UserRelationModifier = {
+  strengthDelta: -1 | 0 | 1;
+  stateOverride: RelationState | null;
+  muted: boolean;
+  disabled: boolean;
+};
+
+export type EffectiveRelation = GraphRelationMatrixEntry & {
+  userModifier: UserRelationModifier;
+  effectiveStrength: RelationStrength;
+  effectiveState: RelationState;
+};
+
+export const RELATION_TYPE_LABEL: Record<RelationType, string> = {
+  strengthens: 'усиливает',
+  drains: 'истощает',
+  stabilizes: 'стабилизирует',
+  destabilizes: 'дестабилизирует',
+  opens: 'открывает',
+  slows: 'тормозит',
+  'depends-on': 'зависит от',
+  masks: 'маскирует',
+};
+
+export const RELATION_STRENGTH_LABEL: Record<RelationStrength, string> = {
+  low: 'слабая',
+  med: 'средняя',
+  high: 'сильная',
+};
+
+export const RELATION_CONFIDENCE_LABEL: Record<RelationConfidence, string> = {
+  hypothesis: 'гипотеза',
+  medium: 'рабочая',
+  verified: 'проверенная',
+};
+
+export const RELATION_STATE_LABEL: Record<RelationState, string> = {
+  active: 'активна',
+  muted: 'приглушена',
+  disabled: 'отключена',
+  weak: 'ослаблена',
+  hypothesis: 'гипотеза',
+};
+
+export const RELATION_ACTIVATION_LABEL: Record<RelationActivationMode, string> = {
+  always_on: 'всегда включена',
+  user_toggleable: 'можно переключать',
+  context_conditional: 'контекстная',
+};
+
+export const DEFAULT_RELATION_USER_MODIFIER: UserRelationModifier = {
+  strengthDelta: 0,
+  stateOverride: null,
+  muted: false,
+  disabled: false,
+};
+
+const STRENGTH_ORDER: RelationStrength[] = ['low', 'med', 'high'];
+
+export const getEffectiveStrength = (base: RelationStrength, delta: UserRelationModifier['strengthDelta']): RelationStrength => {
+  const index = STRENGTH_ORDER.indexOf(base);
+  return STRENGTH_ORDER[Math.max(0, Math.min(STRENGTH_ORDER.length - 1, index + delta))];
+};
+
+export const resolveEffectiveRelationState = (relation: GraphRelationMatrixEntry, modifier: UserRelationModifier): RelationState => {
+  if (modifier.disabled && relation.activationMode !== 'always_on') return 'disabled';
+  if (modifier.stateOverride) return modifier.stateOverride;
+  if (modifier.muted && relation.activationMode !== 'always_on') return 'muted';
+  return relation.defaultState;
+};
+
 export const V1_MAJOR_DOMAINS: GraphStartDomain[] = [
   {
     id: 'health-energy',
@@ -160,4 +259,117 @@ export const V1_DOMAIN_EDGES: GraphStartEdge[] = [
   { id: 'edge-goals-focus', from: 'goals-meaning', to: 'focus-development', relation: 'enables', strength: 'high', confidence: 'verified' },
   { id: 'edge-finance-health', from: 'finance-obligations', to: 'health-energy', relation: 'drains', strength: 'low', confidence: 'hypothesis' },
   { id: 'edge-goals-relations', from: 'goals-meaning', to: 'relationships-family', relation: 'drains', strength: 'low', confidence: 'hypothesis' },
+];
+
+export const V1_NATIVE_RELATION_MATRIX: GraphRelationMatrixEntry[] = [
+  {
+    id: 'rel-health-work-capacity',
+    source: 'health-energy',
+    target: 'work-income',
+    relationType: 'opens',
+    directionality: 'directed',
+    defaultStrength: 'high',
+    defaultConfidence: 'verified',
+    activationMode: 'always_on',
+    defaultState: 'active',
+  },
+  {
+    id: 'rel-work-money-flow',
+    source: 'work-income',
+    target: 'finance-obligations',
+    relationType: 'strengthens',
+    directionality: 'directed',
+    defaultStrength: 'high',
+    defaultConfidence: 'verified',
+    activationMode: 'always_on',
+    defaultState: 'active',
+  },
+  {
+    id: 'rel-money-health-load',
+    source: 'finance-obligations',
+    target: 'health-energy',
+    relationType: 'drains',
+    directionality: 'directed',
+    defaultStrength: 'med',
+    defaultConfidence: 'medium',
+    activationMode: 'user_toggleable',
+    defaultState: 'active',
+  },
+  {
+    id: 'rel-relations-energy',
+    source: 'relationships-family',
+    target: 'health-energy',
+    relationType: 'stabilizes',
+    directionality: 'directed',
+    defaultStrength: 'med',
+    defaultConfidence: 'medium',
+    activationMode: 'user_toggleable',
+    defaultState: 'active',
+  },
+  {
+    id: 'rel-environment-rhythm',
+    source: 'environment-home',
+    target: 'health-energy',
+    relationType: 'stabilizes',
+    directionality: 'directed',
+    defaultStrength: 'med',
+    defaultConfidence: 'verified',
+    activationMode: 'context_conditional',
+    defaultState: 'active',
+  },
+  {
+    id: 'rel-environment-focus',
+    source: 'environment-home',
+    target: 'focus-development',
+    relationType: 'opens',
+    directionality: 'directed',
+    defaultStrength: 'med',
+    defaultConfidence: 'medium',
+    activationMode: 'context_conditional',
+    defaultState: 'active',
+  },
+  {
+    id: 'rel-goals-behavior',
+    source: 'goals-meaning',
+    target: 'focus-development',
+    relationType: 'depends-on',
+    directionality: 'directed',
+    defaultStrength: 'high',
+    defaultConfidence: 'verified',
+    activationMode: 'always_on',
+    defaultState: 'active',
+  },
+  {
+    id: 'rel-goals-relations-friction',
+    source: 'goals-meaning',
+    target: 'relationships-family',
+    relationType: 'destabilizes',
+    directionality: 'directed',
+    defaultStrength: 'low',
+    defaultConfidence: 'hypothesis',
+    activationMode: 'user_toggleable',
+    defaultState: 'hypothesis',
+  },
+  {
+    id: 'rel-work-focus-drift',
+    source: 'work-income',
+    target: 'focus-development',
+    relationType: 'drains',
+    directionality: 'directed',
+    defaultStrength: 'low',
+    defaultConfidence: 'medium',
+    activationMode: 'user_toggleable',
+    defaultState: 'weak',
+  },
+  {
+    id: 'rel-finance-environment-stability',
+    source: 'finance-obligations',
+    target: 'environment-home',
+    relationType: 'stabilizes',
+    directionality: 'directed',
+    defaultStrength: 'med',
+    defaultConfidence: 'verified',
+    activationMode: 'always_on',
+    defaultState: 'active',
+  },
 ];

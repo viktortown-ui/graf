@@ -6,7 +6,21 @@ import type { ConfidenceSnapshot } from '../../entities/confidence/confidenceEng
 import { StartGraphScene } from './StartGraphScene';
 import { StartInnerUniverse } from './StartInnerUniverse';
 import { StartGraphOverlay } from './StartGraphOverlay';
-import { V1_DOMAIN_EDGES, V1_MAJOR_DOMAINS, type GraphStartDomain } from './graphStartModel';
+import {
+  DEFAULT_RELATION_USER_MODIFIER,
+  RELATION_ACTIVATION_LABEL,
+  RELATION_CONFIDENCE_LABEL,
+  RELATION_STATE_LABEL,
+  RELATION_STRENGTH_LABEL,
+  RELATION_TYPE_LABEL,
+  V1_MAJOR_DOMAINS,
+  V1_NATIVE_RELATION_MATRIX,
+  getEffectiveStrength,
+  resolveEffectiveRelationState,
+  type GraphStartDomain,
+  type GraphRelationMatrixEntry,
+  type UserRelationModifier,
+} from './graphStartModel';
 
 type StartGraphStageProps = {
   selectedNodeName: string;
@@ -20,13 +34,14 @@ type StartGraphStageProps = {
   onLaunch: (mode: AppMode) => void;
 };
 
-const RELATION_LABEL = {
-  enables: 'усиливает',
-  'depends-on': 'зависит',
-  stabilizes: 'стабилизирует',
-  amplifies: 'ускоряет',
-  drains: 'истощает',
-} as const;
+type EffectiveRelationView = GraphRelationMatrixEntry & {
+  edgeId: string;
+  userModifier: UserRelationModifier;
+  effectiveStrength: 'low' | 'med' | 'high';
+  effectiveState: 'active' | 'muted' | 'disabled' | 'weak' | 'hypothesis';
+};
+
+const toEdgeId = (relationId: string) => `edge:${relationId}`;
 
 export const StartGraphStage = ({
   selectedNodeName,
@@ -40,8 +55,28 @@ export const StartGraphStage = ({
   onLaunch,
 }: StartGraphStageProps) => {
   const [anchorPosition, setAnchorPosition] = useState<{ left: number; top: number } | null>(null);
-  const { focusedDomainId, selectedEdgeId, activatedToolId, pinnedDomainIds, nodePositions } = startGraph;
+  const { focusedDomainId, selectedEdgeId, activatedToolId, pinnedDomainIds, nodePositions, relationModifiers } = startGraph;
   const pinnedIds = useMemo(() => new Set(pinnedDomainIds), [pinnedDomainIds]);
+
+  const effectiveRelations = useMemo<EffectiveRelationView[]>(() => {
+    return V1_NATIVE_RELATION_MATRIX.map((relation) => {
+      const userModifier = relationModifiers[relation.id] ?? DEFAULT_RELATION_USER_MODIFIER;
+      const effectiveStrength = getEffectiveStrength(relation.defaultStrength, userModifier.strengthDelta);
+      const effectiveState = resolveEffectiveRelationState(relation, userModifier);
+      return {
+        ...relation,
+        edgeId: toEdgeId(relation.id),
+        userModifier,
+        effectiveStrength,
+        effectiveState,
+      };
+    });
+  }, [relationModifiers]);
+
+  const selectedRelation = useMemo(
+    () => effectiveRelations.find((relation) => relation.edgeId === selectedEdgeId) ?? null,
+    [effectiveRelations, selectedEdgeId],
+  );
 
   const focusedDomain = useMemo(
     () => V1_MAJOR_DOMAINS.find((domain) => domain.id === focusedDomainId) ?? null,
@@ -51,12 +86,29 @@ export const StartGraphStage = ({
   const adjacentIds = useMemo(() => {
     if (!focusedDomainId) return new Set<GraphStartDomain['id']>();
     const ids = new Set<GraphStartDomain['id']>();
-    V1_DOMAIN_EDGES.forEach((edge) => {
-      if (edge.from === focusedDomainId) ids.add(edge.to);
-      if (edge.to === focusedDomainId) ids.add(edge.from);
+    effectiveRelations.forEach((relation) => {
+      if (relation.source === focusedDomainId) ids.add(relation.target);
+      if (relation.target === focusedDomainId) ids.add(relation.source);
     });
     return ids;
-  }, [focusedDomainId]);
+  }, [focusedDomainId, effectiveRelations]);
+
+  const topRelations = effectiveRelations
+    .filter((relation) => !focusedDomainId || relation.source === focusedDomainId || relation.target === focusedDomainId)
+    .slice(0, 5);
+
+  const updateRelationModifier = (relationId: string, patch: Partial<UserRelationModifier>) => {
+    const current = relationModifiers[relationId] ?? DEFAULT_RELATION_USER_MODIFIER;
+    onStartGraphChange({
+      relationModifiers: {
+        ...relationModifiers,
+        [relationId]: {
+          ...current,
+          ...patch,
+        },
+      },
+    });
+  };
 
   const handleFocusDomain = (domainId: GraphStartDomain['id']) => {
     onStartGraphChange({ focusedDomainId: domainId, activatedToolId: null, selectedEdgeId: null });
@@ -74,10 +126,6 @@ export const StartGraphStage = ({
     onStartGraphChange({ pinnedDomainIds: Array.from(next) });
   };
 
-  const topRelations = V1_DOMAIN_EDGES.filter(
-    (edge) => !focusedDomainId || edge.from === focusedDomainId || edge.to === focusedDomainId,
-  ).slice(0, 5);
-
   return (
     <div className="start-graph-v2" aria-label="Графовый старт">
       <header className="start-graph-v2__header">
@@ -89,6 +137,8 @@ export const StartGraphStage = ({
       <section className="start-graph-v2__stage-wrap">
         <StartGraphScene
           focusedDomainId={focusedDomainId}
+          selectedEdgeId={selectedEdgeId}
+          relationModifiers={relationModifiers}
           nodePositions={nodePositions}
           onDomainFocus={handleFocusDomain}
           onEdgeSelect={(edgeId) => onStartGraphChange({ selectedEdgeId: edgeId })}
@@ -98,6 +148,105 @@ export const StartGraphStage = ({
           onRenderedAnchorPosition={setAnchorPosition}
         />
         <StartGraphOverlay focusedDomainId={focusedDomainId} selectedEdgeId={selectedEdgeId} pinnedIds={pinnedIds} />
+
+        {selectedRelation ? (
+          <aside
+            className="start-graph-relation-inspector"
+            style={
+              anchorPosition
+                ? {
+                    left: Math.max(16, Math.min(anchorPosition.left + 96, 780)),
+                    top: Math.max(96, Math.min(anchorPosition.top + 48, 520)),
+                  }
+                : undefined
+            }
+          >
+            <p className="start-graph-relation-inspector__kicker">Связь доменов</p>
+            <h4>
+              {V1_MAJOR_DOMAINS.find((d) => d.id === selectedRelation.source)?.shortTitle} →{' '}
+              {V1_MAJOR_DOMAINS.find((d) => d.id === selectedRelation.target)?.shortTitle}
+            </h4>
+            <p>
+              {RELATION_TYPE_LABEL[selectedRelation.relationType]} · {RELATION_STATE_LABEL[selectedRelation.effectiveState]}
+            </p>
+            <dl>
+              <div>
+                <dt>Тип</dt>
+                <dd>{RELATION_TYPE_LABEL[selectedRelation.relationType]}</dd>
+              </div>
+              <div>
+                <dt>Базовая сила</dt>
+                <dd>{RELATION_STRENGTH_LABEL[selectedRelation.defaultStrength]}</dd>
+              </div>
+              <div>
+                <dt>Текущая сила</dt>
+                <dd>{RELATION_STRENGTH_LABEL[selectedRelation.effectiveStrength]}</dd>
+              </div>
+              <div>
+                <dt>Уверенность модели</dt>
+                <dd>{RELATION_CONFIDENCE_LABEL[selectedRelation.defaultConfidence]}</dd>
+              </div>
+              <div>
+                <dt>Режим активации</dt>
+                <dd>{RELATION_ACTIVATION_LABEL[selectedRelation.activationMode]}</dd>
+              </div>
+            </dl>
+
+            <div className="start-graph-relation-inspector__controls">
+              <p>Управление связью</p>
+              <div>
+                <button
+                  type="button"
+                  disabled={selectedRelation.activationMode === 'always_on'}
+                  onClick={() =>
+                    updateRelationModifier(selectedRelation.id, {
+                      muted: !selectedRelation.userModifier.muted,
+                      disabled: false,
+                      stateOverride: null,
+                    })
+                  }
+                >
+                  {selectedRelation.userModifier.muted ? 'Вернуть нормальную яркость' : 'Приглушить связь'}
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedRelation.activationMode === 'always_on'}
+                  onClick={() =>
+                    updateRelationModifier(selectedRelation.id, {
+                      disabled: !selectedRelation.userModifier.disabled,
+                      muted: false,
+                      stateOverride: null,
+                    })
+                  }
+                >
+                  {selectedRelation.userModifier.disabled ? 'Включить обратно' : 'Отключить связь'}
+                </button>
+              </div>
+              <div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateRelationModifier(selectedRelation.id, {
+                      strengthDelta: Math.max(-1, selectedRelation.userModifier.strengthDelta - 1) as -1 | 0 | 1,
+                    })
+                  }
+                >
+                  Ослабить
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateRelationModifier(selectedRelation.id, {
+                      strengthDelta: Math.min(1, selectedRelation.userModifier.strengthDelta + 1) as -1 | 0 | 1,
+                    })
+                  }
+                >
+                  Усилить
+                </button>
+              </div>
+            </div>
+          </aside>
+        ) : null}
 
         {focusedDomain ? (
           <StartInnerUniverse
@@ -152,18 +301,19 @@ export const StartGraphStage = ({
         </article>
 
         <article className="start-graph-v2__panel">
-          <h3>Связи и фиксация</h3>
+          <h3>Нативные связи</h3>
           <ul className="start-graph-v2__relations">
-            {topRelations.map((edge) => {
-              const from = V1_MAJOR_DOMAINS.find((domain) => domain.id === edge.from)?.shortTitle ?? edge.from;
-              const to = V1_MAJOR_DOMAINS.find((domain) => domain.id === edge.to)?.shortTitle ?? edge.to;
+            {topRelations.map((relation) => {
+              const from = V1_MAJOR_DOMAINS.find((domain) => domain.id === relation.source)?.shortTitle ?? relation.source;
+              const to = V1_MAJOR_DOMAINS.find((domain) => domain.id === relation.target)?.shortTitle ?? relation.target;
               return (
-                <li key={edge.id}>
+                <li key={relation.id}>
                   <span>
                     {from} → {to}
                   </span>
                   <small>
-                    {RELATION_LABEL[edge.relation]} · {edge.strength} · {edge.confidence}
+                    {RELATION_TYPE_LABEL[relation.relationType]} · {RELATION_STRENGTH_LABEL[relation.effectiveStrength]} ·{' '}
+                    {RELATION_STATE_LABEL[relation.effectiveState]}
                   </small>
                 </li>
               );
