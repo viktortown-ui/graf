@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { AppMode } from '../../entities/system/modes';
 import type { LaunchContext } from '../../app/state/launchContext';
-import type { ChainContext } from '../../app/state/useSceneState';
+import type { ChainContext, StartGraphPersistentState } from '../../app/state/useSceneState';
 import type { ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
 import { StartGraphScene } from './StartGraphScene';
 import { StartInnerUniverse } from './StartInnerUniverse';
@@ -13,6 +13,8 @@ type StartGraphStageProps = {
   launchContext: LaunchContext;
   chainContext: ChainContext;
   confidence: ConfidenceSnapshot;
+  startGraph: StartGraphPersistentState;
+  onStartGraphChange: (patch: Partial<StartGraphPersistentState>) => void;
   onAnchorChange: (nodeId: string) => void;
   onLaunchContextChange: (context: LaunchContext) => void;
   onLaunch: (mode: AppMode) => void;
@@ -31,16 +33,15 @@ export const StartGraphStage = ({
   launchContext,
   chainContext,
   confidence,
+  startGraph,
+  onStartGraphChange,
   onAnchorChange,
   onLaunchContextChange,
   onLaunch,
 }: StartGraphStageProps) => {
-  const [focusedDomainId, setFocusedDomainId] = useState<GraphStartDomain['id'] | null>(null);
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
-  const [activatedToolId, setActivatedToolId] = useState<string | null>(null);
-  const [pinnedIds, setPinnedIds] = useState<Set<GraphStartDomain['id']>>(new Set());
-  const [nodePositions, setNodePositions] = useState<Record<string, { x: number; y: number }>>({});
   const [anchorPosition, setAnchorPosition] = useState<{ left: number; top: number } | null>(null);
+  const { focusedDomainId, selectedEdgeId, activatedToolId, pinnedDomainIds, nodePositions } = startGraph;
+  const pinnedIds = useMemo(() => new Set(pinnedDomainIds), [pinnedDomainIds]);
 
   const focusedDomain = useMemo(
     () => V1_MAJOR_DOMAINS.find((domain) => domain.id === focusedDomainId) ?? null,
@@ -58,8 +59,7 @@ export const StartGraphStage = ({
   }, [focusedDomainId]);
 
   const handleFocusDomain = (domainId: GraphStartDomain['id']) => {
-    setFocusedDomainId(domainId);
-    setActivatedToolId(null);
+    onStartGraphChange({ focusedDomainId: domainId, activatedToolId: null, selectedEdgeId: null });
     const domain = V1_MAJOR_DOMAINS.find((item) => item.id === domainId);
     if (domain) {
       onAnchorChange(domain.anchorNodeId);
@@ -68,12 +68,10 @@ export const StartGraphStage = ({
   };
 
   const togglePin = (domainId: GraphStartDomain['id']) => {
-    setPinnedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(domainId)) next.delete(domainId);
-      else next.add(domainId);
-      return next;
-    });
+    const next = new Set(pinnedIds);
+    if (next.has(domainId)) next.delete(domainId);
+    else next.add(domainId);
+    onStartGraphChange({ pinnedDomainIds: Array.from(next) });
   };
 
   const topRelations = V1_DOMAIN_EDGES.filter(
@@ -91,10 +89,11 @@ export const StartGraphStage = ({
       <section className="start-graph-v2__stage-wrap">
         <StartGraphScene
           focusedDomainId={focusedDomainId}
+          nodePositions={nodePositions}
           onDomainFocus={handleFocusDomain}
-          onEdgeSelect={setSelectedEdgeId}
+          onEdgeSelect={(edgeId) => onStartGraphChange({ selectedEdgeId: edgeId })}
           onNodePosition={(domainId, position) => {
-            setNodePositions((prev) => ({ ...prev, [domainId]: position }));
+            onStartGraphChange({ nodePositions: { ...nodePositions, [domainId]: position } });
           }}
           onRenderedAnchorPosition={setAnchorPosition}
         />
@@ -112,7 +111,7 @@ export const StartGraphStage = ({
                 : null
             }
             activatedToolId={activatedToolId}
-            onActivateTool={setActivatedToolId}
+            onActivateTool={(toolId) => onStartGraphChange({ activatedToolId: toolId })}
           />
         ) : null}
       </section>
