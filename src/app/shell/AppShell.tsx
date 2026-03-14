@@ -6,13 +6,23 @@ import { useModeState } from '../state/useModeState';
 import { useSceneState } from '../state/useSceneState';
 import { useSettingsState } from '../state/useSettingsState';
 import { MODES } from '../../entities/system/modes';
-import { readDevLabEnabled, setDevLabEnabled } from '../../entities/system/devLabAccess';
+import { setDevLabEnabled } from '../../entities/system/devLabAccess';
+import { readDefaultDevLabEnabled, usePersistenceController } from '../persistence/usePersistenceController';
 
 export const AppShell = () => {
   const { activeMode, activeModeDefinition, setActiveMode } = useModeState();
   const sceneState = useSceneState();
   const settingsState = useSettingsState();
-  const [devLabEnabled, setDevLabState] = useState(readDevLabEnabled);
+  const [devLabEnabled, setDevLabState] = useState(readDefaultDevLabEnabled);
+
+  const persistence = usePersistenceController({
+    sceneState,
+    settingsState,
+    activeMode,
+    setActiveMode,
+    devLabEnabled,
+    setDevLabState,
+  });
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -45,7 +55,13 @@ export const AppShell = () => {
     <main className="app-shell" data-theme={settingsState.settings.theme}>
       <LeftRail activeMode={activeMode} modes={visibleModes} onSelectMode={setActiveMode} />
       <section className="scene-stage">
-        <SceneViewport mode={activeMode} sceneState={sceneState} settingsState={settingsState} onModeChange={setActiveMode} />
+        <SceneViewport
+          mode={activeMode}
+          sceneState={sceneState}
+          settingsState={settingsState}
+          persistence={persistence}
+          onModeChange={setActiveMode}
+        />
         <OverlayLayer mode={activeModeDefinition} sceneState={sceneState} />
       </section>
     </main>

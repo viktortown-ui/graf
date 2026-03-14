@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { DEMO_GRAPH } from '../../features/graph/model';
 import { WORLD_PLANETS } from '../../features/world/worldPlanets';
+import type { GraphStartDomain } from '../../features/start/graphStartModel';
 import type { DailyCheckIn, DailyFactors, Profile } from './dataSpine';
 import { createDataSpine } from './dataSpine';
 import { evaluateConfidence } from '../../entities/confidence/confidenceEngine';
@@ -79,6 +80,27 @@ export type SpatialLens = {
   zoom: number;
 };
 
+export type StartGraphPersistentState = {
+  focusedDomainId: GraphStartDomain['id'] | null;
+  selectedEdgeId: string | null;
+  activatedToolId: string | null;
+  pinnedDomainIds: GraphStartDomain['id'][];
+  nodePositions: Record<string, { x: number; y: number }>;
+};
+
+export type SceneStateSnapshot = {
+  selection: SceneSelection;
+  graphLens: SpatialLens;
+  worldCamera: SpatialLens & { rotation: number };
+  launchContext: LaunchContext;
+  dataSpine: ReturnType<typeof createDataSpine>;
+  historyDates: string[];
+  graphHandoff: WorldGraphHandoff | null;
+  oracleHandoff: OracleExecutionHandoff | null;
+  chainContext: ChainContext;
+  startGraph: StartGraphPersistentState;
+};
+
 const DEFAULT_SELECTION: SceneSelection = {
   worldPlanetId: 'energy',
   graphNodeId: 'domain-focus',
@@ -86,6 +108,13 @@ const DEFAULT_SELECTION: SceneSelection = {
 
 const DEFAULT_GRAPH_LENS: SpatialLens = { panX: 0, panY: 0, zoom: 1 };
 const DEFAULT_WORLD_CAMERA = { rotation: 0, panX: 0, panY: 0, zoom: 1 };
+const DEFAULT_START_GRAPH: StartGraphPersistentState = {
+  focusedDomainId: null,
+  selectedEdgeId: null,
+  activatedToolId: null,
+  pinnedDomainIds: [],
+  nodePositions: {},
+};
 
 const DOMAIN_TO_GRAPH_NODE: Record<WorldGraphHandoff['activeDomain']['id'], string> = {
   finance: 'domain-money',
@@ -115,6 +144,7 @@ export const useSceneState = () => {
   const [historyDates, setHistoryDates] = useState<string[]>([new Date().toISOString().slice(0, 10)]);
   const [graphHandoff, setGraphHandoff] = useState<WorldGraphHandoff | null>(null);
   const [oracleHandoff, setOracleHandoff] = useState<OracleExecutionHandoff | null>(null);
+  const [startGraph, setStartGraph] = useState<StartGraphPersistentState>(DEFAULT_START_GRAPH);
   const [chainContext, setChainContext] = useState<ChainContext>({
     launchContext: DEFAULT_LAUNCH_CONTEXT,
     activeDomain: null,
@@ -254,6 +284,30 @@ export const useSceneState = () => {
     setHistoryDates((current) => (current[current.length - 1] === today ? current : [...current, today]));
   };
 
+  const resetLaunchState = () => {
+    setLaunchContext(DEFAULT_LAUNCH_CONTEXT);
+    setSelection(DEFAULT_SELECTION);
+    setDataSpine(createDataSpine());
+    setHistoryDates([new Date().toISOString().slice(0, 10)]);
+    setGraphHandoff(null);
+    setOracleHandoff(null);
+    setStartGraph(DEFAULT_START_GRAPH);
+    setChainContext({
+      launchContext: DEFAULT_LAUNCH_CONTEXT,
+      activeDomain: null,
+      selectedLens: 'pressure',
+      worldToGraphHandoff: null,
+      graphToOracleHandoff: null,
+      selectedOracleScenario: null,
+      lastAcceptedScenario: null,
+      recommendedPath: ['start', 'world', 'graph', 'oracle'],
+      routeMemory: ['start'],
+      currentStep: 'start',
+      lastBlocker: null,
+      lastLeverage: null,
+    });
+  };
+
   return {
     selection,
     selectedGraphNode,
@@ -267,8 +321,10 @@ export const useSceneState = () => {
     graphHandoff,
     oracleHandoff,
     chainContext,
+    startGraph,
     setGraphLens,
     setWorldCamera,
+    setStartGraph,
     applyLaunchContext,
     applyWorldGraphHandoff,
     applyGraphOracleHandoff,
@@ -277,6 +333,30 @@ export const useSceneState = () => {
     updateDataSpine,
     selectWorldPlanet,
     selectGraphNode,
+    hydrateFromSnapshot: (snapshot: SceneStateSnapshot) => {
+      setSelection(snapshot.selection);
+      setGraphLens(snapshot.graphLens);
+      setWorldCamera(snapshot.worldCamera);
+      setLaunchContext(snapshot.launchContext);
+      setDataSpine(snapshot.dataSpine);
+      setHistoryDates(snapshot.historyDates);
+      setGraphHandoff(snapshot.graphHandoff);
+      setOracleHandoff(snapshot.oracleHandoff);
+      setChainContext(snapshot.chainContext);
+      setStartGraph(snapshot.startGraph);
+    },
+    createSnapshot: (): SceneStateSnapshot => ({
+      selection,
+      graphLens,
+      worldCamera,
+      launchContext,
+      dataSpine,
+      historyDates,
+      graphHandoff,
+      oracleHandoff,
+      chainContext,
+      startGraph,
+    }),
     resetView: () => {
       setGraphLens(DEFAULT_GRAPH_LENS);
       setWorldCamera(DEFAULT_WORLD_CAMERA);
@@ -285,28 +365,8 @@ export const useSceneState = () => {
       setSelection(DEFAULT_SELECTION);
       setGraphLens(DEFAULT_GRAPH_LENS);
       setWorldCamera(DEFAULT_WORLD_CAMERA);
+      setStartGraph(DEFAULT_START_GRAPH);
     },
-    resetLaunch: () => {
-      setLaunchContext(DEFAULT_LAUNCH_CONTEXT);
-      setSelection(DEFAULT_SELECTION);
-      setDataSpine(createDataSpine());
-      setHistoryDates([new Date().toISOString().slice(0, 10)]);
-      setGraphHandoff(null);
-      setOracleHandoff(null);
-      setChainContext({
-        launchContext: DEFAULT_LAUNCH_CONTEXT,
-        activeDomain: null,
-        selectedLens: 'pressure',
-        worldToGraphHandoff: null,
-        graphToOracleHandoff: null,
-        selectedOracleScenario: null,
-        lastAcceptedScenario: null,
-        recommendedPath: ['start', 'world', 'graph', 'oracle'],
-        routeMemory: ['start'],
-        currentStep: 'start',
-        lastBlocker: null,
-        lastLeverage: null,
-      });
-    },
+    resetLaunch: resetLaunchState,
   };
 };

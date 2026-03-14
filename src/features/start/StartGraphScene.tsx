@@ -7,6 +7,7 @@ import type { GraphStartDomain } from './graphStartModel';
 
 type StartGraphSceneProps = {
   focusedDomainId: GraphStartDomain['id'] | null;
+  nodePositions: Partial<Record<GraphStartDomain['id'], { x: number; y: number }>>;
   onDomainFocus: (domainId: GraphStartDomain['id']) => void;
   onEdgeSelect: (edgeId: string | null) => void;
   onNodePosition: (domainId: GraphStartDomain['id'], position: { x: number; y: number }) => void;
@@ -15,6 +16,7 @@ type StartGraphSceneProps = {
 
 export const StartGraphScene = ({
   focusedDomainId,
+  nodePositions,
   onDomainFocus,
   onEdgeSelect,
   onNodePosition,
@@ -28,7 +30,7 @@ export const StartGraphScene = ({
 
     const cy = cytoscape({
       container: containerRef.current,
-      elements: getStartGraphElements(),
+      elements: getStartGraphElements(nodePositions),
       style: startGraphStyles as cytoscape.StylesheetJson,
       layout: { name: 'preset', fit: true, padding: 44 },
       minZoom: 0.55,
@@ -70,7 +72,7 @@ export const StartGraphScene = ({
       cy.destroy();
       cyRef.current = null;
     };
-  }, [onDomainFocus, onEdgeSelect, onNodePosition]);
+  }, [nodePositions, onDomainFocus, onEdgeSelect, onNodePosition]);
 
   useEffect(() => {
     const cy = cyRef.current;

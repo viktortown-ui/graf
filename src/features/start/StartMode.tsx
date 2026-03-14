@@ -1,6 +1,6 @@
 import type { AppMode } from '../../entities/system/modes';
 import type { LaunchContext } from '../../app/state/launchContext';
-import type { ChainContext } from '../../app/state/useSceneState';
+import type { ChainContext, StartGraphPersistentState } from '../../app/state/useSceneState';
 import type { ConfidenceSnapshot } from '../../entities/confidence/confidenceEngine';
 import { StartGraphStage } from './StartGraphStage';
 
@@ -9,6 +9,8 @@ type StartModeProps = {
   launchContext: LaunchContext;
   chainContext: ChainContext;
   confidence: ConfidenceSnapshot;
+  startGraph: StartGraphPersistentState;
+  onStartGraphChange: (patch: Partial<StartGraphPersistentState>) => void;
   onAnchorChange: (nodeId: string) => void;
   onLaunchContextChange: (context: LaunchContext) => void;
   onLaunch: (mode: AppMode) => void;

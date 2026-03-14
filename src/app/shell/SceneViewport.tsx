@@ -14,11 +14,13 @@ import type { useSettingsState } from '../state/useSettingsState';
 import { MODE_SIGNAL } from '../../engine/sceneSignals';
 import { MODES } from '../../entities/system/modes';
 import { ChainRouteMemory } from '../../shared/ui/ChainRouteMemory';
+import type { usePersistenceController } from '../persistence/usePersistenceController';
 
 type SceneViewportProps = {
   mode: AppMode;
   sceneState: ReturnType<typeof useSceneState>;
   settingsState: ReturnType<typeof useSettingsState>;
+  persistence: ReturnType<typeof usePersistenceController>;
   onModeChange: (mode: AppMode) => void;
 };
 
@@ -60,7 +62,7 @@ const getThemeVars = (settings: AppSettings) => {
   } as CSSProperties;
 };
 
-export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }: SceneViewportProps) => {
+export const SceneViewport = ({ mode, sceneState, settingsState, persistence, onModeChange }: SceneViewportProps) => {
   const signal = MODE_SIGNAL[mode];
   const styleVars = getThemeVars(settingsState.settings);
   const activeModeDefinition = MODES.find((entry) => entry.id === mode);
@@ -116,6 +118,8 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
             <StartMode
               selectedNodeName={sceneState.selectedGraphNode.name}
               confidence={sceneState.confidence}
+              startGraph={sceneState.startGraph}
+              onStartGraphChange={(patch) => sceneState.setStartGraph((current) => ({ ...current, ...patch }))}
               onAnchorChange={(id) => sceneState.selectGraphNode(id, settingsState.settings.autoFocusNode)}
               launchContext={sceneState.launchContext}
               chainContext={sceneState.chainContext}
@@ -175,7 +179,9 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
             <SettingsMode
               settings={settingsState.settings}
               activeModeLabel={activeModeLabel}
-              saveStatus={settingsState.lastSavedAt}
+              saveStatus={persistence.saveStatus}
+              persistenceError={persistence.lastError}
+              snapshots={persistence.snapshots}
               storageSizeKb={settingsState.estimateStorageKb()}
               appVersion={'0.1.0'}
               onSettingChange={settingsState.setSetting}
@@ -196,8 +202,10 @@ export const SceneViewport = ({ mode, sceneState, settingsState, onModeChange }:
                 sceneState.resetLaunch();
                 sceneState.resetView();
               }}
-              onExport={settingsState.exportSettings}
-              onImport={settingsState.importSettings}
+              onExportProject={persistence.exportProject}
+              onImportProject={persistence.importProject}
+              onCreateSnapshot={persistence.createSnapshot}
+              onRestoreSnapshot={persistence.restoreSnapshot}
               onResetVisualCache={() => sceneState.resetView()}
             />
           )}

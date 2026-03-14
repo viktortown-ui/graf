@@ -10,7 +10,7 @@ const domainPositions: Record<GraphStartDomain['id'], { x: number; y: number }> 
   'capability-craft': { x: 800, y: 240 },
 };
 
-export const getStartGraphElements = (): ElementDefinition[] => {
+export const getStartGraphElements = (positionOverrides: Partial<Record<GraphStartDomain['id'], { x: number; y: number }>> = {}): ElementDefinition[] => {
   const core: ElementDefinition = {
     data: {
       id: CORE_NODE_ID,
@@ -32,7 +32,7 @@ export const getStartGraphElements = (): ElementDefinition[] => {
       kind: 'domain',
       state: 'available',
     },
-    position: domainPositions[domain.id],
+    position: positionOverrides[domain.id] ?? domainPositions[domain.id],
     grabbable: true,
     selectable: true,
   }));
